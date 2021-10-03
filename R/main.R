@@ -41,8 +41,11 @@ deeptrafo <- function(
   )
 {
   
-  if(!"y" %in% names(data))
+  if(!"y" %in% names(data)){
     data$y <- y
+  }else if(data$y[[1]] != y[[1]]){
+    stop("y will be used as name of the response, but name already taken in data.")
+  }
   
   if(is.null(names(list_of_formulas)))
     names(list_of_formulas)[1:2] <- c("h1", "h2")
@@ -243,7 +246,7 @@ from_preds_to_trafo <- function(
       input_shape = list(NULL, total_h1_dim),
       dim_bsp = c(order_bsp_p1)
     )
-    
+
     ## define RWTs
     AoB <- tf_row_tensor(input_theta_y, interact_pred)
     AprimeoB <- tf_row_tensor(input_theta_y_prime, interact_pred)
@@ -275,11 +278,11 @@ from_preds_to_trafo <- function(
     }
     
     # return transformation
-    trafo <- list(
+    trafo <- layer_concatenate(list(
       shift_pred,
       aTtheta,
       aPrimeTtheta
-    )
+    ))
     
     return(trafo)
     
@@ -319,8 +322,9 @@ neg_ll_trafo <- function(base_distribution) {
   return(
     function(y, model){
 
-      first_term <- bd %>% tfd_log_prob(layer_add(model[[1]], model[[2]]))
-      sec_term <- tf$math$log(tf$clip_by_value(model[[3]], 1e-8, Inf))
+      first_term <- bd %>% tfd_log_prob(layer_add(list(tf_stride_cols(model,1L), 
+                                                       tf_stride_cols(model,2L))))
+      sec_term <- tf$math$log(tf$clip_by_value(tf_stride_cols(model,3L), 1e-8, Inf))
       neglogLik <- -1 * tf$add(first_term, sec_term)
       return(neglogLik)
     }

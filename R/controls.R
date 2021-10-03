@@ -46,14 +46,16 @@ trafo_control <- function(order_bsp = 10L,
   
   if(is.null(y_basis_fun)){
     
-    y_basis_fun <- function(y) eval_bsp(y, order = order_bsp, supp = supp(y))
+    y_basis_fun <- function(y, orderbsp = order_bsp, suppy = supp(y)) eval_bsp(y, order = orderbsp, supp = suppy)
     
   }
   
   if(is.null(y_basis_fun_prime)){
     
-    y_basis_fun_prime <- function(y) eval_bsp_prime(y, order = order_bsp,
-                               supp = supp(y)) / diff(supp(y))
+    y_basis_fun_prime <- function(y, orderbsp = order_bsp, suppy = supp(y) / diff(supp(y))){ 
+      eval_bsp_prime(y, order = orderbsp,
+                     supp = suppy)
+    }
     
   }
   

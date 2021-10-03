@@ -382,3 +382,10 @@ calculate_log_score <- function(x, output)
   )
   
 }
+
+get_order_bsp_p1 <- function(x)
+{
+  
+  x$init_params$additive_predictors$ybasis[[2]]$shape[[2]]
+  
+}

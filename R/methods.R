@@ -190,31 +190,11 @@ predict.deeptrafo <- function(
 {
 
   if(is.null(newdata)){
-    inpCov <- unname(object$init_params$input_cov)
+    inpCov <- prepare_data(object$init_params$parsed_formulas_contents[-1*1:2])
   }else{
     # preprocess data
     if(is.data.frame(newdata)) newdata <- as.list(newdata)
-    inpCov <- prepare_data(object, newdata, pred=TRUE)
-    if(cast_float) inpCov <- lapply(inpCov, function(x) tf$constant(x, dtype = "float32"))
-    if(length(inpCov)==2 && !is.null(names(inpCov)) && names(inpCov)[2]=="minval")
-    {
-      minval <- inpCov[[2]]
-      inpCov <- inpCov[[1]]
-    }else{
-      minval <- NULL
-    }
-    inpCov <- c(inpCov, list(NULL), list(NULL))
-  }
-  
-  image_data <- NULL
-  if(length(object$init_params$image_var)>0){
-    if(!is.null(newdata)){
-      image_data <- as.data.frame(newdata[names(object$init_params$image_var)], 
-                                  stringsAsFactors = FALSE)
-    }else{
-      image_data <- as.data.frame(object$init_params$data[names(object$init_params$image_var)], 
-                                  stringsAsFactors = FALSE) 
-    }
+    inpCov <- prepare_newdata(object$init_params$parsed_formulas_contents[-1*1:2], newdata)
   }
 
   # TODO: make prediction possible for one observation only; fix type mismatch pdf grid
@@ -225,10 +205,9 @@ predict.deeptrafo <- function(
 
     # if(!is.null(minval)) y <- y - sum(minval*get_theta(object))
 
-    ay <- tf$cast(object$init_params$y_basis_fun(y), tf$float32)
-    aPrimey <- tf$cast(object$init_params$y_basis_fun_prime(y), tf$float32)
-    inpCov[length(inpCov)-c(1,0)] <- list(ay, aPrimey)
-    mod_output <- evaluate.deeptrafo(object, inpCov, y, image_data, batch_size = batch_size)
+    ay_aPrimey <- prepare_newdata(object$init_params$parsed_formulas_contents[1:2], data.frame(y=y))
+    inpCov <- c(ay_aPrimey, inpCov)
+    mod_output <- evaluate.deeptrafo(object, inpCov, y, batch_size = batch_size)
     if(type=="output") return(mod_output)
     w_eta <- mod_output[, 1, drop = FALSE]
     aTtheta <- mod_output[, 2, drop = FALSE]
@@ -242,9 +221,6 @@ predict.deeptrafo <- function(
       ret <- cbind(interaction = as.matrix(aTtheta),
                    as.data.frame(newdata)
       )
-
-      if(ncol(mod_output)==5)
-        ret <- cbind(ret, correction = as.matrix(mod_output[,4,drop=FALSE]))
 
       return(ret)
 
@@ -311,36 +287,26 @@ predict.deeptrafo <- function(
 
 }
 
-evaluate.deeptrafo <- function(object, newdata, y, data_image, batch_size = NULL)
+evaluate.deeptrafo <- function(object, newdata, y, batch_size = NULL)
 {
   
   
   if(length(object$init_params$image_var)>0){
     
-    data_tab <- list(newdata, tf$cast(matrix(y, ncol=1), tf$float32))
+    data_tab <- newdata
     
     # prepare generator
     max_data <- NROW(data_image)
     if(is.null(batch_size)) batch_size <- 32
     steps_per_epoch <- ceiling(max_data/batch_size)
-    
-    generator <- make_generator(data_image, data_tab, batch_size, 
-                                # FIXME: multiple images
-                                target_size = unname(unlist(object$init_params$image_var)[1:2]),
-                                color_mode = unname(ifelse(
-                                  unlist(object$init_params$image_var)[3]==3, 
-                                  "rgb", "grayscale")),
-                                x_col = names(object$init_params$image_var),
-                                is_trafo = object$init_params$family=="transformation_model", 
-                                shuffle = FALSE)
-    
-    mod_output <- object$model$predict(generator)
+
+    mod_output <- object$model$predict_generator(object, newdata, batch_size, apply_fun=NULL)
     
   }else{
     
     if(is.null(batch_size)){
       
-      mod_output <- object$model(list(newdata, tf$cast(matrix(y, ncol=1), tf$float32)))
+      mod_output <- object$model(newdata)
     
     }else{
       
@@ -350,8 +316,7 @@ evaluate.deeptrafo <- function(object, newdata, y, data_image, batch_size = NULL
         mod_output <- lapply(1:steps_per_epoch, 
                              function(i){
                                index <- (i-1)*batch_size + 1:batch_size
-                               object$model(list(lapply(newdata, function(x) subset_array(x, index)), 
-                                            tf$cast(matrix(y[index], ncol=1), tf$float32)))
+                               object$model(lapply(newdata, function(x) subset_array(x, index)))
                              })
         mod_output <- do.call("rbind", lapply(mod_output, as.matrix))
     
@@ -363,7 +328,7 @@ evaluate.deeptrafo <- function(object, newdata, y, data_image, batch_size = NULL
   
 }
 
-#' Function to return the shift term
+#' Function to return the weights of the shift term
 #'
 #' @param x the fitted deeptrafo object
 #'
@@ -371,18 +336,19 @@ evaluate.deeptrafo <- function(object, newdata, y, data_image, batch_size = NULL
 get_shift <- function(x)
 {
 
-  stopifnot("deeptrafo" %in% class(x))
-  names_weights <- sapply(x$model$trainable_weights, function(x) x$name)
-  lin_names <- grep("structured_linear_1", names_weights)
-  nonlin_names <- grep("structured_nonlinear_1", names_weights)
-  if(length(c(lin_names, nonlin_names))==0)
-    stop("Not sure which layer to access for shift. ", 
-         "Have you specified a structured shift predictor?")
-  -1 * as.matrix(x$model$trainable_weights[[c(lin_names, nonlin_names)]] + 0)
+  pfc <- x$init_params$parsed_formulas_contents$h2
+  names <- get_names_pfc(pfc)
+  check_names <- names
+  check_names[check_names=="(Intercept)"] <- "1"
+  coefs <- lapply(1:length(check_names), function(i) 
+    pfc[[i]]$coef(get_weight_by_name(x, check_names[i], 4)))
+  
+  names(coefs) <- names
+  return(coefs)
 
 }
 
-#' Function to return the theta term
+#' Function to return the weights of the theta term
 #'
 #' @param x the fitted deeptrafo object
 #'
@@ -390,11 +356,10 @@ get_shift <- function(x)
 get_theta <- function(x)
 {
 
-  stopifnot("deeptrafo" %in% class(x))
   names_weights <- sapply(x$model$trainable_weights, function(x) x$name)
   reshape_softplus_cumsum(
     as.matrix(x$model$weights[[grep("constraint_mono_layer", names_weights)]] + 0),
-    order_bsp_p1 = x$init_params$order_bsp + 1
+    order_bsp_p1 = get_order_bsp_p1(x)
   )
 
 }

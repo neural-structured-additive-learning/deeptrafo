@@ -2,6 +2,7 @@ basis_processor <- function(term, data, output_dim = NULL, param_nr, controls){
 
   name <- makelayername(term, param_nr)
   bfy <- controls$y_basis_fun(data[[extractvar(term)]])
+  suppy <- range(data[[extractvar(term)]])
   
   # define layer  
   layer <- function(x, ...)
@@ -11,7 +12,8 @@ basis_processor <- function(term, data, output_dim = NULL, param_nr, controls){
   
   list(
     data_trafo = function() bfy,
-    predict_trafo = function(newdata) controls$y_basis_fun(newdata[extractvar(term)]),
+    predict_trafo = function(newdata) controls$y_basis_fun(newdata[[extractvar(term)]],
+                                                           suppy = suppy),
     input_dim = as.integer(ncol(bfy)),
     layer = layer
   )
@@ -21,6 +23,7 @@ basis_prime_processor <- function(term, data, output_dim = NULL, param_nr, contr
   
   name <- makelayername(term, param_nr)
   bfy <- controls$y_basis_fun_prime(data[[extractvar(term)]])
+  suppy <- range(data[[extractvar(term)]])
   
   # define layer  
   layer <- function(x, ...)
@@ -30,7 +33,8 @@ basis_prime_processor <- function(term, data, output_dim = NULL, param_nr, contr
   
   list(
     data_trafo = function() bfy,
-    predict_trafo = function(newdata) controls$y_basis_fun_prime(newdata[extractvar(term)]),
+    predict_trafo = function(newdata) controls$y_basis_fun_prime(newdata[[extractvar(term)]],
+                                                                 suppy = suppy),
     input_dim = as.integer(ncol(bfy)),
     layer = layer
   )
