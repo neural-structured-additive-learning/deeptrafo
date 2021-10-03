@@ -1,5 +1,71 @@
-#' @title Predict based on a deeptrafo object
+#' Generic methods for deeptrafo objects
 #'
+#' @param x deeptrafo object
+#' @param which which effect to plot, default selects all.
+#' @param which_param character; either \code{"h1"} or \code{"h2"}
+#' 1 corresponds to the shift term, 2 to the interaction term.
+#' @param only_data logical, if TRUE, only the data for plotting is returned
+#' @param grid_length the length of an equidistant grid at which a two-dimensional function
+#' is evaluated for plotting.
+#' @param eval_grid logical; should plot be evaluated on a grid
+#' @param ... further arguments, passed to fit, plot or predict function
+#'
+#' @method plot deeptrafo
+#' @export
+#' @rdname methodTrafo
+#'
+plot.deeptrafo <- function(
+  x,
+  which = NULL,
+  # which of the nonlinear structured effects
+  which_param = "h1", # for which parameter
+  only_data = FALSE,
+  grid_length = 40,
+  ... # passed to plot function
+)
+{
+
+  which_param <- switch (which_param,
+    h1 = 3,
+    h2 = 4
+  )
+  
+  return(plot.deepregression(x, which = which, which_param = which_param,
+                             only_data = only_data, grid_length = grid_length, ...))
+  
+}
+
+#' @param x deeptrafo object
+#' @param which_param integer, indicating for which distribution parameter
+#' coefficients should be returned (default is first parameter)
+#' @param type either NULL (all types of coefficients are returned),
+#' "linear" for linear coefficients or "smooth" for coefficients of;
+#' Note that \code{type} is currently not used for \code{"h1"}
+#' @param ... further arguments, passed to fit, plot or predict function
+#'
+#' @method coef deeptrafo
+#' @export
+#' @rdname methodTrafo
+#'
+coef.deeptrafo <- function(
+  object,
+  which_param = 1,
+  type = NULL,
+  ...
+)
+{
+  
+  if(which_param=="h1") return(get_theta(object))
+  if(which_param=="h2") return(get_shift(object, type = type))
+  
+  # else, return lags 
+  return(coef.deepregression(object, which_param = 5, type = type))
+  
+  
+}
+
+
+#' 
 #' @param object a deeptrafo model
 #' @param newdata optional new data, either data.frame or list
 #' @param ... not used atm
@@ -7,7 +73,9 @@
 #' and \code{type} in \code{c('trafo', 'pdf', 'cdf', 'interaction')}
 #' determining the returned value
 #'
-#' @export
+#' @method predict deeptrafo
+#'
+#' @rdname methodTrafo
 #'
 predict.deeptrafo <- function(
   object,
@@ -36,7 +104,7 @@ predict.deeptrafo <- function(
 
     ay_aPrimey <- prepare_newdata(object$init_params$parsed_formulas_contents[1:2], data.frame(y=y))
     inpCov <- c(ay_aPrimey, inpCov)
-    mod_output <- evaluate.deeptrafo(object, inpCov, y, batch_size = batch_size)
+    mod_output <- fitted.deeptrafo(object, inpCov, y, batch_size = batch_size)
     if(type=="output") return(mod_output)
     w_eta <- mod_output[, 1, drop = FALSE]
     aTtheta <- mod_output[, 2, drop = FALSE]
@@ -116,7 +184,20 @@ predict.deeptrafo <- function(
 
 }
 
-evaluate.deeptrafo <- function(object, newdata, y, batch_size = NULL)
+#' 
+#' @param object a deeptrafo model
+#' @param newdata optional new data, either data.frame or list
+#' @param batch_size integer; optional, useful if data is too large
+#' @param ... not used atm
+#' @return returns a function with two parameters: the actual response
+#' and \code{type} in \code{c('trafo', 'pdf', 'cdf', 'interaction')}
+#' determining the returned value
+#'
+#' @method predict deeptrafo
+#'
+#' @rdname methodTrafo
+#'
+fitted.deeptrafo <- function(object, newdata, batch_size = NULL, ...)
 {
   
   
@@ -129,7 +210,7 @@ evaluate.deeptrafo <- function(object, newdata, y, batch_size = NULL)
     if(is.null(batch_size)) batch_size <- 32
     steps_per_epoch <- ceiling(max_data/batch_size)
 
-    mod_output <- object$model$predict_generator(object, newdata, batch_size, apply_fun=NULL)
+    mod_output <- predict_generator(object, newdata, batch_size, apply_fun=NULL)
     
   }else{
     
@@ -160,13 +241,17 @@ evaluate.deeptrafo <- function(object, newdata, y, batch_size = NULL)
 #' Function to return the weights of the shift term
 #'
 #' @param x the fitted deeptrafo object
+#' @param type see coef.deeptrafo
 #'
 #' @export
-get_shift <- function(x)
+get_shift <- function(x, type = NULL)
 {
 
   pfc <- x$init_params$parsed_formulas_contents$h2
-  names <- get_names_pfc(pfc)
+  to_return <- get_type_pfc(pfc, type)
+  
+  names <- get_names_pfc(pfc)[as.logical(to_return)]
+  
   check_names <- names
   check_names[check_names=="(Intercept)"] <- "1"
   coefs <- lapply(1:length(check_names), function(i) 

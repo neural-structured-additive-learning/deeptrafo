@@ -4,10 +4,12 @@
 \alias{get_shift}
 \title{Function to return the weights of the shift term}
 \usage{
-get_shift(x)
+get_shift(x, type = NULL)
 }
 \arguments{
 \item{x}{the fitted deeptrafo object}
+
+\item{type}{see coef.deeptrafo}
 }
 \description{
 Function to return the weights of the shift term
