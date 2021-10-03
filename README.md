@@ -1,7 +1,12 @@
 
 # deeptransformation
 
-This package provides function to fit Deep Conditional Transformation Models and Autoregressive Transformation Models using deepregression
+This package provides function to fit 
+
+* Deep Conditional Transformation Models (Baumann et al., 2021) and 
+* Autoregressive Transformation Models (Ruegamer et al., 2021)
+ 
+using deepregression.
 
 # Installation
 
