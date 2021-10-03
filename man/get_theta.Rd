@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{get_theta}
 \alias{get_theta}
-\title{Function to return the theta term}
+\title{Function to return the weights of the theta term}
 \usage{
 get_theta(x)
 }
@@ -10,5 +10,5 @@ get_theta(x)
 \item{x}{the fitted deeptrafo object}
 }
 \description{
-Function to return the theta term
+Function to return the weights of the theta term
 }

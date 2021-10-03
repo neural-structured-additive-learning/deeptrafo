@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{get_shift}
 \alias{get_shift}
-\title{Function to return the shift term}
+\title{Function to return the weights of the shift term}
 \usage{
 get_shift(x)
 }
@@ -10,5 +10,5 @@ get_shift(x)
 \item{x}{the fitted deeptrafo object}
 }
 \description{
-Function to return the shift term
+Function to return the weights of the shift term
 }
