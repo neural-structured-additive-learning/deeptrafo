@@ -26,9 +26,9 @@ For deep conditional transformation models, please cite the following:
     
 For autoregressive transformation models, please cite:
 
-    @article{ruegamer2021atm
+    @article{ruegamer2021atm,
       title={Transforming autoregression for expressive forecasts with parametric uncertainty quantification},
-      author={David \textbf{R{\"u}gamer} and Philipp Baumann and Torsten Hothorn},
+      author={R{\"u}gamer, David and Baumann, Philipp and Hothorn, Torsten},
       year={2021},
       eprint={2110.xxxx},
       archivePrefix={arXiv},
