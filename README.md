@@ -33,6 +33,6 @@ For autoregressive transformation models, please cite:
       eprint={2110.xxxx},
       archivePrefix={arXiv},
       journal={arXiv preprint arXiv:2110.xxxx}
-}
+    }
 
 
