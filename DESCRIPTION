@@ -3,13 +3,14 @@ Title: Fitting Deep Conditional Transformation Models
 Version: 0.1
 Authors@R: c(
     person("David", "Ruegamer", , "david.ruegamer@gmail.com", role = c("aut", "cre")),
-    person("Philipp", "Baumann", , "baumann@kof.ethz.ch", role = c("aut","cre"))
+    person("Philipp", "Baumann", , "baumann@kof.ethz.ch", role = c("aut"))
     )
 Description:
     Allows for the specification of deep conditional transformation models
 Depends: R (>= 4.0.0)
 Imports:
     deepregression
+Depends: Formula
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
