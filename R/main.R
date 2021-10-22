@@ -1,35 +1,42 @@
 #' Fitting Deep Conditional Transformation Models
 #'
-#' @param y outcome vector
+#' @param formula Formula specifying the outcome, shift, interaction and shared
+#'     terms as \code{response ~ shifting | interacting | shared}
 #' @param list_of_formulas list of formulas where the first element corresponds to 
-#' a transformation h_1 as specified in DCTMs, the second element to h_2 as specified
-#' in DCTMs and a third element for shared layers used in both
+#'     a transformation h_1 as specified in DCTMs, the second element to h_2 as specified
+#'     in DCTMs and a third element for shared layers used in both
 #' @param lag_formula formula representing the optional predictor for lags of the 
-#' response as defined for ATMs
+#'     response as defined for ATMs
 #' @param data list or data.frame with data; must include y as column
 #' @param order_bsp integer; order of Bernstein polynomials
 #' @param addconst_interaction positive constant;
-#' a constant added to the additive predictor of the interaction term.
-#' If \code{NULL}, terms are left unchanged. If 0 and predictors have negative values in their
-#' design matrix, the minimum value of all predictors is added to ensure positivity.
-#' If > 0, the minimum value plus the \code{addconst_interaction} is added to each predictor
-#' in the interaction term.
+#'     a constant added to the additive predictor of the interaction term.
+#'     If \code{NULL}, terms are left unchanged. If 0 and predictors have negative values in their
+#'     design matrix, the minimum value of all predictors is added to ensure positivity.
+#'     If > 0, the minimum value plus the \code{addconst_interaction} is added to each predictor
+#'     in the interaction term.
 #' @param split_between_h1_h2 integer; for shared layer use
-#' defines how many of the last layer's hidden units are added to the h2
-#' term (while the rest is used for the h2 term) 
+#'     defines how many of the last layer's hidden units are added to the h2
+#'     term (while the rest is used for the h2 term) 
 #' @param family, tfd_distribution or string; the base distribution for 
-#' transformation models. If string, can be \code{"normal"} or \code{"logistic"}.
+#'     transformation models. If string, can be \code{"normal"} or \code{"logistic"}.
 #' @param trafo_options options for transformation models such as the basis function used
 #' @param ... Arguments passed to \code{deepregression}
+#' 
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
+#' 
+#' @examples 
+#' dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+#' fml <- y ~ x | z
+#' deeptrafo(fml, dat)
+#' 
 #' @export
 #' @details 
 #'
 deeptrafo <- function(
-  y,
-  list_of_formulas,
-  lag_formula = NULL,
+  formula,
   data,
+  lag_formula = NULL,
   order_bsp = 10L,
   addconst_interaction = NULL,
   split_between_h1_h2 = 1L,
@@ -40,21 +47,23 @@ deeptrafo <- function(
   ...
   )
 {
+  # How many terms are in the formula
+  nterms <- attr(formula, "rhs")
   
-  if(!"y" %in% names(data)){
-    data$y <- y
-  }else if(data$y[[1]] != y[[1]]){
-    stop("y will be used as name of the response, but name already taken in data.")
-  }
+  # Name of the response variable
+  rvar <- all.vars(formula)[1]
   
-  if(is.null(names(list_of_formulas)))
-    names(list_of_formulas)[1:2] <- c("h1", "h2")
-  if(length(list_of_formulas)==3)
-    names(list_of_formulas)[3] <- "shared"
+  # List of formulas
+  list_of_formulas <- list(
+    ybasis = as.formula(paste0("~ -1 + bsfun(", rvar, ")")),
+    ybasisprime = as.formula(paste0("~ -1 + bsprimefun(", rvar, ")")),
+    h1 = structure(formula(formula, lhs = 0, rhs = 1), with_layer = FALSE),
+    h2 = ifelse(nterms >= 2, formula(formula, lhs = 0, rhs = 2), NULL),
+    shared = ifelse(nterms == 3, formula(formula, lhs = 0, rhs = 3), NULL)
+  )
   
-  list_of_formulas <- c(list(ybasis = ~ -1 + bsfun(y),
-                             ybasisprime = ~ -1 + bsprimefun(y)),
-                        list_of_formulas)
+  # Extract response variable
+  y <- model.response(model.frame(formula(formula, lhs = 1, rhs = 0)))
   
   # check for ATMs
   if(!is.null(lag_formula)){
@@ -67,17 +76,13 @@ deeptrafo <- function(
     
   }
   
-  attr(list_of_formulas[[which(names(list_of_formulas)=="h1")]], 
-       "with_layer") <- FALSE
-  
   # define how to get a trafo model from predictor
   from_pred_to_trafo_fun <- from_preds_to_trafo(atm_toplayer = atm_toplayer,
                                                 split = split_between_h1_h2,
                                                 const_ia = addconst_interaction)
   
   # define ar_layer and atm processor
-  ar_layer <- ar_lags_layer(order = order_bsp,
-                            supp = range(y))
+  ar_layer <- ar_lags_layer(order = order_bsp, supp = range(y))
   
   atm_lag_processor <- make_atm_processor(ar_layer)
   
@@ -87,11 +92,11 @@ deeptrafo <- function(
   
   dots <- list(...)
   
-  if(is.null(dots$additional_processor)){
+  if (is.null(dots$additional_processor)) {
     
     additional_processor <- trafo_processor
     
-  }else{
+  } else{
     
     additional_processor <- c(list(...)$additional_processor, trafo_processor)
     dots$additional_processor <- NULL
@@ -101,7 +106,7 @@ deeptrafo <- function(
   attr(additional_processor, "controls") <- trafo_options
   
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
-  snwb[[which(names(list_of_formulas)=="h1")]] <- interaction_init
+  snwb[[which(names(list_of_formulas) == "h1")]] <- interaction_init
   
   ret <- do.call("deepregression", 
                  c(list(y = y, 
