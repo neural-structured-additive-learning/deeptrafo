@@ -19,7 +19,7 @@ from_preds_to_trafo(
 \code{deepregression}}
 }
 \value{
-a function of list_pred_param returning a list of output tensors 
+a function of list_pred_param returning a list of output tensors
 that is passed to \code{model_fun} of \code{deepregression}
 }
 \description{
