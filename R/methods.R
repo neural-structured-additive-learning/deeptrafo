@@ -10,6 +10,7 @@
 #' @param eval_grid logical; should plot be evaluated on a grid
 #' @param ... further arguments, passed to fit, plot or predict function
 #'
+#'
 #' @method plot deeptrafo
 #' @export
 #' @rdname methodTrafo
@@ -26,13 +27,14 @@ plot.deeptrafo <- function(
 {
 
   which_param <- switch (which_param,
-    h1 = 3,
-    h2 = 4
+    "h1" = 3,
+    "h2" = 4
   )
-  
-  return(plot.deepregression(x, which = which, which_param = which_param,
-                             only_data = only_data, grid_length = grid_length, ...))
-  
+
+  class(x) <- class(x)[-1]
+  return(plot(x, which = which, which_param = which_param,
+              only_data = only_data, grid_length = grid_length, ...))
+
 }
 
 #' @param x deeptrafo object
@@ -54,18 +56,18 @@ coef.deeptrafo <- function(
   ...
 )
 {
-  
+
   if(which_param=="h1") return(get_theta(object))
   if(which_param=="h2") return(get_shift(object, type = type))
-  
-  # else, return lags 
+
+  # else, return lags
   return(coef.deepregression(object, which_param = 5, type = type))
-  
-  
+
+
 }
 
 
-#' 
+#'
 #' @param object a deeptrafo model
 #' @param newdata optional new data, either data.frame or list
 #' @param ... not used atm
@@ -184,7 +186,7 @@ predict.deeptrafo <- function(
 
 }
 
-#' 
+#'
 #' @param object a deeptrafo model
 #' @param newdata optional new data, either data.frame or list
 #' @param batch_size integer; optional, useful if data is too large
@@ -199,43 +201,43 @@ predict.deeptrafo <- function(
 #'
 fitted.deeptrafo <- function(object, newdata, batch_size = NULL, ...)
 {
-  
-  
+
+
   if(length(object$init_params$image_var)>0){
-    
+
     data_tab <- newdata
-    
+
     # prepare generator
     max_data <- NROW(data_image)
     if(is.null(batch_size)) batch_size <- 32
     steps_per_epoch <- ceiling(max_data/batch_size)
 
     mod_output <- predict_generator(object, newdata, batch_size, apply_fun=NULL)
-    
+
   }else{
-    
+
     if(is.null(batch_size)){
-      
+
       mod_output <- object$model(newdata)
-    
+
     }else{
-      
+
         max_data <- NROW(newdata[[1]])
         steps_per_epoch <- ceiling(max_data/batch_size)
-        
-        mod_output <- lapply(1:steps_per_epoch, 
+
+        mod_output <- lapply(1:steps_per_epoch,
                              function(i){
                                index <- (i-1)*batch_size + 1:batch_size
                                object$model(lapply(newdata, function(x) subset_array(x, index)))
                              })
         mod_output <- do.call("rbind", lapply(mod_output, as.matrix))
-    
+
     }
-    
+
   }
-  
+
   return(mod_output)
-  
+
 }
 
 #' Function to return the weights of the shift term
@@ -249,14 +251,14 @@ get_shift <- function(x, type = NULL)
 
   pfc <- x$init_params$parsed_formulas_contents$h2
   to_return <- get_type_pfc(pfc, type)
-  
+
   names <- get_names_pfc(pfc)[as.logical(to_return)]
-  
+
   check_names <- names
   check_names[check_names=="(Intercept)"] <- "1"
-  coefs <- lapply(1:length(check_names), function(i) 
+  coefs <- lapply(1:length(check_names), function(i)
     pfc[[i]]$coef(get_weight_by_name(x, check_names[i], 4)))
-  
+
   names(coefs) <- names
   return(coefs)
 

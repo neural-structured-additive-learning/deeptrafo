@@ -5,3 +5,5 @@
 deepregression.Rproj
 README_files
 ^codecov\.yml$
+^.*\.Rproj$
+^\.Rproj\.user$

@@ -5,10 +5,9 @@
 \title{Fitting Deep Conditional Transformation Models}
 \usage{
 deeptrafo(
-  y,
-  list_of_formulas,
-  lag_formula = NULL,
+  formula,
   data,
+  lag_formula = NULL,
   order_bsp = 10L,
   addconst_interaction = NULL,
   split_between_h1_h2 = 1L,
@@ -20,16 +19,13 @@ deeptrafo(
 )
 }
 \arguments{
-\item{y}{outcome vector}
-
-\item{list_of_formulas}{list of formulas where the first element corresponds to 
-a transformation h_1 as specified in DCTMs, the second element to h_2 as specified
-in DCTMs and a third element for shared layers used in both}
-
-\item{lag_formula}{formula representing the optional predictor for lags of the 
-response as defined for ATMs}
+\item{formula}{Formula specifying the outcome, shift, interaction and shared
+terms as \code{response ~ shifting | interacting | shared}}
 
 \item{data}{list or data.frame with data; must include y as column}
+
+\item{lag_formula}{formula representing the optional predictor for lags of the
+response as defined for ATMs}
 
 \item{order_bsp}{integer; order of Bernstein polynomials}
 
@@ -44,12 +40,16 @@ in the interaction term.}
 defines how many of the last layer's hidden units are added to the h2
 term (while the rest is used for the h2 term)}
 
-\item{family, }{tfd_distribution or string; the base distribution for 
+\item{family, }{tfd_distribution or string; the base distribution for
 transformation models. If string, can be \code{"normal"} or \code{"logistic"}.}
 
 \item{trafo_options}{options for transformation models such as the basis function used}
 
 \item{...}{Arguments passed to \code{deepregression}}
+
+\item{list_of_formulas}{list of formulas where the first element corresponds to
+a transformation h_1 as specified in DCTMs, the second element to h_2 as specified
+in DCTMs and a third element for shared layers used in both}
 }
 \value{
 An object of class \code{c("deeptrafo", "deepregression")}
@@ -58,5 +58,11 @@ An object of class \code{c("deeptrafo", "deepregression")}
 Fitting Deep Conditional Transformation Models
 }
 \details{
+
+}
+\examples{
+dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+fml <- y ~ x | z
+deeptrafo(fml, dat)
 
 }
