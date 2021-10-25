@@ -27,9 +27,10 @@
 #'
 #' @examples
 #' dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
-#' fml <- y ~ x | z
+#' fml <- y ~ s(x) | z
 #' m <- deeptrafo(fml, dat)
 #' m %>% fit(epochs = 10)
+#' plot(m)
 #'
 #' @export
 #' @details
