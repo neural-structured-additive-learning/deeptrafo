@@ -7,10 +7,9 @@ Authors@R: c(
     )
 Description:
     Allows for the specification of deep conditional transformation models
-Depends: R (>= 4.0.0)
+Depends: R (>= 4.0.0), Formula
 Imports:
     deepregression
-Depends: Formula
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
