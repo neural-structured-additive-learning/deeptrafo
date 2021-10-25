@@ -48,7 +48,8 @@ deeptrafo <- function(
   )
 {
   # How many terms are in the formula
-  nterms <- attr(formula, "rhs")
+  formula <- as.Formula(formula)
+  nterms <- length(attr(formula, "rhs"))
 
   # Name of the response variable
   rvar <- all.vars(formula)[1]
@@ -57,10 +58,13 @@ deeptrafo <- function(
   list_of_formulas <- list(
     ybasis = as.formula(paste0("~ -1 + bsfun(", rvar, ")")),
     ybasisprime = as.formula(paste0("~ -1 + bsprimefun(", rvar, ")")),
-    h1 = structure(formula(formula, lhs = 0, rhs = 1), with_layer = FALSE),
-    h2 = ifelse(nterms >= 2, formula(formula, lhs = 0, rhs = 2), NULL),
-    shared = ifelse(nterms == 3, formula(formula, lhs = 0, rhs = 3), NULL)
+    h1 = structure(formula(formula, lhs = 0, rhs = 1L), with_layer = FALSE),
+    h2 = if (nterms >= 2L) formula(formula, lhs = 0, rhs = 2L) else NULL,
+    shared = if (nterms == 3L) formula(formula, lhs = 0, rhs = 3L) else NULL
   )
+
+  # Remove NULL formulae
+  list_of_formulas[sapply(list_of_formulas, is.null)] <- NULL
 
   # Extract response variable
   y <- model.response(model.frame(formula(formula, lhs = 1, rhs = 0), data = data))
