@@ -61,8 +61,8 @@ coef.deeptrafo <- function(
   if(which_param=="h2") return(get_shift(object, type = type))
 
   # else, return lags
-  return(coef.deepregression(object, which_param = 5, type = type))
-
+  class(object) <- class(object)[-1]
+  return(coef(object, which_param = 5, type = type))
 
 }
 

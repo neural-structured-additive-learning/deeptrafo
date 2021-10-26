@@ -27,10 +27,11 @@
 #'
 #' @examples
 #' dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
-#' fml <- y ~ s(x) | z
+#' fml <- y ~ s(x)
 #' m <- deeptrafo(fml, dat)
 #' m %>% fit(epochs = 10)
 #' plot(m)
+#' coef(m)
 #'
 #' @export
 #' @details
@@ -61,7 +62,7 @@ deeptrafo <- function(
     ybasis = as.formula(paste0("~ -1 + bsfun(", rvar, ")")),
     ybasisprime = as.formula(paste0("~ -1 + bsprimefun(", rvar, ")")),
     h1 = structure(formula(formula, lhs = 0, rhs = 1L), with_layer = FALSE),
-    h2 = if (nterms >= 2L) formula(formula, lhs = 0, rhs = 2L) else NULL,
+    h2 = if (nterms >= 2L) formula(formula, lhs = 0, rhs = 2L) else ~ 1,
     shared = if (nterms == 3L) formula(formula, lhs = 0, rhs = 3L) else NULL
   )
 
