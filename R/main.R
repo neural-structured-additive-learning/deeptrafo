@@ -260,8 +260,8 @@ from_preds_to_trafo <- function(
     )
 
     ## define RWTs
-    AoB <- tf_row_tensor(input_theta_y, interact_pred)
-    AprimeoB <- tf_row_tensor(input_theta_y_prime, interact_pred)
+    AoB <- deepregression:::tf_row_tensor(input_theta_y, interact_pred)
+    AprimeoB <- deepregression:::tf_row_tensor(input_theta_y_prime, interact_pred)
 
     # define h1 and h1'
     aTtheta <- AoB %>% thetas_layer()
@@ -274,7 +274,7 @@ from_preds_to_trafo <- function(
 
       # combine every lag with the interacting predictor
       AoB_lags <- lapply(input_theta_atm, function(inp)
-        tf_row_tensor(inp, interact_pred))
+        deepregression:::tf_row_tensor(inp, interact_pred))
 
       # multiply with theta weights
       aTtheta_lags <- layer_concatenate_identity(
