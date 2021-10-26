@@ -3,6 +3,7 @@ Title: Fitting Deep Conditional Transformation Models
 Version: 0.1
 Authors@R: c(
     person("David", "Ruegamer", , "david.ruegamer@gmail.com", role = c("aut", "cre")),
+    person("Lucas", "Kook", , "lucasheinrich.kook@uzh.ch", role = c("aut"),
     person("Philipp", "Baumann", , "baumann@kof.ethz.ch", role = c("aut"))
     )
 Description:
