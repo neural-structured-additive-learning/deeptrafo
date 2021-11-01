@@ -51,14 +51,16 @@ plot.deeptrafo <- function(
 #'
 coef.deeptrafo <- function(
   object,
-  which_param = 1,
+  which_param = "h1",
   type = NULL,
   ...
 )
 {
 
-  if(which_param=="h1") return(get_theta(object))
-  if(which_param=="h2") return(get_shift(object, type = type))
+	if (which_param == "h1")
+		return(get_theta(object))
+	if (which_param == "h2")
+		return(get_shift(object, type = type))
 
   # else, return lags
   class(object) <- class(object)[-1]
@@ -252,12 +254,12 @@ get_shift <- function(x, type = NULL)
   pfc <- x$init_params$parsed_formulas_contents$h2
   to_return <- get_type_pfc(pfc, type)
 
-  names <- get_names_pfc(pfc)[as.logical(to_return)]
+  names <- deepregression:::get_names_pfc(pfc)[as.logical(to_return)]
 
   check_names <- names
   check_names[check_names=="(Intercept)"] <- "1"
   coefs <- lapply(1:length(check_names), function(i)
-    pfc[[i]]$coef(get_weight_by_name(x, check_names[i], 4)))
+    pfc[[i]]$coef(deepregression:::get_weight_by_name(x, check_names[i], 4)))
 
   names(coefs) <- names
   return(coefs)
