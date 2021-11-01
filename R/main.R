@@ -31,7 +31,8 @@
 #' m <- deeptrafo(fml, dat)
 #' m %>% fit(epochs = 10)
 #' plot(m)
-#' coef(m)
+#' coef(m, which_param = "h1")
+#' coef(m, which_param = "h2")
 #'
 #' @export
 #' @details
@@ -51,8 +52,8 @@ deeptrafo <- function(
   )
 {
   # How many terms are in the formula
-  formula <- as.Formula(formula)
-  nterms <- length(attr(formula, "rhs"))
+  fml <- as.Formula(formula)
+  nterms <- length(attr(fml, "rhs"))
 
   # Name of the response variable
   rvar <- all.vars(formula)[1]
@@ -61,16 +62,16 @@ deeptrafo <- function(
   list_of_formulas <- list(
     ybasis = as.formula(paste0("~ -1 + bsfun(", rvar, ")")),
     ybasisprime = as.formula(paste0("~ -1 + bsprimefun(", rvar, ")")),
-    h1 = structure(formula(formula, lhs = 0, rhs = 1L), with_layer = FALSE),
-    h2 = if (nterms >= 2L) formula(formula, lhs = 0, rhs = 2L) else ~ 1,
-    shared = if (nterms == 3L) formula(formula, lhs = 0, rhs = 3L) else NULL
+    h1 = structure(formula(fml, lhs = 0, rhs = 1L), with_layer = FALSE),
+    h2 = if (nterms >= 2L) formula(fml, lhs = 0, rhs = 2L) else ~ 1,
+    shared = if (nterms == 3L) formula(fml, lhs = 0, rhs = 3L) else NULL
   )
 
   # Remove NULL formulae
   list_of_formulas[sapply(list_of_formulas, is.null)] <- NULL
 
   # Extract response variable
-  y <- model.response(model.frame(formula(formula, lhs = 1, rhs = 0), data = data))
+  y <- model.response(model.frame(formula(fml, lhs = 1, rhs = 0), data = data))
 
   # check for ATMs
   if(!is.null(lag_formula)){
