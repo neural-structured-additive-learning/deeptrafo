@@ -377,9 +377,10 @@ nll_ordinal <- function(base_distribution, K) {
 
   return(
     function(y_true, y_pred){
-			# Depends on basis evaluation of ordinal y
-      first_term <- bd %>% tfd_log_prob(layer_add(list(tf_stride_cols(y_pred, 1L),
-                                                       tf_stride_cols(y_pred, 2L))))
+    	# TODO: Discuss interval censored responses
+			# Depends on basis evaluation of ordinal y, we need y_k and y_{k-1}
+    	first_term <- layer_add(list(tf_stride_cols(y_pred, 1L),
+    															 tf_stride_cols(y_pred, 2L)))
       sec_term <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 3L), 1e-8, Inf))
       neglogLik <- -1 * tf$add(first_term, sec_term)
       return(neglogLik)
