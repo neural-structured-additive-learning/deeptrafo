@@ -1,3 +1,14 @@
+eval_ord <- function(y) {
+	stopifnot(is.ordered(y))
+	model.matrix(~ 0 + y, data = data.frame(y = y), contrasts.arg = list("y" = "contr.treatment"))
+}
+
+eval_ord_prime <- function(y) {
+	resp <- eval_ord(y)
+	resp[] <- 0
+	return(resp)
+}
+
 eval_bsp <- function(y, order = 3, supp = range(y)) {
 
   # Evaluate a Bernstein Polynom (bsp) with a predefined order on a predefined
@@ -10,8 +21,8 @@ eval_bsp <- function(y, order = 3, supp = range(y)) {
   #
   # returns a numeric matrix (n x (order + 1))
 
-  y <- (y - supp[1]) / diff(supp)
-  sapply(0:order, function(m) dbeta(y, m + 1, order + 1 - m) / (order + 1))
+	y <- (y - supp[1]) / diff(supp)
+	sapply(0:order, function(m) dbeta(y, m + 1, order + 1 - m) / (order + 1))
 
 }
 
