@@ -30,7 +30,8 @@
 #'                   x = rnorm(100), z = rnorm(100))
 #' fml <- y ~ s(x) | z
 #' m <- deeptrafo(fml, dat)
-#' m %>% fit(epochs = 100)
+#' m %>% fit(epochs = 10)
+#' m %>% predict()
 #' plot(m)
 #' coef(m, which_param = "h1")
 #' coef(m, which_param = "h2")
@@ -51,7 +52,7 @@ deeptrafo <- function(
   trafo_options = trafo_control(order_bsp = order_bsp,
   															ordered = is.ordered(data[[all.vars(fml)[1]]])),
   ...
-  )
+)
 {
   # How many terms are in the formula
   fml <- as.Formula(formula)
