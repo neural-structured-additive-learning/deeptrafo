@@ -50,7 +50,7 @@ deeptrafo <- function(
   family = "normal",
   monitor_metrics = crps_stdnorm_metric,
   trafo_options = trafo_control(order_bsp = order_bsp,
-  															ordered = is.ordered(data[[all.vars(fml)[1]]])),
+                                ordered = is.ordered(data[[all.vars(fml)[1]]])),
   ...
 )
 {
