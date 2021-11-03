@@ -1,6 +1,12 @@
 eval_ord <- function(y) {
 	stopifnot(is.ordered(y))
-	model.matrix(~ 0 + y, data = data.frame(y = y), contrasts.arg = list("y" = "contr.treatment"))
+	model.matrix(~ 0 + y, data = data.frame(y = y),
+               contrasts.arg = list("y" = "contr.treatment"))
+}
+
+eval_ord_lwr <- function(y) {
+	resp <- eval_ord(y)
+	cbind(y[, -1L], 0)
 }
 
 eval_ord_prime <- function(y) {

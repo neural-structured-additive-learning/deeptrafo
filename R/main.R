@@ -90,7 +90,8 @@ deeptrafo <- function(
   # define how to get a trafo model from predictor
   from_pred_to_trafo_fun <- from_preds_to_trafo(atm_toplayer = atm_toplayer,
                                                 split = split_between_h1_h2,
-                                                const_ia = addconst_interaction)
+                                                const_ia = addconst_interaction,
+  																							ordered = trafo_options$ordered)
 
   # define ar_layer and atm processor
   ar_layer <- ar_lags_layer(order = order_bsp, supp = range(y))
@@ -216,7 +217,8 @@ interaction_init <- function(pp, deep_top = NULL,
 from_preds_to_trafo <- function(
   atm_toplayer = function(x) layer_dense(x, units = 1L),
   split = 1L,
-  const_ia = NULL
+  const_ia = NULL,
+  ordered = FALSE
 )
 {
 
@@ -254,6 +256,13 @@ from_preds_to_trafo <- function(
 
     # define shapes
     order_bsp_p1 <- input_theta_y$shape[[2]]
+
+    if (ordered) {
+    	# order_bsp_p1 <- order_bsp_p1 - 1L
+    	# TODO: padding of input
+    	input_theta_y_lower <- input_theta_y
+    }
+
     h1_col <- interact_pred$shape[[2]]
     total_h1_dim <- order_bsp_p1 * h1_col
 
@@ -266,6 +275,10 @@ from_preds_to_trafo <- function(
     ## define RWTs
     AoB <- deepregression:::tf_row_tensor(input_theta_y, interact_pred)
     AprimeoB <- deepregression:::tf_row_tensor(input_theta_y_prime, interact_pred)
+    if (ordered) {
+    	AoBlwr <- deepregression:::tf_row_tensor(input_theta_y_lower, interact_pred)
+    	aylwrTtheta <- AoBlwr %>% thetas_layer()
+    }
 
     # define h1 and h1'
     aTtheta <- AoB %>% thetas_layer()
@@ -294,11 +307,19 @@ from_preds_to_trafo <- function(
     }
 
     # return transformation
-    trafo <- layer_concatenate(list(
-      shift_pred,
-      aTtheta,
-      aPrimeTtheta
-    ))
+    if (!ordered) {
+    	trafo <- layer_concatenate(list(
+    		shift_pred,
+    		aTtheta,
+    		aPrimeTtheta
+    	))
+    } else {
+    	trafo <- layer_concatenate(list(
+    		aTtheta,
+    		aylwrTtheta,
+    		shift_pred
+    	))
+    }
 
     return(trafo)
 
@@ -365,7 +386,7 @@ neg_ll_trafo <- function(base_distribution) {
 #' @export
 #'
 #'
-nll_ordinal <- function(base_distribution, K) {
+nll_ordinal <- function(base_distribution = "logistic") {
 
 	if (is.character(base_distribution)) {
 		bd <- switch(
@@ -380,10 +401,12 @@ nll_ordinal <- function(base_distribution, K) {
     function(y_true, y_pred){
     	# TODO: Discuss interval censored responses
 			# Depends on basis evaluation of ordinal y, we need y_k and y_{k-1}
-    	first_term <- layer_add(list(tf_stride_cols(y_pred, 1L),
-                                   tf_stride_cols(y_pred, 2L)))
-      sec_term <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 3L), 1e-8, Inf))
-      neglogLik <- -1 * tf$add(first_term, sec_term)
+    	lwr <- layer_add(list(tf_stride_cols(y_pred, 1L),
+                            tf_stride_cols(y_pred, 3L)))
+    	upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
+                            tf_stride_cols(y_pred, 3L)))
+    	lik <- tfd_cdf(bd, upr) - tfd_cdf(bd, lwr)
+      neglogLik <- - tf$log(lik)
       return(neglogLik)
     }
   )
