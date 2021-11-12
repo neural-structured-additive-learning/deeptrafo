@@ -1,12 +1,24 @@
 eval_ord <- function(y) {
 	stopifnot(is.ordered(y))
 	model.matrix(~ 0 + y, data = data.frame(y = y),
-               contrasts.arg = list("y" = "contr.treatment"))
+							 contrasts.arg = list("y" = "contr.treatment"))
+}
+
+eval_ord_upr <- function(y) {
+	ret <- eval_ord(y)
+	llev <- levels(y)[length(levels(y))]
+	ret[y == llev, ncol(ret)] <- 1e20
+	ret
 }
 
 eval_ord_lwr <- function(y) {
 	resp <- eval_ord(y)
-	cbind(y[, -1L], 0)
+	nms <- colnames(resp)
+	ret <- cbind(resp[, -1L], 0)
+	flev <- levels(y)[1L]
+	ret[y == flev, 1L] <- -1e20
+	colnames(ret) <- nms
+	ret
 }
 
 eval_ord_prime <- function(y) {

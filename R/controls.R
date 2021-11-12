@@ -62,9 +62,8 @@ trafo_control <- function(order_bsp = 10L,
 		}
 
 	} else {
-		y_basis_fun <- eval_ord
-		y_basis_fun_prime <- eval_ord_prime
-		y_basis_fun_lower <- eval_ord_lwr
+		y_basis_fun <- eval_ord_upr
+		y_basis_fun_prime <- eval_ord_lwr
 		penalize_bsp <- NULL
 		order_bsp_penalty <- NULL
 	}
@@ -74,7 +73,6 @@ trafo_control <- function(order_bsp = 10L,
 				 y_basis_fun_prime = y_basis_fun_prime,
 				 penalize_bsp = penalize_bsp,
 				 order_bsp_penalty = order_bsp_penalty,
-				 y_basis_fun_lower = y_basis_fun_lower,
 				 ordered = ordered)
 	)
 

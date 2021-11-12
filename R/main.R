@@ -120,6 +120,8 @@ deeptrafo <- function(
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1")]] <- interaction_init
 
+  tloss <- ifelse(trafo_options$ordered, nll_ordinal(family), neg_ll_trafo(family))
+
   ret <- do.call("deepregression",
                  c(list(y = y,
                         family = family,
@@ -127,7 +129,7 @@ deeptrafo <- function(
                         list_of_formulas = list_of_formulas,
                         subnetwork_builder = snwb,
                         from_preds_to_output = from_pred_to_trafo_fun,
-                        loss = neg_ll_trafo(family),
+                        loss = tloss,
                         monitor_metrics = monitor_metrics,
                         additional_processor = additional_processor),
                    dots)
@@ -258,9 +260,7 @@ from_preds_to_trafo <- function(
     order_bsp_p1 <- input_theta_y$shape[[2]]
 
     if (ordered) {
-    	# order_bsp_p1 <- order_bsp_p1 - 1L
-    	# TODO: padding of input
-    	input_theta_y_lower <- input_theta_y
+    	input_theta_y_lower <- input_theta_y_prime
     }
 
     h1_col <- interact_pred$shape[[2]]
@@ -389,7 +389,7 @@ neg_ll_trafo <- function(base_distribution) {
 nll_ordinal <- function(base_distribution = "logistic") {
 
 	if (is.character(base_distribution)) {
-		bd <- switch(
+		bd <- switch(base_distribution,
 			"normal" = tfd_normal(loc = 0, scale = 1),
 			"logistic" = tfd_logistic(loc = 0, scale = 1)
 		)
@@ -399,14 +399,12 @@ nll_ordinal <- function(base_distribution = "logistic") {
 
   return(
     function(y_true, y_pred){
-    	# TODO: Discuss interval censored responses
-			# Depends on basis evaluation of ordinal y, we need y_k and y_{k-1}
     	lwr <- layer_add(list(tf_stride_cols(y_pred, 1L),
                             tf_stride_cols(y_pred, 3L)))
     	upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
                             tf_stride_cols(y_pred, 3L)))
     	lik <- tfd_cdf(bd, upr) - tfd_cdf(bd, lwr)
-      neglogLik <- - tf$log(lik)
+      neglogLik <- - tf$math$log(lik)
       return(neglogLik)
     }
   )
