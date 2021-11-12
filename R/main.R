@@ -26,11 +26,16 @@
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
 #'
 #' @examples
-#' dat <- data.frame(y = ordered(sample(1:5, 100, replace = TRUE)),
-#'                   x = rnorm(100), z = rnorm(100))
-#' fml <- y ~ x
-#' m <- deeptrafo(fml, dat, family = "logistic", monitor_metric = NULL)
-#' m %>% fit(epochs = 10)
+#' data("wine", package = "ordinal")
+#' fml <- rating ~ 1
+#' inps <- list(
+#'   eval_ord_upr(model.response(model.frame(fml, wine))),
+#'   eval_ord_lwr(model.response(model.frame(fml, wine))),
+#'   matrix(1, nrow = nrow(wine)),
+#'   matrix(1, nrow = nrow(wine))
+#' )
+#' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
+#' m %>% fit(epochs = 10, batch_size = nrow(wine))
 #' m %>% predict()
 #' plot(m)
 #' coef(m, which_param = "h1")
@@ -66,8 +71,8 @@ deeptrafo <- function(
   list_of_formulas <- list(
     ybasis = as.formula(paste0("~ -1 + bsfun(", rvar, ")")),
     ybasisprime = as.formula(paste0("~ -1 + bsprimefun(", rvar, ")")),
-    h1 = structure(formula(fml, lhs = 0, rhs = 1L), with_layer = FALSE),
-    h2 = if (nterms >= 2L) formula(fml, lhs = 0, rhs = 2L) else ~ 1,
+    h1 = if (nterms >= 2L) formula(fml, lhs = 0, rhs = 2L) else ~ 1,
+    h2 = structure(formula(fml, lhs = 0, rhs = 1L), with_layer = FALSE),
     shared = if (nterms == 3L) formula(fml, lhs = 0, rhs = 3L) else NULL
   )
 
@@ -230,12 +235,12 @@ from_preds_to_trafo <- function(
     # make inputs more readable
     input_theta_y <- list_pred_param$ybasis
     input_theta_y_prime <- list_pred_param$ybasisprime
-    interact_pred <- list_pred_param$h2
+    interact_pred <- list_pred_param$h1
     if(!is.null(const_ia))
       interact_pred <- tf$add(interact_pred,
                               tf$constant(const_ia,
                                           dtype="float32"))
-    shift_pred <- list_pred_param$h1
+    shift_pred <- list_pred_param$h2
 
     # check if ATM or DCTM
     is_atm <- !is.null(list_pred_param$atmlags)
@@ -249,7 +254,7 @@ from_preds_to_trafo <- function(
 
       # extract parts (use all but the last column for h1)
       h1part <- tf_stride_cols(input_shared, 1L, shared_dim-split)
-      h2part <- tf_stride_cols(input_shared, shared_dim-split+1L, shared_dim)
+      h2part <- tf_stride_cols(input_shared, shared_dim-split + 1L, shared_dim)
 
       # concat
       interact_pred <- layer_concatenate(list(interact_pred, h1part))
@@ -384,9 +389,9 @@ nll_ordinal <- function(base_distribution = "logistic") {
 
   return(
     function(y_true, y_pred){
-    	lwr <- layer_add(list(tf_stride_cols(y_pred, 4L),
+    	lwr <- layer_add(list(tf_stride_cols(y_pred, 3L),
                             tf_stride_cols(y_pred, 1L)))
-    	upr <- layer_add(list(tf_stride_cols(y_pred, 3L),
+    	upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
                             tf_stride_cols(y_pred, 1L)))
     	lik <- tfd_cdf(bd, upr) - tfd_cdf(bd, lwr)
       neglogLik <- - tf$math$log(lik)
