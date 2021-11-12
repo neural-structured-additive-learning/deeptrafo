@@ -230,12 +230,12 @@ from_preds_to_trafo <- function(
     # make inputs more readable
     input_theta_y <- list_pred_param$ybasis
     input_theta_y_prime <- list_pred_param$ybasisprime
-    interact_pred <- list_pred_param$h1
+    interact_pred <- list_pred_param$h2
     if(!is.null(const_ia))
       interact_pred <- tf$add(interact_pred,
                               tf$constant(const_ia,
                                           dtype="float32"))
-    shift_pred <- list_pred_param$h2
+    shift_pred <- list_pred_param$h1
 
     # check if ATM or DCTM
     is_atm <- !is.null(list_pred_param$atmlags)
@@ -384,9 +384,9 @@ nll_ordinal <- function(base_distribution = "logistic") {
 
   return(
     function(y_true, y_pred){
-    	lwr <- layer_add(list(tf_stride_cols(y_pred, 3L),
+    	lwr <- layer_add(list(tf_stride_cols(y_pred, 4L),
                             tf_stride_cols(y_pred, 1L)))
-    	upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
+    	upr <- layer_add(list(tf_stride_cols(y_pred, 3L),
                             tf_stride_cols(y_pred, 1L)))
     	lik <- tfd_cdf(bd, upr) - tfd_cdf(bd, lwr)
       neglogLik <- - tf$math$log(lik)
