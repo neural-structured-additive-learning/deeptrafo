@@ -35,8 +35,8 @@
 #'   matrix(1, nrow = nrow(wine))
 #' )
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
-#' m %>% fit(epochs = 10, batch_size = nrow(wine))
-#' m %>% predict()
+#' m %>% fit(epochs = 1000, batch_size = nrow(wine))
+#' m %>% predict(apply_fun = identity)
 #' plot(m)
 #' coef(m, which_param = "h1")
 #' coef(m, which_param = "h2")
@@ -129,7 +129,7 @@ deeptrafo <- function(
   tloss <- ifelse(trafo_options$ordered, nll_ordinal(family), neg_ll_trafo(family))
 
   ret <- do.call("deepregression",
-                 c(list(y = y,
+                 c(list(y = eval_ord(y),
                         family = family,
                         data = data,
                         list_of_formulas = list_of_formulas,
@@ -393,7 +393,10 @@ nll_ordinal <- function(base_distribution = "logistic") {
                             tf_stride_cols(y_pred, 1L)))
     	upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
                             tf_stride_cols(y_pred, 1L)))
-    	lik <- tfd_cdf(bd, upr) - tfd_cdf(bd, lwr)
+    	t1 <- tf_stride_cols(y_true, 1L)
+    	t2 <- tf_stride_cols(y_true, ncol(y_true))
+    	lik <- t1 * tfd_cdf(bd, upr) + t2 * (1 - tfd_cdf(bd, lwr)) +
+    		(1 - t1) * (1 - t2) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
       neglogLik <- - tf$math$log(lik)
       return(neglogLik)
     }

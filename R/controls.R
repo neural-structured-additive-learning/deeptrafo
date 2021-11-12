@@ -61,10 +61,10 @@ trafo_control <- function(order_bsp = 10L,
 	}
 
 	if (ordered) {
-		y_basis_fun <- function(y, orderbsp = order_bsp, supp = suppy) {
+		y_basis_fun <- function(y, orderbsp = order_bsp, suppy = suppy) {
 			eval_ord_upr(y)
 		}
-		y_basis_fun_prime <- function(y, orderbsp = order_bsp, supp = suppy) {
+		y_basis_fun_prime <- function(y, orderbsp = order_bsp, suppy = suppy) {
 			eval_ord_lwr(y)
 		}
 		penalize_bsp <- 0

@@ -6,8 +6,8 @@ eval_ord <- function(y) {
 
 .eval_ord_upr <- Vectorize(function(y) {
 	ret <- eval_ord(y)
-	llev <- levels(y)[length(levels(y))]
-	if (y == llev) ret[length(ret)] <- 1e20
+	# llev <- levels(y)[length(levels(y))]
+	# if (y == llev) ret[length(ret)] <- 1e20
 	ret
 })
 
@@ -21,8 +21,8 @@ eval_ord_upr <- function(y) {
 .eval_ord_lwr <- Vectorize(function(y) {
 	resp <- eval_ord(y)
 	ret <- c(resp[-1L], 0)
-	flev <- levels(y)[1L]
-	if (y == flev) ret[1L] <- -1e20
+	# flev <- levels(y)[1L]
+	# if (y == flev) ret[1L] <- -1e20
 	ret
 })
 
