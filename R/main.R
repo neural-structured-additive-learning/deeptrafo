@@ -28,7 +28,7 @@
 #' @examples
 #' dat <- data.frame(y = ordered(sample(1:5, 100, replace = TRUE)),
 #'                   x = rnorm(100), z = rnorm(100))
-#' fml <- y ~ s(x) | z
+#' fml <- y ~ x
 #' m <- deeptrafo(fml, dat)
 #' m %>% fit(epochs = 10)
 #' m %>% predict()
@@ -259,10 +259,6 @@ from_preds_to_trafo <- function(
     # define shapes
     order_bsp_p1 <- input_theta_y$shape[[2]]
 
-    if (ordered) {
-    	input_theta_y_lower <- input_theta_y_prime
-    }
-
     h1_col <- interact_pred$shape[[2]]
     total_h1_dim <- order_bsp_p1 * h1_col
 
@@ -275,10 +271,6 @@ from_preds_to_trafo <- function(
     ## define RWTs
     AoB <- deepregression:::tf_row_tensor(input_theta_y, interact_pred)
     AprimeoB <- deepregression:::tf_row_tensor(input_theta_y_prime, interact_pred)
-    if (ordered) {
-    	AoBlwr <- deepregression:::tf_row_tensor(input_theta_y_lower, interact_pred)
-    	aylwrTtheta <- AoBlwr %>% thetas_layer()
-    }
 
     # define h1 and h1'
     aTtheta <- AoB %>% thetas_layer()
@@ -307,19 +299,11 @@ from_preds_to_trafo <- function(
     }
 
     # return transformation
-    if (!ordered) {
-    	trafo <- layer_concatenate(list(
-    		shift_pred,
-    		aTtheta,
-    		aPrimeTtheta
-    	))
-    } else {
-    	trafo <- layer_concatenate(list(
-    		aTtheta,
-    		aylwrTtheta,
-    		shift_pred
-    	))
-    }
+    trafo <- layer_concatenate(list(
+    	shift_pred,
+    	aTtheta,
+    	aPrimeTtheta
+    ))
 
     return(trafo)
 
@@ -399,10 +383,10 @@ nll_ordinal <- function(base_distribution = "logistic") {
 
   return(
     function(y_true, y_pred){
-    	lwr <- layer_add(list(tf_stride_cols(y_pred, 1L),
-                            tf_stride_cols(y_pred, 3L)))
+    	lwr <- layer_add(list(tf_stride_cols(y_pred, 3L),
+                            tf_stride_cols(y_pred, 1L)))
     	upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
-                            tf_stride_cols(y_pred, 3L)))
+                            tf_stride_cols(y_pred, 1L)))
     	lik <- tfd_cdf(bd, upr) - tfd_cdf(bd, lwr)
       neglogLik <- - tf$math$log(lik)
       return(neglogLik)
