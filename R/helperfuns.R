@@ -1,23 +1,35 @@
 eval_ord <- function(y) {
 	stopifnot(is.ordered(y))
-	model.matrix(~ 0 + y, data = data.frame(y = y),
-							 contrasts.arg = list("y" = "contr.treatment"))
+	c(model.matrix(~ 0 + y, data = data.frame(y = y),
+								 contrasts.arg = list("y" = "contr.treatment")))
 }
 
-eval_ord_upr <- function(y) {
+.eval_ord_upr <- Vectorize(function(y) {
 	ret <- eval_ord(y)
 	llev <- levels(y)[length(levels(y))]
-	ret[y == llev, ncol(ret)] <- 1e20
+	if (y == llev) ret[length(ret)] <- 1e20
+	ret
+})
+
+eval_ord_upr <- function(y) {
+	ret <- t(.eval_ord_upr(y))
+	if (nrow(ret) == 1L)
+		return(as.vector(ret))
 	ret
 }
 
-eval_ord_lwr <- function(y) {
+.eval_ord_lwr <- Vectorize(function(y) {
 	resp <- eval_ord(y)
-	nms <- colnames(resp)
-	ret <- cbind(resp[, -1L], 0)
+	ret <- c(resp[-1L], 0)
 	flev <- levels(y)[1L]
-	ret[y == flev, 1L] <- -1e20
-	colnames(ret) <- nms
+	if (y == flev) ret[1L] <- -1e20
+	ret
+})
+
+eval_ord_lwr <- function(y) {
+	ret <- t(.eval_ord_lwr(y))
+	if (nrow(ret) == 1L)
+		return(as.vector(ret))
 	ret
 }
 

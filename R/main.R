@@ -29,7 +29,7 @@
 #' dat <- data.frame(y = ordered(sample(1:5, 100, replace = TRUE)),
 #'                   x = rnorm(100), z = rnorm(100))
 #' fml <- y ~ x
-#' m <- deeptrafo(fml, dat)
+#' m <- deeptrafo(fml, dat, family = "logistic", monitor_metric = NULL)
 #' m %>% fit(epochs = 10)
 #' m %>% predict()
 #' plot(m)
@@ -43,14 +43,15 @@ deeptrafo <- function(
   formula,
   data,
   lag_formula = NULL,
-  order_bsp = 10L,
+  ordered = is.ordered(data[[all.vars(fml)[1]]]),
+  order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]), 10L),
   addconst_interaction = NULL,
   split_between_h1_h2 = 1L,
   atm_toplayer = function(x) layer_dense(x, units = 1L),
   family = "normal",
   monitor_metrics = crps_stdnorm_metric,
   trafo_options = trafo_control(order_bsp = order_bsp,
-                                ordered = is.ordered(data[[all.vars(fml)[1]]])),
+                                ordered = ordered),
   ...
 )
 {
