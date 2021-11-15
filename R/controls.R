@@ -14,69 +14,69 @@
 #' @export
 #'
 trafo_control <- function(order_bsp = 10L,
-													support = function(y) range(y),
-													y_basis_fun = NULL,
-													y_basis_fun_prime = NULL,
-													penalize_bsp = 0,
-													order_bsp_penalty = 2,
-													tf_bsps = FALSE,
-													ordered = FALSE) {
-	# define support (either function or dummy function outputting the supplied range)
-	if (!is.function(support)) {
+                          support = function(y) range(y),
+                          y_basis_fun = NULL,
+                          y_basis_fun_prime = NULL,
+                          penalize_bsp = 0,
+                          order_bsp_penalty = 2,
+                          tf_bsps = FALSE,
+                          ordered = FALSE) {
+  # define support (either function or dummy function outputting the supplied range)
+  if (!is.function(support)) {
 
-		supp <- function(x) support
+    supp <- function(x) support
 
-	} else {
+  } else {
 
-		supp <- support
+    supp <- support
 
-	}
+  }
 
-	# define bsp functions
-	if (tf_bsps & is.null(y_basis_fun) & is.null(y_basis_fun_prime)) {
+  # define bsp functions
+  if (tf_bsps & is.null(y_basis_fun) & is.null(y_basis_fun_prime)) {
 
-		if (is.function(supp))
-			stop("Support must be given if TensorFlow Bernstein Basis Polynomials are used.")
+    if (is.function(supp))
+      stop("Support must be given if TensorFlow Bernstein Basis Polynomials are used.")
 
-		eval_bsp <- eval_bsp_tf(order_bsp, supp)
-		eval_bsp_prime <- eval_bsp_prime_tf(order_bsp, supp)
+    eval_bsp <- eval_bsp_tf(order_bsp, supp)
+    eval_bsp_prime <- eval_bsp_prime_tf(order_bsp, supp)
 
-	}
+  }
 
-	if (is.null(y_basis_fun)) {
+  if (is.null(y_basis_fun)) {
 
-		y_basis_fun <- function(y, orderbsp = order_bsp, suppy = supp(y)) {
-			eval_bsp(y, order = orderbsp, supp = suppy)
-		}
+    y_basis_fun <- function(y, orderbsp = order_bsp, suppy = supp(y)) {
+      eval_bsp(y, order = orderbsp, supp = suppy)
+    }
 
-	}
+  }
 
-	if (is.null(y_basis_fun_prime)) {
+  if (is.null(y_basis_fun_prime)) {
 
-		y_basis_fun_prime <- function(y, orderbsp = order_bsp,
-																	suppy = supp(y) / diff(supp(y))) {
-			eval_bsp_prime(y, order = orderbsp, supp = suppy)
-		}
+    y_basis_fun_prime <- function(y, orderbsp = order_bsp,
+                                  suppy = supp(y) / diff(supp(y))) {
+      eval_bsp_prime(y, order = orderbsp, supp = suppy)
+    }
 
-	}
+  }
 
-	if (ordered) {
-		y_basis_fun <- function(y, orderbsp = order_bsp, suppy = suppy) {
-			eval_ord_upr(y)
-		}
-		y_basis_fun_prime <- function(y, orderbsp = order_bsp, suppy = suppy) {
-			eval_ord_lwr(y)
-		}
-		penalize_bsp <- 0
-		order_bsp_penalty <- 1
-	}
+  if (ordered) {
+    y_basis_fun <- function(y, orderbsp = order_bsp, suppy = suppy) {
+      eval_ord_upr(y)
+    }
+    y_basis_fun_prime <- function(y, orderbsp = order_bsp, suppy = suppy) {
+      eval_ord_lwr(y)
+    }
+    penalize_bsp <- 0
+    order_bsp_penalty <- 1
+  }
 
-	return(
-		list(y_basis_fun = y_basis_fun,
-				 y_basis_fun_prime = y_basis_fun_prime,
-				 penalize_bsp = penalize_bsp,
-				 order_bsp_penalty = order_bsp_penalty,
-				 ordered = ordered)
-	)
+  return(
+    list(y_basis_fun = y_basis_fun,
+         y_basis_fun_prime = y_basis_fun_prime,
+         penalize_bsp = penalize_bsp,
+         order_bsp_penalty = order_bsp_penalty,
+         ordered = ordered)
+  )
 
 }

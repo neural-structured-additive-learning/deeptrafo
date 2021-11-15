@@ -97,7 +97,7 @@ deeptrafo <- function(
   from_pred_to_trafo_fun <- from_preds_to_trafo(atm_toplayer = atm_toplayer,
                                                 split = split_between_h1_h2,
                                                 const_ia = addconst_interaction,
-  																							ordered = trafo_options$ordered)
+                                                ordered = trafo_options$ordered)
 
   # define ar_layer and atm processor
   ar_layer <- ar_lags_layer(order = order_bsp, supp = range(y))
@@ -157,9 +157,9 @@ deeptrafo <- function(
 #' @return returns a list of input and output for this additive predictor
 #'
 interaction_init <- function(pp, deep_top = NULL,
-                            orthog_fun = orthog_tf,
-                            split_fun = split_model,
-                            param_nr = 2)
+                             orthog_fun = orthog_tf,
+                             split_fun = split_model,
+                             param_nr = 2)
 {
 
 
@@ -185,7 +185,7 @@ interaction_init <- function(pp, deep_top = NULL,
     if(length(outputs_wo_oz)>0) outputs <- layer_concatenate_identity(
       lapply((1:length(pp))[outputs_wo_oz],
              function(i) pp[[i]]$layer(inputs[[i]]))
-      )
+    )
     ox_outputs <- list()
     k <- 1
 
@@ -306,9 +306,9 @@ from_preds_to_trafo <- function(
 
     # return transformation
     trafo <- layer_concatenate(list(
-    	shift_pred,
-    	aTtheta,
-    	aPrimeTtheta
+      shift_pred,
+      aTtheta,
+      aPrimeTtheta
     ))
 
     return(trafo)
@@ -378,25 +378,25 @@ neg_ll_trafo <- function(base_distribution) {
 #'
 nll_ordinal <- function(base_distribution = "logistic") {
 
-	if (is.character(base_distribution)) {
-		bd <- switch(base_distribution,
-			"normal" = tfd_normal(loc = 0, scale = 1),
-			"logistic" = tfd_logistic(loc = 0, scale = 1)
-		)
-	} else {
-		bd <- base_distribution
-	}
+  if (is.character(base_distribution)) {
+    bd <- switch(base_distribution,
+                 "normal" = tfd_normal(loc = 0, scale = 1),
+                 "logistic" = tfd_logistic(loc = 0, scale = 1)
+    )
+  } else {
+    bd <- base_distribution
+  }
 
   return(
     function(y_true, y_pred){
-    	lwr <- layer_add(list(tf_stride_cols(y_pred, 3L),
+      lwr <- layer_add(list(tf_stride_cols(y_pred, 3L),
                             tf_stride_cols(y_pred, 1L)))
-    	upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
+      upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
                             tf_stride_cols(y_pred, 1L)))
-    	t1 <- tf_stride_cols(y_true, 1L)
-    	t2 <- tf_stride_cols(y_true, ncol(y_true))
-    	lik <- t1 * tfd_cdf(bd, upr) + t2 * (1 - tfd_cdf(bd, lwr)) +
-    		(1 - t1) * (1 - t2) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
+      t1 <- tf_stride_cols(y_true, 1L)
+      t2 <- tf_stride_cols(y_true, ncol(y_true))
+      lik <- t1 * tfd_cdf(bd, upr) + t2 * (1 - tfd_cdf(bd, lwr)) +
+        (1 - t1) * (1 - t2) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
       neglogLik <- - tf$math$log(lik)
       return(neglogLik)
     }

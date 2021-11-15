@@ -27,8 +27,8 @@ plot.deeptrafo <- function(
 {
 
   which_param <- switch (which_param,
-    "h1" = 3,
-    "h2" = 4
+                         "h1" = 3,
+                         "h2" = 4
   )
 
   class(x) <- class(x)[-1]
@@ -57,10 +57,10 @@ coef.deeptrafo <- function(
 )
 {
 
-	if (which_param == "h1")
-		return(get_theta(object))
-	if (which_param == "h2")
-		return(get_shift(object, type = type))
+  if (which_param == "h1")
+    return(get_theta(object))
+  if (which_param == "h2")
+    return(get_shift(object, type = type))
 
   # else, return lags
   class(object) <- class(object)[-1]
@@ -224,15 +224,15 @@ fitted.deeptrafo <- function(object, newdata, batch_size = NULL, ...)
 
     }else{
 
-        max_data <- NROW(newdata[[1]])
-        steps_per_epoch <- ceiling(max_data/batch_size)
+      max_data <- NROW(newdata[[1]])
+      steps_per_epoch <- ceiling(max_data/batch_size)
 
-        mod_output <- lapply(1:steps_per_epoch,
-                             function(i){
-                               index <- (i-1)*batch_size + 1:batch_size
-                               object$model(lapply(newdata, function(x) subset_array(x, index)))
-                             })
-        mod_output <- do.call("rbind", lapply(mod_output, as.matrix))
+      mod_output <- lapply(1:steps_per_epoch,
+                           function(i){
+                             index <- (i-1)*batch_size + 1:batch_size
+                             object$model(lapply(newdata, function(x) subset_array(x, index)))
+                           })
+      mod_output <- do.call("rbind", lapply(mod_output, as.matrix))
 
     }
 

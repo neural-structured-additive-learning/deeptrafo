@@ -1,42 +1,42 @@
 eval_ord <- function(y) {
-	stopifnot(is.ordered(y))
-	c(model.matrix(~ 0 + y, data = data.frame(y = y),
-								 contrasts.arg = list("y" = "contr.treatment")))
+  stopifnot(is.ordered(y))
+  c(model.matrix(~ 0 + y, data = data.frame(y = y),
+                 contrasts.arg = list("y" = "contr.treatment")))
 }
 
 .eval_ord_upr <- Vectorize(function(y) {
-	ret <- eval_ord(y)
-	# llev <- levels(y)[length(levels(y))]
-	# if (y == llev) ret[length(ret)] <- 1e20
-	ret
+  ret <- eval_ord(y)
+  # llev <- levels(y)[length(levels(y))]
+  # if (y == llev) ret[length(ret)] <- 1e20
+  ret
 })
 
 eval_ord_upr <- function(y) {
-	ret <- t(.eval_ord_upr(y))
-	if (nrow(ret) == 1L)
-		return(as.vector(ret))
-	ret
+  ret <- t(.eval_ord_upr(y))
+  if (nrow(ret) == 1L)
+    return(as.vector(ret))
+  ret
 }
 
 .eval_ord_lwr <- Vectorize(function(y) {
-	resp <- eval_ord(y)
-	ret <- c(resp[-1L], 0)
-	# flev <- levels(y)[1L]
-	# if (y == flev) ret[1L] <- -1e20
-	ret
+  resp <- eval_ord(y)
+  ret <- c(resp[-1L], 0)
+  # flev <- levels(y)[1L]
+  # if (y == flev) ret[1L] <- -1e20
+  ret
 })
 
 eval_ord_lwr <- function(y) {
-	ret <- t(.eval_ord_lwr(y))
-	if (nrow(ret) == 1L)
-		return(as.vector(ret))
-	ret
+  ret <- t(.eval_ord_lwr(y))
+  if (nrow(ret) == 1L)
+    return(as.vector(ret))
+  ret
 }
 
 eval_ord_prime <- function(y) {
-	resp <- eval_ord(y)
-	resp[] <- 0
-	return(resp)
+  resp <- eval_ord(y)
+  resp[] <- 0
+  return(resp)
 }
 
 eval_bsp <- function(y, order = 3, supp = range(y)) {
@@ -51,8 +51,8 @@ eval_bsp <- function(y, order = 3, supp = range(y)) {
   #
   # returns a numeric matrix (n x (order + 1))
 
-	y <- (y - supp[1]) / diff(supp)
-	sapply(0:order, function(m) dbeta(y, m + 1, order + 1 - m) / (order + 1))
+  y <- (y - supp[1]) / diff(supp)
+  sapply(0:order, function(m) dbeta(y, m + 1, order + 1 - m) / (order + 1))
 
 }
 
@@ -171,7 +171,7 @@ mono_trafo_multi <- function(w, bsp_dim)
   wrest <- tf$math$softplus(tf$slice(w_res, c(1L,0L), size=c(as.integer(nrow(w_res)-1),ncol(w_res))))
   w_w_cons <- tf$cumsum(k_concatenate(list(w1,wrest),
                                       axis = 1L # this is 1 and not 0 because k_concat is 1-based
-                                      ), axis=0L)
+  ), axis=0L)
   return(tf$reshape(w_w_cons, shape = list(nrow(w),1L)))
 
 }
@@ -234,38 +234,38 @@ layer_mono_multi <- function(object,
 
 MonoMultiTrafoLayer <- R6::R6Class("MonoMultiTrafoLayer",
 
-                              inherit = KerasLayer,
+                                   inherit = KerasLayer,
 
-                              public = list(
+                                   public = list(
 
-                                output_dim = NULL,
+                                     output_dim = NULL,
 
-                                kernel = NULL,
+                                     kernel = NULL,
 
-                                dim_bsp = NULL,
+                                     dim_bsp = NULL,
 
-                                initialize = function(output_dim, dim_bsp) {
-                                  self$output_dim <- output_dim
-                                  self$dim_bsp <- dim_bsp
-                                },
+                                     initialize = function(output_dim, dim_bsp) {
+                                       self$output_dim <- output_dim
+                                       self$dim_bsp <- dim_bsp
+                                     },
 
-                                build = function(input_shape) {
-                                  self$kernel <- self$add_weight(
-                                    name = 'kernel',
-                                    shape = list(input_shape[[2]], self$output_dim),
-                                    initializer = initializer_random_normal(),
-                                    trainable = TRUE
-                                  )
-                                },
+                                     build = function(input_shape) {
+                                       self$kernel <- self$add_weight(
+                                         name = 'kernel',
+                                         shape = list(input_shape[[2]], self$output_dim),
+                                         initializer = initializer_random_normal(),
+                                         trainable = TRUE
+                                       )
+                                     },
 
-                                call = function(x, mask = NULL) {
-                                  tf$multiply(x, tf$transpose(mono_trafo_multi(self$kernel, self$dim_bsp)))
-                                },
+                                     call = function(x, mask = NULL) {
+                                       tf$multiply(x, tf$transpose(mono_trafo_multi(self$kernel, self$dim_bsp)))
+                                     },
 
-                                compute_output_shape = function(input_shape) {
-                                  list(input_shape[[1]], self$output_dim)
-                                }
-                              )
+                                     compute_output_shape = function(input_shape) {
+                                       list(input_shape[[1]], self$output_dim)
+                                     }
+                                   )
 )
 
 # define layer wrapper function
