@@ -35,7 +35,7 @@
 #'   matrix(1, nrow = nrow(wine))
 #' )
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
-#' m %>% fit(epochs = 1000, batch_size = nrow(wine))
+#' m %>% fit(epochs = 100, batch_size = nrow(wine))
 #' m %>% predict(apply_fun = identity)
 #' plot(m)
 #' coef(m, which_param = "h1")
@@ -72,9 +72,11 @@ deeptrafo <- function(
     ybasis = as.formula(paste0("~ -1 + bsfun(", rvar, ")")),
     ybasisprime = as.formula(paste0("~ -1 + bsprimefun(", rvar, ")")),
     h1 = if (nterms >= 2L) formula(fml, lhs = 0, rhs = 2L) else ~ 1,
-    h2 = structure(formula(fml, lhs = 0, rhs = 1L), with_layer = FALSE),
+    h2 = formula(fml, lhs = 0, rhs = 1L),
     shared = if (nterms == 3L) formula(fml, lhs = 0, rhs = 3L) else NULL
   )
+
+  attr(list_of_formulas$h1, "with_layer") <- FALSE
 
   # Remove NULL formulae
   list_of_formulas[sapply(list_of_formulas, is.null)] <- NULL
@@ -127,9 +129,10 @@ deeptrafo <- function(
   snwb[[which(names(list_of_formulas) == "h1")]] <- interaction_init
 
   tloss <- ifelse(trafo_options$ordered, nll_ordinal(family), neg_ll_trafo(family))
+  y <- if (ordered) eval_ord(y)
 
   ret <- do.call("deepregression",
-                 c(list(y = eval_ord(y),
+                 c(list(y = y,
                         family = family,
                         data = data,
                         list_of_formulas = list_of_formulas,
