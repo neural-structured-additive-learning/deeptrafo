@@ -26,11 +26,20 @@
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
 #'
 #' @examples
-#' dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
-#' fml <- y ~ s(x) | z
-#' m <- deeptrafo(fml, dat)
-#' m %>% fit(epochs = 10)
+#' data("wine", package = "ordinal")
+#' fml <- rating ~ 1
+#' inps <- list(
+#'   eval_ord_upr(model.response(model.frame(fml, wine))),
+#'   eval_ord_lwr(model.response(model.frame(fml, wine))),
+#'   matrix(1, nrow = nrow(wine)),
+#'   matrix(1, nrow = nrow(wine))
+#' )
+#' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
+#' m %>% fit(epochs = 100, batch_size = nrow(wine))
+#' m %>% predict(apply_fun = identity)
 #' plot(m)
+#' coef(m, which_param = "h1")
+#' coef(m, which_param = "h2")
 #'
 #' @export
 #' @details
@@ -39,19 +48,21 @@ deeptrafo <- function(
   formula,
   data,
   lag_formula = NULL,
-  order_bsp = 10L,
+  ordered = is.ordered(data[[all.vars(fml)[1]]]),
+  order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]), 10L),
   addconst_interaction = NULL,
   split_between_h1_h2 = 1L,
   atm_toplayer = function(x) layer_dense(x, units = 1L),
   family = "normal",
   monitor_metrics = crps_stdnorm_metric,
-  trafo_options = trafo_control(order_bsp = order_bsp),
+  trafo_options = trafo_control(order_bsp = order_bsp,
+                                ordered = ordered),
   ...
-  )
+)
 {
   # How many terms are in the formula
-  formula <- as.Formula(formula)
-  nterms <- length(attr(formula, "rhs"))
+  fml <- as.Formula(formula)
+  nterms <- length(attr(fml, "rhs"))
 
   # Name of the response variable
   rvar <- all.vars(formula)[1]
@@ -60,16 +71,18 @@ deeptrafo <- function(
   list_of_formulas <- list(
     ybasis = as.formula(paste0("~ -1 + bsfun(", rvar, ")")),
     ybasisprime = as.formula(paste0("~ -1 + bsprimefun(", rvar, ")")),
-    h1 = structure(formula(formula, lhs = 0, rhs = 1L), with_layer = FALSE),
-    h2 = if (nterms >= 2L) formula(formula, lhs = 0, rhs = 2L) else NULL,
-    shared = if (nterms == 3L) formula(formula, lhs = 0, rhs = 3L) else NULL
+    h1 = if (nterms >= 2L) formula(fml, lhs = 0, rhs = 2L) else ~ 1,
+    h2 = formula(fml, lhs = 0, rhs = 1L),
+    shared = if (nterms == 3L) formula(fml, lhs = 0, rhs = 3L) else NULL
   )
+
+  attr(list_of_formulas$h1, "with_layer") <- FALSE
 
   # Remove NULL formulae
   list_of_formulas[sapply(list_of_formulas, is.null)] <- NULL
 
   # Extract response variable
-  y <- model.response(model.frame(formula(formula, lhs = 1, rhs = 0), data = data))
+  y <- model.response(model.frame(formula(fml, lhs = 1, rhs = 0), data = data))
 
   # check for ATMs
   if(!is.null(lag_formula)){
@@ -85,7 +98,8 @@ deeptrafo <- function(
   # define how to get a trafo model from predictor
   from_pred_to_trafo_fun <- from_preds_to_trafo(atm_toplayer = atm_toplayer,
                                                 split = split_between_h1_h2,
-                                                const_ia = addconst_interaction)
+                                                const_ia = addconst_interaction,
+                                                ordered = trafo_options$ordered)
 
   # define ar_layer and atm processor
   ar_layer <- ar_lags_layer(order = order_bsp, supp = range(y))
@@ -114,6 +128,9 @@ deeptrafo <- function(
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1")]] <- interaction_init
 
+  tloss <- ifelse(trafo_options$ordered, nll_ordinal(family), neg_ll_trafo(family))
+  y <- if (ordered) eval_ord(y)
+
   ret <- do.call("deepregression",
                  c(list(y = y,
                         family = family,
@@ -121,7 +138,7 @@ deeptrafo <- function(
                         list_of_formulas = list_of_formulas,
                         subnetwork_builder = snwb,
                         from_preds_to_output = from_pred_to_trafo_fun,
-                        loss = neg_ll_trafo(family),
+                        loss = tloss,
                         monitor_metrics = monitor_metrics,
                         additional_processor = additional_processor),
                    dots)
@@ -143,9 +160,9 @@ deeptrafo <- function(
 #' @return returns a list of input and output for this additive predictor
 #'
 interaction_init <- function(pp, deep_top = NULL,
-                            orthog_fun = orthog_tf,
-                            split_fun = split_model,
-                            param_nr = 2)
+                             orthog_fun = orthog_tf,
+                             split_fun = split_model,
+                             param_nr = 2)
 {
 
 
@@ -171,7 +188,7 @@ interaction_init <- function(pp, deep_top = NULL,
     if(length(outputs_wo_oz)>0) outputs <- layer_concatenate_identity(
       lapply((1:length(pp))[outputs_wo_oz],
              function(i) pp[[i]]$layer(inputs[[i]]))
-      )
+    )
     ox_outputs <- list()
     k <- 1
 
@@ -211,7 +228,8 @@ interaction_init <- function(pp, deep_top = NULL,
 from_preds_to_trafo <- function(
   atm_toplayer = function(x) layer_dense(x, units = 1L),
   split = 1L,
-  const_ia = NULL
+  const_ia = NULL,
+  ordered = FALSE
 )
 {
 
@@ -239,7 +257,7 @@ from_preds_to_trafo <- function(
 
       # extract parts (use all but the last column for h1)
       h1part <- tf_stride_cols(input_shared, 1L, shared_dim-split)
-      h2part <- tf_stride_cols(input_shared, shared_dim-split+1L, shared_dim)
+      h2part <- tf_stride_cols(input_shared, shared_dim-split + 1L, shared_dim)
 
       # concat
       interact_pred <- layer_concatenate(list(interact_pred, h1part))
@@ -249,6 +267,7 @@ from_preds_to_trafo <- function(
 
     # define shapes
     order_bsp_p1 <- input_theta_y$shape[[2]]
+
     h1_col <- interact_pred$shape[[2]]
     total_h1_dim <- order_bsp_p1 * h1_col
 
@@ -259,8 +278,8 @@ from_preds_to_trafo <- function(
     )
 
     ## define RWTs
-    AoB <- tf_row_tensor(input_theta_y, interact_pred)
-    AprimeoB <- tf_row_tensor(input_theta_y_prime, interact_pred)
+    AoB <- deepregression:::tf_row_tensor(input_theta_y, interact_pred)
+    AprimeoB <- deepregression:::tf_row_tensor(input_theta_y_prime, interact_pred)
 
     # define h1 and h1'
     aTtheta <- AoB %>% thetas_layer()
@@ -273,7 +292,7 @@ from_preds_to_trafo <- function(
 
       # combine every lag with the interacting predictor
       AoB_lags <- lapply(input_theta_atm, function(inp)
-        tf_row_tensor(inp, interact_pred))
+        deepregression:::tf_row_tensor(inp, interact_pred))
 
       # multiply with theta weights
       aTtheta_lags <- layer_concatenate_identity(
@@ -337,6 +356,51 @@ neg_ll_trafo <- function(base_distribution) {
                                                        tf_stride_cols(model,2L))))
       sec_term <- tf$math$log(tf$clip_by_value(tf_stride_cols(model,3L), 1e-8, Inf))
       neglogLik <- -1 * tf$add(first_term, sec_term)
+      return(neglogLik)
+    }
+  )
+
+}
+
+#' negative log-likelihood of an ordinal transformation model
+#'
+#' @param base_distribution base or error distribution
+#' @param K number of classes in the ordinal outcome
+#'
+#' @return a function for the negative log-likelihood with outcome \code{y_true}
+#' and transformation model \code{y_pred}. The transformation model is represented
+#' by a list of two, with first element a list of model outputs
+#' that are summed up and evaluated with the log-probability of the
+#' \code{basis_dist}, and second element a single-column tensor
+#' representing the determinant of the Jacobian and transformed
+#' using the log
+#'
+#' @import deepregression
+#' @export
+#'
+#'
+nll_ordinal <- function(base_distribution = "logistic") {
+
+  if (is.character(base_distribution)) {
+    bd <- switch(base_distribution,
+                 "normal" = tfd_normal(loc = 0, scale = 1),
+                 "logistic" = tfd_logistic(loc = 0, scale = 1)
+    )
+  } else {
+    bd <- base_distribution
+  }
+
+  return(
+    function(y_true, y_pred){
+      lwr <- layer_add(list(tf_stride_cols(y_pred, 3L),
+                            tf_stride_cols(y_pred, 1L)))
+      upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
+                            tf_stride_cols(y_pred, 1L)))
+      t1 <- tf_stride_cols(y_true, 1L)
+      t2 <- tf_stride_cols(y_true, ncol(y_true))
+      lik <- t1 * tfd_cdf(bd, upr) + t2 * (1 - tfd_cdf(bd, lwr)) +
+        (1 - t1) * (1 - t2) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
+      neglogLik <- - tf$math$log(lik)
       return(neglogLik)
     }
   )
