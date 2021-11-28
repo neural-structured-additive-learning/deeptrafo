@@ -62,7 +62,8 @@ trafo_control <- function(order_bsp = 10L,
   return(list(y_basis_fun = y_basis_fun,
               y_basis_fun_prime = y_basis_fun_prime,
               penalize_bsp = penalize_bsp,
-              order_bsp_penalty = order_bsp_penalty
+              order_bsp_penalty = order_bsp_penalty,
+              special_layer_args = list(dim_bsp = order_bsp + 1L)
   )
   )
   

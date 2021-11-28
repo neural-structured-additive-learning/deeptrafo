@@ -55,12 +55,26 @@ deeptrafo <- function(
 
   # Name of the response variable
   rvar <- all.vars(formula)[1]
-
+  
+  # Placeholder Intercept
+  int <- as.numeric(attr(terms(formula(formula, lhs = 0, rhs = 1L)), 
+                         "intercept"))
+  
+  # Set up formulas for basis
+  h1_formfun <- function(prime) paste0(
+    "~ -1 + ", paste(paste0("bsfun(", rvar, " %I% ", c(int, 
+    trimws(strsplit(form2text(formula(formula, lhs = 0, rhs = 1L)[[2]]), "+", fixed = T)[[1]])
+    ), ", prime = ", prime, ")"), collapse=" + ")
+  )
+  
+  h1 <- h1_formfun("FALSE")
+  h1p <- h1_formfun("TRUE")
+  
+    
   # List of formulas
   list_of_formulas <- list(
-    ybasis = as.formula(paste0("~ -1 + bsfun(", rvar, ")")),
-    ybasisprime = as.formula(paste0("~ -1 + bsprimefun(", rvar, ")")),
-    h1 = structure(formula(formula, lhs = 0, rhs = 1L), with_layer = FALSE),
+    h1 = as.formula(h1),
+    h1prime = as.formula(h1p),
     h2 = if (nterms >= 2L) formula(formula, lhs = 0, rhs = 2L) else NULL,
     shared = if (nterms == 3L) formula(formula, lhs = 0, rhs = 3L) else NULL
   )
@@ -93,7 +107,6 @@ deeptrafo <- function(
   atm_lag_processor <- make_atm_processor(ar_layer)
 
   trafo_processor <- list(bsfun = basis_processor,
-                          bsprimefun = basis_prime_processor,
                           atmlag = atm_lag_processor)
 
   dots <- list(...)
@@ -111,9 +124,20 @@ deeptrafo <- function(
 
   attr(additional_processor, "controls") <- trafo_options
 
+  # terms_h1 <- terms_h_formula(h1)
+  # terms_h1p <- terms_h_formula(h1p)
+  # 
+  # weight_options <- weight_control(
+  #   shared_layers = c(list(unname(mapply(c, terms_h1, terms_h1p, SIMPLIFY = FALSE))),
+  #                     list(list(NULL))[rep(1,length(list_of_formulas)-2)]
+  #   )
+  # )
+  
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
-  snwb[[which(names(list_of_formulas) == "h1")]] <- interaction_init
-
+  snwb[[which(names(list_of_formulas) == "h1prime")]] <- 
+    interaction_init(h1primenr = which(names(list_of_formulas) == "h1prime"),
+                     h1nr = which(names(list_of_formulas) == "h1"))
+  
   ret <- do.call("deepregression",
                  c(list(y = y,
                         family = family,
@@ -142,58 +166,14 @@ deeptrafo <- function(
 #' @param param_nr integer number for the distribution parameter
 #' @return returns a list of input and output for this additive predictor
 #'
-interaction_init <- function(pp, deep_top = NULL,
-                            orthog_fun = orthog_tf,
-                            split_fun = split_model,
-                            param_nr = 2)
+interaction_init <- function(h1primenr, h1nr)
 {
-
-
-  inputs <- makeInputs(pp, param_nr = param_nr)
-
-  if(all(sapply(pp, function(x) is.null(x$right_from_oz)))){
-    # if there is no term to orthogonalize
-
-    outputs <- lapply(1:length(pp), function(i) pp[[i]]$layer(inputs[[i]]))
-    outputs <- layer_concatenate_identity(outputs)
-    return(list(inputs, outputs))
-
-  }else{
-
-    # define the different types of elements
-    outputs_w_oz <- unique(unlist(sapply(pp, "[[", "right_from_oz")))
-    outputs_used_for_oz <- which(sapply(pp, function(x) !is.null(x$right_from_oz)))
-    outputs_onlyfor_oz <- outputs_used_for_oz[!sapply(pp[outputs_used_for_oz],
-                                                      "[[", "left_from_oz")]
-    outputs_wo_oz <- setdiff(1:length(pp), c(outputs_w_oz, outputs_onlyfor_oz))
-
-    outputs <- list()
-    if(length(outputs_wo_oz)>0) outputs <- layer_concatenate_identity(
-      lapply((1:length(pp))[outputs_wo_oz],
-             function(i) pp[[i]]$layer(inputs[[i]]))
-      )
-    ox_outputs <- list()
-    k <- 1
-
-    for(i in outputs_w_oz){
-
-      inputs_for_oz <- which(sapply(pp, function(ap) i %in% ap$right_from_oz))
-      ox <- layer_concatenate_identity(inputs[inputs_for_oz])
-      # there is no splitting in the interaction term
-      # as it is always combined with the basis for Y
-      deep <- pp[[i]]$layer(inputs[[i]])
-      ox_outputs[[k]] <- orthog_fun(deep, ox)
-      k <- k + 1
-
-    }
-
-    if(length(ox_outputs)>0) outputs <- layer_concatenate_identity(c(outputs, ox_outputs))
-
-    return(list(inputs, outputs))
-
-  }
-
-
+  return(
+    function(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr)
+      subnetwork_init(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr,
+                      pp_input_subset = h1primenr,
+                      pp_layer_subset = h1nr)
+  )
 }
 
 
@@ -218,75 +198,58 @@ from_preds_to_trafo <- function(
   return(function(list_pred_param, ...){
 
     # make inputs more readable
-    input_theta_y <- list_pred_param$ybasis
-    input_theta_y_prime <- list_pred_param$ybasisprime
-    interact_pred <- list_pred_param$h1
-    if(!is.null(const_ia))
-      interact_pred <- tf$add(interact_pred,
-                              tf$constant(const_ia,
-                                          dtype="float32"))
+    aTtheta <- list_pred_param$h1
+    aPrimeTtheta <- list_pred_param$h1prime
     shift_pred <- list_pred_param$h2
+    
+    # if(!is.null(const_ia))
+    #   interact_pred <- tf$add(interact_pred,
+    #                           tf$constant(const_ia,
+    #                                       dtype="float32"))
 
-    # check if ATM or DCTM
-    is_atm <- !is.null(list_pred_param$atmlags)
-    if(is_atm) input_theta_atm <- list_pred_param$atmlags
-
-    # check if shared layer
-    has_shared <- !is.null(list_pred_param$shared)
-    if(has_shared){
-      input_shared <- list_pred_param$shared
-      shared_dim <- input_shared$shape[[2]]
-
-      # extract parts (use all but the last column for h1)
-      h1part <- tf_stride_cols(input_shared, 1L, shared_dim-split)
-      h2part <- tf_stride_cols(input_shared, shared_dim-split+1L, shared_dim)
-
-      # concat
-      interact_pred <- layer_concatenate(list(interact_pred, h1part))
-      shift_pred <- layer_concatenate(list(shift_pred, h2part))
-
-    }
-
-    # define shapes
-    order_bsp_p1 <- input_theta_y$shape[[2]]
-    h1_col <- interact_pred$shape[[2]]
-    total_h1_dim <- order_bsp_p1 * h1_col
-
-    # define monotone layer for trafo function
-    thetas_layer <- layer_mono_multi(
-      input_shape = list(NULL, total_h1_dim),
-      dim_bsp = c(order_bsp_p1)
-    )
-
-    ## define RWTs
-    AoB <- tf_row_tensor(input_theta_y, interact_pred)
-    AprimeoB <- tf_row_tensor(input_theta_y_prime, interact_pred)
-
-    # define h1 and h1'
-    aTtheta <- AoB %>% thetas_layer()
-    aPrimeTtheta <- AprimeoB %>% thetas_layer()
-
-    # check if ATM and add to shift_pred
-    if(is_atm){
-
-      ## create interaction
-
-      # combine every lag with the interacting predictor
-      AoB_lags <- lapply(input_theta_atm, function(inp)
-        tf_row_tensor(inp, interact_pred))
-
-      # multiply with theta weights
-      aTtheta_lags <- layer_concatenate_identity(
-        lapply(AoB_lags, function(aob) aob %>% thetas_layer())
-      )
-
-      # combine all transformed lags
-      lag_pred <- aTtheta_lags %>% atm_toplayer()
-
-      # overwrite the shift_pred by adding lags
-      shift_pred <- layer_add(list(shift_pred, lag_pred))
-
-    }
+    # # check if ATM or DCTM
+    # is_atm <- !is.null(list_pred_param$atmlags)
+    # if(is_atm) input_theta_atm <- list_pred_param$atmlags
+    # 
+    # # check if shared layer
+    # has_shared <- !is.null(list_pred_param$shared)
+    # 
+    # if(has_shared){
+    #   
+    #   input_shared <- list_pred_param$shared
+    #   shared_dim <- input_shared$shape[[2]]
+    # 
+    #   # extract parts (use all but the last column for h1)
+    #   h1part <- tf_stride_cols(input_shared, 1L, shared_dim-split)
+    #   h2part <- tf_stride_cols(input_shared, shared_dim-split+1L, shared_dim)
+    # 
+    #   # concat
+    #   interact_pred <- layer_concatenate(list(interact_pred, h1part))
+    #   shift_pred <- layer_concatenate(list(shift_pred, h2part))
+    # 
+    # }
+    # 
+    # # check if ATM and add to shift_pred
+    # if(is_atm){
+    # 
+    #   ## create interaction
+    # 
+    #   # combine every lag with the interacting predictor
+    #   AoB_lags <- lapply(input_theta_atm, function(inp)
+    #     tf_row_tensor(inp, interact_pred))
+    # 
+    #   # multiply with theta weights
+    #   aTtheta_lags <- layer_concatenate_identity(
+    #     lapply(AoB_lags, function(aob) aob %>% thetas_layer())
+    #   )
+    # 
+    #   # combine all transformed lags
+    #   lag_pred <- aTtheta_lags %>% atm_toplayer()
+    # 
+    #   # overwrite the shift_pred by adding lags
+    #   shift_pred <- layer_add(list(shift_pred, lag_pred))
+    # 
+    # }
 
     # return transformation
     trafo <- layer_concatenate(list(

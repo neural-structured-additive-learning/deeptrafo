@@ -165,17 +165,31 @@ MonoMultiLayer <- R6::R6Class("MonoMultiLayer",
                                 kernel = NULL,
 
                                 dim_bsp = NULL,
+                                
+                                kernel_regularizer = NULL,
+                                
+                                # input_dim = NULL,
+                                
+                                initializer = NULL,
 
-                                initialize = function(output_dim, dim_bsp) {
+                                initialize = function(output_dim, dim_bsp,
+                                                      # input_dim, 
+                                                      kernel_regularizer,
+                                                      initializer = initializer_random_normal()) 
+                                {
                                   self$output_dim <- output_dim
                                   self$dim_bsp <- dim_bsp
+                                  # self$input_dim <- input_dim
+                                  self$kernel_regularizer <- kernel_regularizer
+                                  self$initializer <- initializer
                                 },
 
                                 build = function(input_shape) {
                                   self$kernel <- self$add_weight(
                                     name = 'kernel',
                                     shape = list(input_shape[[2]], self$output_dim),
-                                    initializer = initializer_random_normal(),
+                                    initializer = self$initializer,
+                                    regularizer = self$kernel_regularizer,
                                     trainable = TRUE
                                   )
                                 },
@@ -185,26 +199,51 @@ MonoMultiLayer <- R6::R6Class("MonoMultiLayer",
                                 },
 
                                 compute_output_shape = function(input_shape) {
-                                  list(input_shape[[1]], self$output_dim)
+                                  list(NULL, self$output_dim)
                                 }
                               )
 )
 
 # define layer wrapper function
 layer_mono_multi <- function(object,
-                             input_shape = NULL,
-                             output_dim = 1L,
+                             units = 1L,
                              dim_bsp = NULL,
                              name = "constraint_mono_layer_multi",
-                             trainable = TRUE
+                             trainable = TRUE,
+                             kernel_regularizer = NULL
 ) {
   create_layer(MonoMultiLayer, object, list(
     name = name,
     trainable = trainable,
-    input_shape = input_shape,
-    output_dim = as.integer(output_dim),
-    dim_bsp = as.integer(dim_bsp)
+    output_dim = as.integer(units),
+    dim_bsp = as.integer(dim_bsp),
+    kernel_regularizer = kernel_regularizer
   ))
+}
+
+layer_combined_mono <- function(object,
+                                units = 1L,
+                                dim_bsp = NULL,
+                                name = "constraint_mono_layer_multi",
+                                trainable = TRUE,
+                                kernel_regularizer = NULL
+                                )
+{
+  
+  function(object){
+    objects <- tf$split(object, num_or_size_splits = 2L, axis=1L)
+    tf$keras$layers$concatenate(lapply(1:length(objects), function(i)
+      layer_mono_multi(
+        object = objects[[i]],
+        units = units,
+        dim_bsp = dim_bsp,
+        name = paste0(name, "_", i),
+        trainable = trainable,
+        kernel_regularizer = kernel_regularizer
+      )
+    ))
+  }
+  
 }
 
 
@@ -412,3 +451,14 @@ get_order_bsp_p1 <- function(x)
   x$init_params$additive_predictors$ybasis[[2]]$shape[[2]]
 
 }
+
+split_interaction_terms <- function(term){
+  
+  splt <- trimws(strsplit(term, "%I%")[[1]])
+  splt[1] <- paste0(splt[1], ")")
+  splt[2] <- substr(splt[2], 1, nchar(splt[2])-1)
+  return(splt)
+  
+}
+
+# terms_h_formula <- function(h1) trimws(strsplit(gsub("~ -1 + ", "", h1, fixed=T), "+", fixed = T)[[1]])
