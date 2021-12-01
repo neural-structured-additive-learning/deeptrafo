@@ -254,7 +254,6 @@ from_preds_to_trafo <- function(
     #   shift_pred <- layer_add(list(shift_pred, lag_pred))
     # 
     # }
->>>>>>> rwt
 
     # return transformation
     trafo <- layer_concatenate(list(
