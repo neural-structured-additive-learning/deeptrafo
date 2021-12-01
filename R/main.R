@@ -86,8 +86,8 @@ deeptrafo <- function(
   list_of_formulas <- list(
     h1 = as.formula(h1),
     h1prime = as.formula(h1p),
-    h2 = if (nterms >= 2L) formula(formula, lhs = 0, rhs = 2L) else NULL,
-    shared = if (nterms == 3L) formula(formula, lhs = 0, rhs = 3L) else NULL
+    h2 = if (nterms >= 2L) formula(fml, lhs = 0, rhs = 2L) else NULL,
+    shared = if (nterms == 3L) formula(fml, lhs = 0, rhs = 3L) else NULL
   )
 
   attr(list_of_formulas$h1, "with_layer") <- FALSE
@@ -139,8 +139,9 @@ deeptrafo <- function(
   attr(additional_processor, "controls") <- trafo_options
 
   tloss <- ifelse(trafo_options$ordered, nll_ordinal(family), neg_ll_trafo(family))
-  y <- if (ordered) eval_ord(y)
+  if (ordered) y <- eval_ord(y)
 
+  snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1prime")]] <- 
     h1prime_init(h1primenr = which(names(list_of_formulas) == "h1prime"),
                  h1nr = which(names(list_of_formulas) == "h1"))
