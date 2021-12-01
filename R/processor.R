@@ -36,11 +36,11 @@ basis_processor <- function(term, data, output_dim = NULL, param_nr, controls){
   
   if(is_prime){
     predict_trafo_bs <- function(newdata) 
-      controls$y_basis_fun_prime(newdata[[extractvar(term)]], 
+      controls$y_basis_fun_prime(newdata[[extractvar(terms[1])]], 
                                  suppy = suppy)
   }else{
     predict_trafo_bs <-  function(newdata)
-      controls$y_basis_fun(newdata[[extractvar(term)]], 
+      controls$y_basis_fun(newdata[[extractvar(terms[1])]], 
                            suppy = suppy)
   }
   
@@ -68,13 +68,36 @@ basis_processor <- function(term, data, output_dim = NULL, param_nr, controls){
     
   }
   
+  plot_fun <- NULL
+  get_org_values <- NULL
+  
+  if(!is.null(iat$plot_fun)){
+    
+    get_org_values <- function() 
+      return(list(data[[extractvar(terms[1])]],
+                  iat$get_org_values()))
+    
+    plot_fun <- h1_plotfun(dim_basis)
+    
+  }
+  
+  data_trafo <- function() cbind(bfy, iat$data_trafo())
+  predict_trafo <- function(newdata) cbind(predict_trafo_bs(newdata), 
+                                           iat$predict_trafo(newdata))
+    
   list(
-    data_trafo = function() cbind(bfy, iat$data_trafo()),
-    predict_trafo = function(newdata) cbind(predict_trafo_bs(newdata), 
-                                            iat$predict_trafo(newdata)),
+    data_trafo = data_trafo,
+    predict_trafo = predict_trafo,
     input_dim = as.integer(dim_basis + dim_iat),
     layer = layer,
-    coef = function(weights) as.matrix(weights)
+    coef = function(weights) as.matrix(weights),
+    partial_effect = function(weights, newdata=NULL){
+      X <- if(is.null(newdata)) data_trafo() else
+        predict_trafo(newdata)
+      return(row_tensor_by_basis(X, dim_basis) %*% weights)
+    },
+    plot_fun = plot_fun,
+    get_org_values = get_org_values
   )
 }
 

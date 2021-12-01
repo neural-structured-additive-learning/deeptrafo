@@ -16,7 +16,7 @@
   ...
 )
 
-\method{coef}{deeptrafo}(object, which_param = 1, type = NULL, ...)
+\method{coef}{deeptrafo}(object, which_param = "h1", type = NULL, ...)
 
 \method{predict}{deeptrafo}(object, newdata = NULL, which = NULL, cast_float = FALSE, ...)
 

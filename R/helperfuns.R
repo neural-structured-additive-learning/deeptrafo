@@ -483,4 +483,51 @@ split_interaction_terms <- function(term){
   
 }
 
-# terms_h_formula <- function(h1) trimws(strsplit(gsub("~ -1 + ", "", h1, fixed=T), "+", fixed = T)[[1]])
+row_tensor <- function(A,B)
+{
+  
+  kronecker(A, matrix(1, ncol = ncol(B))) *
+    kronecker(matrix(1, ncol = ncol(A)), B)
+  
+}
+
+row_tensor_by_basis <- function(X, basis_dim){
+  
+  row_tensor(X[,1:basis_dim],X[,(basis_dim+1):ncol(X)])
+  
+}
+
+h1_plotfun <- function(dim_basis){
+  
+  return(
+    function(pp, weights, grid_length = 40){
+      
+      org_values <- pp$get_org_values()
+      
+      BX <- row_tensor_by_basis(pp$data_trafo(), dim_basis)
+      
+      plotData <-
+        list(org_feature_name = pp$term,
+             value = do.call("cbind", org_values),
+             design_mat = BX,
+             coef = weights)
+      
+      this_x <- do.call(seq, c(as.list(range(plotData$value[,1])),
+                               list(l=grid_length)))
+      this_y <- do.call(seq, c(as.list(range(plotData$value[,2])),
+                                 list(l=grid_length)))
+      df <- as.data.frame(expand.grid(this_x, this_y))
+      colnames(df) <- extractvar(pp$term)
+      plotData$df <- df
+      plotData$x <- this_x
+      plotData$y <- this_y
+      plotData$partial_effect <- row_tensor_by_basis(
+        pp$predict_trafo(newdata = df), dim_basis) %*% weights
+      
+      return(plotData)
+      
+    }
+      
+  )
+  
+}

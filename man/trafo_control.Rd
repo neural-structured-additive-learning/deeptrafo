@@ -11,7 +11,8 @@ trafo_control(
   y_basis_fun_prime = NULL,
   penalize_bsp = 0,
   order_bsp_penalty = 2,
-  tf_bsps = FALSE
+  tf_bsps = FALSE,
+  ordered = FALSE
 )
 }
 \arguments{
@@ -29,7 +30,7 @@ the support for the basis of y;}
 penalty based on integrated squared second order derivatives, values >= 1 in difference
 penalties}
 
-\item{tf_bsps}{logical; whether to use a TensorFlow implementation of the Bernstein polynomial 
+\item{tf_bsps}{logical; whether to use a TensorFlow implementation of the Bernstein polynomial
 functions}
 }
 \description{
