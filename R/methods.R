@@ -26,10 +26,7 @@ plot.deeptrafo <- function(
 )
 {
 
-  which_param <- switch (which_param,
-    "h1" = 1,
-    "h2" = 3
-  )
+  which_param <- map_param_string_to_index(which_param)
 
   class(x) <- class(x)[-1]
   return(plot(x, which = which, which_param = which_param,
@@ -57,14 +54,18 @@ coef.deeptrafo <- function(
 )
 {
 
-  if (which_param == "h1")
-    return(get_theta(object))
-  if (which_param == "h2")
-    return(get_shift(object, type = type))
+  is_interaction <- which_param == "h1"
+  which_param <- map_param_string_to_index(which_param)
 
   # else, return lags
   class(object) <- class(object)[-1]
-  return(coef(object, which_param = 5, type = type))
+  ret <- coef(object, which_param = which_param, type = type)
+  
+  if (is_interaction)
+    ret <- lapply(ret, function(r) 
+      reshape_softplus_cumsum(r, order_bsp_p1 = get_order_bsp_p1(object)))
+  
+  return(ret)
 
 }
 
@@ -242,46 +243,13 @@ fitted.deeptrafo <- function(object, newdata, batch_size = NULL, ...)
 
 }
 
-#' Function to return the weights of the shift term
-#'
-#' @param x the fitted deeptrafo object
-#' @param type see coef.deeptrafo
-#'
-#' @export
-get_shift <- function(x, type = NULL)
+map_param_string_to_index <- function(which_param)
 {
-
-  pfc <- x$init_params$parsed_formulas_contents$h2
-  to_return <- get_type_pfc(pfc, type)
-
-  names <- deepregression:::get_names_pfc(pfc)[as.logical(to_return)]
-
-  check_names <- names
-  check_names[check_names=="(Intercept)"] <- "1"
-  coefs <- lapply(1:length(check_names), function(i)
-    pfc[[i]]$coef(deepregression:::get_weight_by_name(x, check_names[i], 4)))
-
-  names(coefs) <- names
-  return(coefs)
-
-}
-
-#' Function to return the weights of the theta term
-#'
-#' @param x the fitted deeptrafo object
-#'
-#' @export
-get_theta <- function(x)
-{
-
-  names_weights <- sapply(x$model$trainable_weights, function(x) x$name)
-  reshape_softplus_cumsum(
-    as.matrix(x$model$weights[[grep("constraint_mono_layer", names_weights)]] + 0),
-    order_bsp_p1 = get_order_bsp_p1(x)
+  
+  switch (which_param,
+          "h1" = 1,
+          "h2" = 3
   )
-
+  
 }
-
-
-
 

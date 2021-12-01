@@ -74,7 +74,7 @@ deeptrafo <- function(
   # Set up formulas for basis
   h1_formfun <- function(prime) paste0(
     "~ -1 + ", paste(paste0("bsfun(", rvar, " %I% ", c(int, 
-    trimws(strsplit(form2text(formula(formula, lhs = 0, rhs = 1L)[[2]]), "+", fixed = T)[[1]])
+    trimws(strsplit(form2text(formula(fml, lhs = 0, rhs = 1L)[[2]]), "+", fixed = T)[[1]])
     ), ", prime = ", prime, ")"), collapse=" + ")
   )
   
@@ -158,6 +158,7 @@ deeptrafo <- function(
                         additional_processor = additional_processor),
                    dots)
   )
+  ret$init_params$trafo_options <- trafo_options
 
   class(ret) <- c("deeptrafo", "deepregression")
   return(ret)

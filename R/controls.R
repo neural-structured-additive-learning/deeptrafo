@@ -76,7 +76,8 @@ trafo_control <- function(order_bsp = 10L,
          y_basis_fun_prime = y_basis_fun_prime,
          penalize_bsp = penalize_bsp,
          order_bsp_penalty = order_bsp_penalty,
-         ordered = ordered)
+         ordered = ordered,
+         order_bsp = order_bsp)
 
   )
 
