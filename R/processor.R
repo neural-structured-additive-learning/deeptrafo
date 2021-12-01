@@ -70,7 +70,8 @@ basis_processor <- function(term, data, output_dim = NULL, param_nr, controls){
   
   list(
     data_trafo = function() cbind(bfy, iat$data_trafo()),
-    predict_trafo = function(newdata) cbind(predict_trafo_bs(newdata), iat$predict_trafo(newdata)),
+    predict_trafo = function(newdata) cbind(predict_trafo_bs(newdata), 
+                                            iat$predict_trafo(newdata)),
     input_dim = as.integer(dim_basis + dim_iat),
     layer = layer,
     coef = function(weights) as.matrix(weights)

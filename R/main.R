@@ -44,7 +44,6 @@ deeptrafo <- function(
   split_between_h1_h2 = 1L,
   atm_toplayer = function(x) layer_dense(x, units = 1L),
   family = "normal",
-  monitor_metrics = crps_stdnorm_metric,
   trafo_options = trafo_control(order_bsp = order_bsp),
   ...
   )
@@ -135,8 +134,8 @@ deeptrafo <- function(
   
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1prime")]] <- 
-    interaction_init(h1primenr = which(names(list_of_formulas) == "h1prime"),
-                     h1nr = which(names(list_of_formulas) == "h1"))
+    h1prime_init(h1primenr = which(names(list_of_formulas) == "h1prime"),
+                 h1nr = which(names(list_of_formulas) == "h1"))
   
   ret <- do.call("deepregression",
                  c(list(y = y,
@@ -146,7 +145,6 @@ deeptrafo <- function(
                         subnetwork_builder = snwb,
                         from_preds_to_output = from_pred_to_trafo_fun,
                         loss = neg_ll_trafo(family),
-                        monitor_metrics = monitor_metrics,
                         additional_processor = additional_processor),
                    dots)
   )
@@ -166,7 +164,7 @@ deeptrafo <- function(
 #' @param param_nr integer number for the distribution parameter
 #' @return returns a list of input and output for this additive predictor
 #'
-interaction_init <- function(h1primenr, h1nr)
+h1prime_init <- function(h1primenr, h1nr)
 {
   return(
     function(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr)

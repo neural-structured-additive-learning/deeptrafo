@@ -27,8 +27,8 @@ plot.deeptrafo <- function(
 {
 
   which_param <- switch (which_param,
-    "h1" = 3,
-    "h2" = 4
+    "h1" = 1,
+    "h2" = 3
   )
 
   class(x) <- class(x)[-1]
