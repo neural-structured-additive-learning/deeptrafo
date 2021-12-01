@@ -159,6 +159,7 @@ deeptrafo <- function(
                    dots)
   )
   ret$init_params$trafo_options <- trafo_options
+  ret$init_params$response_varname <- rvar
 
   class(ret) <- c("deeptrafo", "deepregression")
   return(ret)

@@ -97,7 +97,8 @@ basis_processor <- function(term, data, output_dim = NULL, param_nr, controls){
       return(row_tensor_by_basis(X, dim_basis) %*% weights)
     },
     plot_fun = plot_fun,
-    get_org_values = get_org_values
+    get_org_values = get_org_values,
+    get_bfy = function(newdata) predict_trafo_bs(newdata)
   )
 }
 

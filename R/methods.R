@@ -79,46 +79,36 @@ coef.deeptrafo <- function(
 #' determining the returned value
 #'
 #' @method predict deeptrafo
+#' @export
 #'
 #' @rdname methodTrafo
 #'
 predict.deeptrafo <- function(
   object,
   newdata = NULL,
-  which = NULL,
-  cast_float = FALSE,
   ...
 )
 {
 
-  if(is.null(newdata)){
-    inpCov <- prepare_data(object$init_params$parsed_formulas_contents[-1*1:2])
-  }else{
-    # preprocess data
-    if(is.data.frame(newdata)) newdata <- as.list(newdata)
-    inpCov <- prepare_newdata(object$init_params$parsed_formulas_contents[-1*1:2], newdata)
-  }
-
   # TODO: make prediction possible for one observation only; fix type mismatch pdf grid
-  trafo_fun <- function(y, type = c("trafo", "pdf", "cdf", "interaction", "shift", "output", "sample"),
-                        which = NULL, grid = FALSE, batch_size = NULL)
+  trafo_fun <- function(y, type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
+                        grid = FALSE, batch_size = NULL)
   {
     type <- match.arg(type)
 
-    # if(!is.null(minval)) y <- y - sum(minval*get_theta(object))
+    if(is.null(newdata))
+      newdata <- prepare_data(object$init_params$parsed_formulas_contents)
+    
+    newdata[[object$init_params$response_varname]] <- y
+    
+    mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
 
-    ay_aPrimey <- prepare_newdata(object$init_params$parsed_formulas_contents[1:2], data.frame(y=y))
-    inpCov <- c(ay_aPrimey, inpCov)
-    mod_output <- fitted.deeptrafo(object, inpCov, y, batch_size = batch_size)
     if(type=="output") return(mod_output)
+    
     w_eta <- mod_output[, 1, drop = FALSE]
     aTtheta <- mod_output[, 2, drop = FALSE]
-    # if(!is.null(minval))
-    #   aTtheta <- aTtheta - sum(minval*get_theta(object))
-    if(type=="interaction"){
 
-      if(is.null(newdata))
-        newdata <- object$init_params$data
+    if(type=="interaction"){
 
       ret <- cbind(interaction = as.matrix(aTtheta),
                    as.data.frame(newdata)
@@ -130,42 +120,37 @@ predict.deeptrafo <- function(
 
     if(type=="shift"){
 
-      if(is.null(newdata))
-        newdata <- object$init_params$data
-
       return(cbind(shift = as.matrix(w_eta),
                    as.data.frame(newdata)))
 
     }
     ytransf <- aTtheta + w_eta
     yprimeTrans <- mod_output[, 3, drop = FALSE]
-    # if(!is.null(minval))
-    #   yprimeTrans + sum(minval*get_theta(object))
+
     theta <- get_theta(object)
+    
     if(grid)
     {
+      
+      pmat <- lapply(object$init_params$parsed_formulas_contents[[1]],
+                     function(pp) pp$predict(newdata))
+      
+      obspp1 <- object$init_params$trafo_options$order_bsp + 1
+      ay <- pmat[[1]][,1:obspp1]
+      ayprime <- object$init_params$parsed_formulas_contents[[2]][[1]]$get_bfy(newdata)
+      xmat <- do.call("cbind", lapply(pmat, function(x) x[,(obspp1+1):ncol(x)]))
 
-      grid_eval <- t(as.matrix(
-        tf$matmul(inpCov[[2]],
-                  tf$transpose(
-                    tf$matmul(ay,
-                              tf$cast(theta, tf$float32)
-                    )))))
+      grid_eval <- t(xmat%*%t(ay%*%theta))
+      
       grid_eval <- grid_eval +
         t(as.matrix(w_eta)[,rep(1,nrow(grid_eval))])
 
       if(type=="pdf")
-        grid_prime_eval <- t(as.matrix(
-          tf$matmul(inpCov[[2]],
-                    tf$transpose(
-                      tf$matmul(aPrimey,
-                                tf$cast(theta, tf$float32)
-                      )))))
+        grid_prime_eval <- t(xmat%*%t(ayprime%*%theta))
 
+      type <- paste0("grid_",type)
 
     }
-
-    if(grid) type <- paste0("grid_",type)
 
     ret <- switch (type,
                    trafo = (ytransf %>% as.matrix),
@@ -177,8 +162,7 @@ predict.deeptrafo <- function(
                    grid_pdf = ((tfd_normal(0,1) %>% tfd_prob(grid_eval) %>%
                                   as.matrix)*as.matrix(grid_prime_eval)),
                    grid_cdf = (tfd_normal(0,1) %>% tfd_cdf(grid_eval) %>%
-                                 as.matrix),
-                   sample
+                                 as.matrix)
     )
 
     return(ret)
@@ -193,18 +177,30 @@ predict.deeptrafo <- function(
 #' @param object a deeptrafo model
 #' @param newdata optional new data, either data.frame or list
 #' @param batch_size integer; optional, useful if data is too large
+#' @param convert_fun function; to convert the TF tensor
 #' @param ... not used atm
 #' @return returns a function with two parameters: the actual response
 #' and \code{type} in \code{c('trafo', 'pdf', 'cdf', 'interaction')}
 #' determining the returned value
 #'
-#' @method predict deeptrafo
+#' @method fitted deeptrafo
+#' @export
 #'
 #' @rdname methodTrafo
 #'
-fitted.deeptrafo <- function(object, newdata, batch_size = NULL, ...)
+fitted.deeptrafo <- function(
+  object, 
+  newdata = NULL, 
+  batch_size = NULL, 
+  convert_fun = as.matrix,
+  ...)
 {
 
+  if(is.null(newdata)){
+    newdata <- prepare_data(object$init_params$parsed_formulas_contents)
+  }else{
+    newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata)
+  }
 
   if(length(object$init_params$image_var)>0){
 
@@ -239,7 +235,7 @@ fitted.deeptrafo <- function(object, newdata, batch_size = NULL, ...)
 
   }
 
-  return(mod_output)
+  return(convert_fun(mod_output))
 
 }
 

@@ -20,7 +20,7 @@
 
 \method{predict}{deeptrafo}(object, newdata = NULL, which = NULL, cast_float = FALSE, ...)
 
-\method{predict}{deeptrafo}(object, newdata, batch_size = NULL, ...)
+\method{fitted}{deeptrafo}(object, newdata = NULL, batch_size = NULL, convert_fun = as.matrix, ...)
 }
 \arguments{
 \item{x}{deeptrafo object}
@@ -46,6 +46,8 @@ Note that \code{type} is currently not used for \code{"h1"}}
 \item{newdata}{optional new data, either data.frame or list}
 
 \item{batch_size}{integer; optional, useful if data is too large}
+
+\item{convert_fun}{function; to convert the TF tensor}
 
 \item{eval_grid}{logical; should plot be evaluated on a grid}
 }
