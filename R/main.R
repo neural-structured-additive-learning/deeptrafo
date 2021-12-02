@@ -27,16 +27,10 @@
 #'
 #' @examples
 #' data("wine", package = "ordinal")
-#' fml <- rating ~ 1
-#' inps <- list(
-#'   eval_ord_upr(model.response(model.frame(fml, wine))),
-#'   eval_ord_lwr(model.response(model.frame(fml, wine))),
-#'   matrix(1, nrow = nrow(wine)),
-#'   matrix(1, nrow = nrow(wine))
-#' )
+#' fml <- rating ~ temp | temp
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
 #' m %>% fit(epochs = 100, batch_size = nrow(wine))
-#' m %>% predict(apply_fun = identity)
+#' m %>% predict()
 #' plot(m)
 #' coef(m, which_param = "h1")
 #' coef(m, which_param = "h2")
@@ -49,7 +43,7 @@ deeptrafo <- function(
   data,
   lag_formula = NULL,
   ordered = is.ordered(data[[all.vars(fml)[1]]]),
-  order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]), 10L),
+  order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]) - 1L, 10L),
   addconst_interaction = NULL,
   split_between_h1_h2 = 1L,
   atm_toplayer = function(x) layer_dense(x, units = 1L),
@@ -66,27 +60,27 @@ deeptrafo <- function(
 
   # Name of the response variable
   rvar <- all.vars(formula)[1]
-  
+
   # Placeholder Intercept
-  int <- as.numeric(attr(terms(formula(formula, lhs = 0, rhs = 1L)), 
+  int <- as.numeric(attr(terms(formula(formula, lhs = 0, rhs = 1L)),
                          "intercept"))
-  
+
   # Set up formulas for basis
   h1_formfun <- function(prime) paste0(
-    "~ -1 + ", paste(paste0("bsfun(", rvar, " %I% ", c(int, 
-    trimws(strsplit(form2text(formula(fml, lhs = 0, rhs = 1L)[[2]]), "+", fixed = T)[[1]])
+    "~ -1 + ", paste(paste0("bsfun(", rvar, " %I% ", c(int,
+    trimws(strsplit(deepregression:::form2text(formula(fml, lhs = 0, rhs = 1L)[[2]]), "+", fixed = T)[[1]])
     ), ", prime = ", prime, ")"), collapse=" + ")
   )
-  
+
   h1 <- h1_formfun("FALSE")
   h1p <- h1_formfun("TRUE")
-  
-    
+
+
   # List of formulas
   list_of_formulas <- list(
     h1 = as.formula(h1),
     h1prime = as.formula(h1p),
-    h2 = if (nterms >= 2L) formula(fml, lhs = 0, rhs = 2L) else NULL,
+    h2 = if (nterms >= 2L) formula(fml, lhs = 0, rhs = 2L) else ~ 1,
     shared = if (nterms == 3L) formula(fml, lhs = 0, rhs = 3L) else NULL
   )
 
@@ -142,10 +136,10 @@ deeptrafo <- function(
   if (ordered) y <- eval_ord(y)
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
-  snwb[[which(names(list_of_formulas) == "h1prime")]] <- 
+  snwb[[which(names(list_of_formulas) == "h1prime")]] <-
     h1prime_init(h1primenr = which(names(list_of_formulas) == "h1prime"),
                  h1nr = which(names(list_of_formulas) == "h1"))
-  
+
   ret <- do.call("deepregression",
                  c(list(y = y,
                         family = family,
@@ -217,45 +211,45 @@ from_preds_to_trafo <- function(
     # # check if ATM or DCTM
     # is_atm <- !is.null(list_pred_param$atmlags)
     # if(is_atm) input_theta_atm <- list_pred_param$atmlags
-    # 
+    #
     # # check if shared layer
     # has_shared <- !is.null(list_pred_param$shared)
-    # 
+    #
     # if(has_shared){
-    #   
+    #
     #   input_shared <- list_pred_param$shared
     #   shared_dim <- input_shared$shape[[2]]
-    # 
+    #
     #   # extract parts (use all but the last column for h1)
     #   h1part <- tf_stride_cols(input_shared, 1L, shared_dim-split)
     #   h2part <- tf_stride_cols(input_shared, shared_dim-split+1L, shared_dim)
-    # 
+    #
     #   # concat
     #   interact_pred <- layer_concatenate(list(interact_pred, h1part))
     #   shift_pred <- layer_concatenate(list(shift_pred, h2part))
-    # 
+    #
     # }
-    # 
+    #
     # # check if ATM and add to shift_pred
     # if(is_atm){
-    # 
+    #
     #   ## create interaction
-    # 
+    #
     #   # combine every lag with the interacting predictor
     #   AoB_lags <- lapply(input_theta_atm, function(inp)
     #     tf_row_tensor(inp, interact_pred))
-    # 
+    #
     #   # multiply with theta weights
     #   aTtheta_lags <- layer_concatenate_identity(
     #     lapply(AoB_lags, function(aob) aob %>% thetas_layer())
     #   )
-    # 
+    #
     #   # combine all transformed lags
     #   lag_pred <- aTtheta_lags %>% atm_toplayer()
-    # 
+    #
     #   # overwrite the shift_pred by adding lags
     #   shift_pred <- layer_add(list(shift_pred, lag_pred))
-    # 
+    #
     # }
 
     # return transformation

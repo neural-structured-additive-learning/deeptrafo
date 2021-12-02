@@ -60,11 +60,11 @@ coef.deeptrafo <- function(
   # else, return lags
   class(object) <- class(object)[-1]
   ret <- coef(object, which_param = which_param, type = type)
-  
+
   if (is_interaction)
-    ret <- lapply(ret, function(r) 
+    ret <- lapply(ret, function(r)
       reshape_softplus_cumsum(r, order_bsp_p1 = get_order_bsp_p1(object)))
-  
+
   return(ret)
 
 }
@@ -98,13 +98,13 @@ predict.deeptrafo <- function(
 
     if(is.null(newdata))
       newdata <- prepare_data(object$init_params$parsed_formulas_contents)
-    
+
     newdata[[object$init_params$response_varname]] <- y
-    
+
     mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
 
     if(type=="output") return(mod_output)
-    
+
     w_eta <- mod_output[, 1, drop = FALSE]
     aTtheta <- mod_output[, 2, drop = FALSE]
 
@@ -128,20 +128,20 @@ predict.deeptrafo <- function(
     yprimeTrans <- mod_output[, 3, drop = FALSE]
 
     theta <- get_theta(object)
-    
+
     if(grid)
     {
-      
+
       pmat <- lapply(object$init_params$parsed_formulas_contents[[1]],
                      function(pp) pp$predict(newdata))
-      
+
       obspp1 <- object$init_params$trafo_options$order_bsp + 1
       ay <- pmat[[1]][,1:obspp1]
       ayprime <- object$init_params$parsed_formulas_contents[[2]][[1]]$get_bfy(newdata)
       xmat <- do.call("cbind", lapply(pmat, function(x) x[,(obspp1+1):ncol(x)]))
 
       grid_eval <- t(xmat%*%t(ay%*%theta))
-      
+
       grid_eval <- grid_eval +
         t(as.matrix(w_eta)[,rep(1,nrow(grid_eval))])
 
@@ -189,9 +189,9 @@ predict.deeptrafo <- function(
 #' @rdname methodTrafo
 #'
 fitted.deeptrafo <- function(
-  object, 
-  newdata = NULL, 
-  batch_size = NULL, 
+  object,
+  newdata = NULL,
+  batch_size = NULL,
   convert_fun = as.matrix,
   ...)
 {
@@ -211,7 +211,10 @@ fitted.deeptrafo <- function(
     if(is.null(batch_size)) batch_size <- 32
     steps_per_epoch <- ceiling(max_data/batch_size)
 
-    mod_output <- predict_generator(object, newdata, batch_size, apply_fun=NULL)
+    mod_output <- deepregression:::predict_generator.deepregression(object,
+                                                                    newdata,
+                                                                    batch_size,
+                                                                    apply_fun = NULL)
 
   }else{
 
@@ -241,11 +244,11 @@ fitted.deeptrafo <- function(
 
 map_param_string_to_index <- function(which_param)
 {
-  
+
   switch (which_param,
           "h1" = 1,
           "h2" = 3
   )
-  
+
 }
 

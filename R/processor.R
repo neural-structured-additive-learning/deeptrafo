@@ -1,5 +1,5 @@
 basis_processor <- function(term, data, output_dim = NULL, param_nr, controls){
-  
+
   name <- makelayername(term, param_nr)
   is_prime <- extractval(term, "prime")
   term <- gsub("\\,\\s?prime\\s?=.*[^\\)]","",term)
@@ -10,81 +10,81 @@ basis_processor <- function(term, data, output_dim = NULL, param_nr, controls){
   }else{
     bfy <- controls$y_basis_fun(data[[extractvar(terms[1])]])
   }
-  
+
   suppy <- range(data[[extractvar(terms[1])]])
-  
+
   # interacting term
   args <- list(term = terms[2], data = data, output_dim = output_dim,
                param_nr = param_nr, controls = controls)
-  spec <- get_special(terms[2], specials = names(controls$procs))
-  
+  spec <- deepregression:::get_special(terms[2], specials = names(controls$procs))
+
   if(is.null(spec)){
     if(terms[2]=="1"){
-      iat <- do.call(int_processor, args)
+      iat <- do.call(deepregression:::int_processor, args)
     }else{
-      iat <- do.call(lin_processor, args)
+      iat <- do.call(deepregression:::lin_processor, args)
     }
   }else iat <- do.call(controls$procs[[spec]], args)
-  
+
   dim_iat <- iat$input_dim
   dim_basis <- ncol(bfy)
   penalty_iat <- iat$penalty
   penalty_basis <- controls$basis_penalty
-  combined_penalty <- combine_penalties(list(penalty_basis,
-                                             penalty_iat), 
-                                        c(dim_basis, dim_iat))
-  
+  combined_penalty <- deepregression:::combine_penalties(list(penalty_basis,
+                                                              penalty_iat),
+                                                         c(dim_basis, dim_iat))
+
   if(is_prime){
-    predict_trafo_bs <- function(newdata) 
-      controls$y_basis_fun_prime(newdata[[extractvar(terms[1])]], 
+    predict_trafo_bs <- function(newdata)
+      controls$y_basis_fun_prime(newdata[[extractvar(terms[1])]],
                                  suppy = suppy)
   }else{
     predict_trafo_bs <-  function(newdata)
-      controls$y_basis_fun(newdata[[extractvar(terms[1])]], 
+      controls$y_basis_fun(newdata[[extractvar(terms[1])]],
                            suppy = suppy)
   }
-  
+
   if(!is_prime){
-    
+
     thetas_layer <- layer_mono_multi(
       units = output_dim,
-      dim_bsp = dim_basis, 
+      dim_bsp = dim_basis,
       kernel_regularizer = combined_penalty,
       name = name
     )
-    
+
     layer <- function(x, ...){
-      
+
       input_theta_y <- tf_stride_cols(x, 1L, dim_basis)
       interact_pred <- tf_stride_cols(x, dim_basis+1L, dim_basis+dim_iat)
       AoB <- tf_row_tensor(input_theta_y, interact_pred)
       return(AoB %>% thetas_layer())
-      
+
     }
-    
+
   }else{
-    
+
     layer <- tf$identity
-    
+
   }
-  
+
   plot_fun <- NULL
   get_org_values <- NULL
-  
+
   if(!is.null(iat$plot_fun)){
-    
-    get_org_values <- function() 
+
+    get_org_values <- function()
       return(list(data[[extractvar(terms[1])]],
                   iat$get_org_values()))
-    
+
     plot_fun <- h1_plotfun(dim_basis)
-    
+
   }
-  
+
   data_trafo <- function() cbind(bfy, iat$data_trafo())
-  predict_trafo <- function(newdata) cbind(predict_trafo_bs(newdata), 
+  predict_trafo <- function(newdata) cbind(predict_trafo_bs(newdata),
                                            iat$predict_trafo(newdata))
-    
+
   list(
     data_trafo = data_trafo,
     predict_trafo = predict_trafo,

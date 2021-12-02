@@ -18,7 +18,7 @@
 
 \method{coef}{deeptrafo}(object, which_param = "h1", type = NULL, ...)
 
-\method{predict}{deeptrafo}(object, newdata = NULL, which = NULL, cast_float = FALSE, ...)
+\method{predict}{deeptrafo}(object, newdata = NULL, ...)
 
 \method{fitted}{deeptrafo}(object, newdata = NULL, batch_size = NULL, convert_fun = as.matrix, ...)
 }
