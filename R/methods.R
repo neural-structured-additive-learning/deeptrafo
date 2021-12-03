@@ -196,42 +196,25 @@ fitted.deeptrafo <- function(
   ...)
 {
 
-  if(is.null(newdata)){
-    newdata <- prepare_data(object$init_params$parsed_formulas_contents)
-  }else{
-    newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata)
-  }
+  if(length(object$init_params$image_var)>0 | !is.null(batch_size)){
 
-  if(length(object$init_params$image_var)>0){
-
-    data_tab <- newdata
-
-    # prepare generator
-    max_data <- NROW(data_image)
-    if(is.null(batch_size)) batch_size <- 32
-    steps_per_epoch <- ceiling(max_data/batch_size)
-
-    mod_output <- predict_generator(object, newdata, batch_size, apply_fun=NULL)
+    mod_output <- predict_gen(object, newdata, batch_size, 
+                              apply_fun = function(x) x, 
+                              convert_fun = convert_fun)
 
   }else{
 
-    if(is.null(batch_size)){
-
-      mod_output <- object$model(newdata)
-
+    if(is.null(newdata)){
+      
+      newdata <- prepare_data(object$init_params$parsed_formulas_contents)
+    
     }else{
-
-      max_data <- NROW(newdata[[1]])
-      steps_per_epoch <- ceiling(max_data/batch_size)
-
-      mod_output <- lapply(1:steps_per_epoch,
-                           function(i){
-                             index <- (i-1)*batch_size + 1:batch_size
-                             object$model(lapply(newdata, function(x) subset_array(x, index)))
-                           })
-      mod_output <- do.call("rbind", lapply(mod_output, as.matrix))
-
+      
+      newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata)
+      
     }
+    
+    mod_output <- object$model(newdata)
 
   }
 
