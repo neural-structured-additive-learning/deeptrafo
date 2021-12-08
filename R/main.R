@@ -174,10 +174,11 @@ deeptrafo <- function(
 h1prime_init <- function(h1primenr, h1nr)
 {
   return(
-    function(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr)
+    function(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr, gaminputs)
       subnetwork_init(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr,
                       pp_input_subset = h1primenr,
-                      pp_layer_subset = h1nr)
+                      pp_layer_subset = h1nr,
+                      gaminputs = gaminputs)
   )
 
 }
