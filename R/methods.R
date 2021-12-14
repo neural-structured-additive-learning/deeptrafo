@@ -97,7 +97,8 @@ predict.deeptrafo <- function(
     type <- match.arg(type)
 
     if(is.null(newdata))
-      newdata <- prepare_data(object$init_params$parsed_formulas_contents)
+      newdata <- deepregression:::prepare_data(object$init_params$parsed_formulas_contents,
+                                               gamdata = object$init_params$gamdata$data_trafos)
 
     newdata[[object$init_params$response_varname]] <- y
 
@@ -196,45 +197,27 @@ fitted.deeptrafo <- function(
   ...)
 {
 
-  if(is.null(newdata)){
-    newdata <- prepare_data(object$init_params$parsed_formulas_contents)
-  }else{
-    newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata)
-  }
+  if(length(object$init_params$image_var)>0 | !is.null(batch_size)){
 
-  if(length(object$init_params$image_var)>0){
-
-    data_tab <- newdata
-
-    # prepare generator
-    max_data <- NROW(data_image)
-    if(is.null(batch_size)) batch_size <- 32
-    steps_per_epoch <- ceiling(max_data/batch_size)
-
-    mod_output <- deepregression:::predict_generator.deepregression(object,
-                                                                    newdata,
-                                                                    batch_size,
-                                                                    apply_fun = NULL)
+    mod_output <- predict_gen(object, newdata, batch_size,
+                              apply_fun = function(x) x,
+                              convert_fun = convert_fun)
 
   }else{
 
-    if(is.null(batch_size)){
+    if(is.null(newdata)){
 
-      mod_output <- object$model(newdata)
+      newdata <- deepregression:::prepare_data(object$init_params$parsed_formulas_contents,
+                                               gamdata = object$init_params$gamdata$data_trafos)
 
     }else{
 
-      max_data <- NROW(newdata[[1]])
-      steps_per_epoch <- ceiling(max_data/batch_size)
-
-      mod_output <- lapply(1:steps_per_epoch,
-                           function(i){
-                             index <- (i-1)*batch_size + 1:batch_size
-                             object$model(lapply(newdata, function(x) subset_array(x, index)))
-                           })
-      mod_output <- do.call("rbind", lapply(mod_output, as.matrix))
+      newdata <- deepregression:::prepare_newdata(object$init_params$parsed_formulas_contents, newdata,
+                                                  gamdata = object$init_params$gamdata$data_trafos)
 
     }
+
+    mod_output <- object$model(newdata)
 
   }
 

@@ -27,10 +27,12 @@
 #'
 #' @examples
 #' data("wine", package = "ordinal")
-#' fml <- rating ~ temp | temp
+#' wine$noise <- rnorm(nrow(wine))
+#' fml <- rating ~ 1
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
 #' m %>% fit(epochs = 100, batch_size = nrow(wine))
-#' m %>% predict()
+#' predfun <- m %>% predict(wine)
+#' predfun(wine$rating, type = "trafo")
 #' plot(m)
 #' coef(m, which_param = "h1")
 #' coef(m, which_param = "h2")
@@ -168,10 +170,11 @@ deeptrafo <- function(
 h1prime_init <- function(h1primenr, h1nr)
 {
   return(
-    function(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr)
+    function(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr, gaminputs)
       subnetwork_init(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr,
                       pp_input_subset = h1primenr,
-                      pp_layer_subset = h1nr)
+                      pp_layer_subset = h1nr,
+                      gaminputs = gaminputs)
   )
 
 }
