@@ -35,9 +35,9 @@ For autoregressive transformation models, please cite:
       title={Transforming autoregression for expressive forecasts with parametric uncertainty quantification},
       author={R{\"u}gamer, David and Baumann, Philipp and Hothorn, Torsten},
       year={2021},
-      eprint={2110.xxxx},
+      eprint={2110.08248},
       archivePrefix={arXiv},
-      journal={arXiv preprint arXiv:2110.xxxx}
+      journal={arXiv preprint arXiv:2110.08248}
     }
 
 
