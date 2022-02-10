@@ -26,11 +26,23 @@ plot.deeptrafo <- function(
 )
 {
 
+  get_weight_fun = if(which_param == "h1")
+    get_weight_by_name_ia else get_weight_by_name
+
   which_param <- map_param_string_to_index(which_param)
 
   class(x) <- class(x)[-1]
   return(plot(x, which = which, which_param = which_param,
-              only_data = only_data, grid_length = grid_length, ...))
+              only_data = only_data, grid_length = grid_length,
+              get_weight_fun = get_weight_fun, ...))
+
+}
+
+get_weight_by_name_ia <- function(x, name, param_nr)
+{
+
+  matrix(get_weight_by_name(x, name, param_nr),
+         ncol = x$init_params$trafo_options$order_bsp + 1L)
 
 }
 
@@ -133,13 +145,14 @@ predict.deeptrafo <- function(
     if(grid)
     {
 
-      pmat <- lapply(object$init_params$parsed_formulas_contents[[1]],
+      ymat <- lapply(object$init_params$parsed_formulas_contents[[1]],
                      function(pp) pp$predict(newdata))
 
       obspp1 <- object$init_params$trafo_options$order_bsp + 1
-      ay <- pmat[[1]][,1:obspp1]
-      ayprime <- object$init_params$parsed_formulas_contents[[2]][[1]]$get_bfy(newdata)
-      xmat <- do.call("cbind", lapply(pmat, function(x) x[,(obspp1+1):ncol(x)]))
+      ay <- ymat[[1]] #[,1:obspp1]
+      ayprime <- ymat[[2]]
+      xmat <- do.call("cbind", lapply(object$init_params$parsed_formulas_contents[[2]],
+                                      function(pp) pp$predict(newdata)))
 
       grid_eval <- t(xmat%*%t(ay%*%theta))
 
@@ -229,7 +242,7 @@ map_param_string_to_index <- function(which_param)
 {
 
   switch (which_param,
-          "h1" = 1,
+          "h1" = 2,
           "h2" = 3
   )
 

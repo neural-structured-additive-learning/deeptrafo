@@ -11,6 +11,8 @@
 #'     penalties
 #' @param tf_bsps logical; whether to use a TensorFlow implementation of the Bernstein polynomial
 #'     functions
+#' @param ordered logical; TODO->LK
+#' @param atm_toplayer function; a function specifying the layer on top of ATM lags
 #' @export
 #'
 trafo_control <- function(order_bsp = 10L,
@@ -20,7 +22,8 @@ trafo_control <- function(order_bsp = 10L,
                           penalize_bsp = 0,
                           order_bsp_penalty = 2,
                           tf_bsps = FALSE,
-                          ordered = FALSE) {
+                          ordered = FALSE,
+                          atm_toplayer = function(x) layer_dense(x, units = 1L)) {
   # define support (either function or dummy function outputting the supplied range)
   if (!is.function(support)) {
 
@@ -77,7 +80,9 @@ trafo_control <- function(order_bsp = 10L,
          penalize_bsp = penalize_bsp,
          order_bsp_penalty = order_bsp_penalty,
          ordered = ordered,
-         order_bsp = order_bsp)
+         order_bsp = order_bsp,
+         atm_toplayer = atm_toplayer,
+         supp = supp)
 
   )
 
