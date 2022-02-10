@@ -25,7 +25,7 @@
 #' @examples
 #' data("wine", package = "ordinal")
 #' wine$noise <- rnorm(nrow(wine))
-#' fml <- rating ~ 1
+#' fml <- rating ~ 1 | 1
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
 #' m %>% fit(epochs = 100, batch_size = nrow(wine))
 #' predfun <- m %>% predict(wine)
@@ -122,7 +122,7 @@ deeptrafo <- function(
   attr(additional_processor, "controls") <- trafo_options
 
   tloss <- ifelse(trafo_options$ordered, nll_ordinal(family), neg_ll_trafo(family))
-  # if (ordered) y <- eval_ord(y)
+  # if (ordered) y <- t(sapply(y, eval_ord))
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
