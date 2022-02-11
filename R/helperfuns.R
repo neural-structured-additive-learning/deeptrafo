@@ -52,7 +52,10 @@ eval_bsp <- function(y, order = 3, supp = range(y)) {
   # returns a numeric matrix (n x (order + 1))
 
   y <- (y - supp[1]) / diff(supp)
-  sapply(0:order, function(m) dbeta(y, m + 1, order + 1 - m) / (order + 1))
+  res <- sapply(0:order, function(m) dbeta(y, m + 1, order + 1 - m) / (order + 1))
+  if(is.null(dim(res)))
+    res <- matrix(res, nrow=1)
+  return(res)
 
 }
 
@@ -72,7 +75,7 @@ eval_bsp_prime <- function(y, order = 3, supp = range(y)) {
   # returns a numeric matrix (n x (order + 1))
 
   y <- (y - supp[1]) / diff(supp)
-  sapply(0:order, function(m) {
+  res <- sapply(0:order, function(m) {
 
     first_t <- dbeta(y, m, order - m + 1) / order
     sec_t <- dbeta(y, m + 1, order - m) / order
@@ -82,6 +85,9 @@ eval_bsp_prime <- function(y, order = 3, supp = range(y)) {
 
     (first_t - sec_t) * order
   })
+  if(is.null(dim(res)))
+    res <- matrix(res, nrow=1)
+  return(res)
 }
 
 eval_bsp_tf <- function(order, supp) {

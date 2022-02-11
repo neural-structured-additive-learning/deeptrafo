@@ -19,7 +19,7 @@ plot.deeptrafo <- function(
   x,
   which = NULL,
   # which of the nonlinear structured effects
-  which_param = "h1", # for which parameter
+  which_param = "h2", # for which parameter
   only_data = FALSE,
   grid_length = 40,
   ... # passed to plot function
