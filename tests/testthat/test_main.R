@@ -2,27 +2,27 @@ context("Test deeptrafo")
 
 check_methods <- function(m, newdata)
 {
-  
+
   # fit
   hist <- m %>% fit(epochs = 2)
   expect_is(hist, "keras_training_history")
-  
+
   # plot
   pret1 <- plot(m, which_param = "h1")
   expect_is(pret1, "list")
   pret2 <- plot(m, which_param = "h2")
   expect_is(pret2, "list")
-  
+
   # coef
   ch1 <- coef(m, which = "h1")
   expect_is(ch1, "list")
   ch2 <- coef(m, which = "h2")
   expect_is(ch2, "list")
-  
+
   # fitted
   fitt <- m %>% fitted()
   expect_is(fitt, "matrix")
-  
+
   # predict
   trf_fun <- m %>% predict.deeptrafo(newdata)
   expect_is(trf_fun, "function")
@@ -46,28 +46,63 @@ check_methods <- function(m, newdata)
   expect_equal(dim(h), c(this_n,this_n))
   i <- trf_fun(newdata$y, type = "cdf", grid=TRUE)
   expect_equal(dim(i), c(this_n,this_n))
-  
-  
+
+
 }
 
 test_that("simple additive model", {
-  
+
   dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
-  fml <- y ~ s(x) | z + s(z)
+  fml <- y | s(x) ~ z + s(z)
   m <- deeptrafo(fml, dat)
-  
+
   check_methods(m, newdata = dat)
-  
+
+})
+
+test_that("unconditional additive model", {
+
+  dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+  fml <- y ~ 1
+  m <- deeptrafo(fml, dat)
+  hist <- fit(m, epochs = 2L)
+  expect_false(any(is.nan(hist$metrics$loss)))
+
+})
+
+test_that("unconditional ordinal model", {
+
+  dat <- data.frame(y = ordered(sample(1:6, 100, replace = TRUE)),
+                    x = rnorm(100), z = rnorm(100))
+  fml <- y ~ 1
+  m <- deeptrafo(fml, dat)
+  hist <- fit(m, epochs = 2L)
+  expect_equal(m$init_params$trafo_options$order_bsp, 5L)
+  expect_false(any(is.nan(hist$metrics$loss)))
+
+})
+
+test_that("ordinal model", {
+
+  dat <- data.frame(y = ordered(sample(1:6, 100, replace = TRUE)),
+                    x = rnorm(100), z = rnorm(100))
+  fml <- y ~ s(z)
+  m <- deeptrafo(fml, dat)
+  hist <- fit(m, epochs = 2L)
+  expect_equal(m$init_params$trafo_options$order_bsp, 5L)
+  expect_false(any(is.nan(hist$metrics$loss)))
+
 })
 
 test_that("autoregressive transformation model", {
-  
+
   dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
   dat$ylag <- lag(dat$y)
   dat$ylag2 <- lag(dat$y, n=2L)
   dat <- na.omit(dat)
+  fml <- y | s(x) ~ z + s(z)
   m <- deeptrafo(fml, dat, lag_formula = ~ ylag + ylag2)
 
   check_methods(m, newdata = dat)
-  
+
 })
