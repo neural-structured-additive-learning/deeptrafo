@@ -1,7 +1,7 @@
 #' Fitting Deep Conditional Transformation Models
 #'
 #' @param formula Formula specifying the outcome, shift, interaction and shared
-#'     terms as \code{response ~ shifting | interacting | shared}
+#'     terms as \code{response | interacting ~ shifting | shared}
 #' @param list_of_formulas list of formulas where the first element corresponds to
 #'     a transformation h_1 as specified in DCTMs, the second element to h_2 as specified
 #'     in DCTMs and a third element for shared layers used in both
@@ -53,6 +53,7 @@ deeptrafo <- function(
 {
   # How many terms are in the formula
   fml <- as.Formula(formula)
+  ninteracting <- length(attr(fml, "lhs"))
   nterms <- length(attr(fml, "rhs"))
 
   # Name of the response variable
@@ -63,18 +64,25 @@ deeptrafo <- function(
                          "intercept"))
 
   # Set up formulas for basis
-  h1_form <- paste0(
-    "~ -1 + ", paste(paste0("ia(", c(int,
-    trimws(strsplit(deepregression:::form2text(formula(fml, lhs = 0, rhs = 1L)[[2]]), "+", fixed = T)[[1]])
-    ), ")"), collapse=" + ")
-  )
+  if (ninteracting > 1L) {
+    interacting <- formula(fml, lhs = 2L, rhs = 0L)[[2]]
+    h1_form <- paste0(
+      "~ -1 + ", paste(paste0("ia(", c(int, trimws(
+        strsplit(form2text(interacting), "+", fixed = TRUE)[[1]]
+      )), ")"), collapse=" + ")
+    )
+  } else {
+    h1_form <- paste0(
+      "~ -1 + ", paste(paste0("ia(", int, ")"), collapse=" + ")
+    )
+  }
 
   # List of formulas
   list_of_formulas <- list(
     yterms = as.formula(paste0("~ -1 + bsfun(", rvar, ") + bspfun(", rvar, ")")),
     h1pred = as.formula(h1_form),
-    h2 = if (nterms >= 2L) formula(fml, lhs = 0, rhs = 2L) else NULL,
-    shared = if (nterms == 3L) formula(fml, lhs = 0, rhs = 3L) else NULL
+    h2 = if (nterms >= 1L) formula(fml, lhs = 0, rhs = 1L) else NULL,
+    shared = if (nterms == 2L) formula(fml, lhs = 0, rhs = 2L) else NULL
   )
 
   # Remove NULL formulae
@@ -89,7 +97,7 @@ deeptrafo <- function(
     # extract from lag formula the variables as simple sum and
     # layers for additional transformation
     lag_formula <- apply_atm_lags(lag_formula)
-    list_of_formulas$yterms <- as.formula(paste0(deepregression:::form2text(list_of_formulas$yterms),
+    list_of_formulas$yterms <- as.formula(paste0(form2text(list_of_formulas$yterms),
                                                  " + ", lag_formula))
 
   }

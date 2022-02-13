@@ -6,13 +6,13 @@ ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
   # interacting term
   args <- list(term = term, data = data, output_dim = output_dim,
                param_nr = param_nr, controls = controls)
-  spec <- deepregression:::get_special(term, specials = names(controls$procs))
+  spec <- get_special(term, specials = names(controls$procs))
 
   if(is.null(spec)){
     if(term=="1"){
-      iat <- do.call(deepregression:::int_processor, args)
+      iat <- do.call(int_processor, args)
     }else{
-      iat <- do.call(deepregression:::lin_processor, args)
+      iat <- do.call(lin_processor, args)
     }
   }else iat <- do.call(controls$procs[[spec]], args)
 
@@ -20,9 +20,9 @@ ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
   dim_basis <- controls$order_bsp + 1L
   penalty_iat <- iat$penalty
   penalty_basis <- controls$basis_penalty
-  combined_penalty <- deepregression:::combine_penalties(list(penalty_basis,
-                                                              penalty_iat),
-                                                         c(dim_basis, dim_iat))
+  combined_penalty <- combine_penalties(list(penalty_basis,
+                                             penalty_iat),
+                                        c(dim_basis, dim_iat))
 
   thetas_layer <- layer_mono_multi(
     units = output_dim,

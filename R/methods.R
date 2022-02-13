@@ -109,8 +109,8 @@ predict.deeptrafo <- function(
     type <- match.arg(type)
 
     if(is.null(newdata))
-      newdata <- deepregression:::prepare_data(object$init_params$parsed_formulas_contents,
-                                               gamdata = object$init_params$gamdata$data_trafos)
+      newdata <- prepare_data(object$init_params$parsed_formulas_contents,
+                              gamdata = object$init_params$gamdata$data_trafos)
 
     newdata[[object$init_params$response_varname]] <- y
 
@@ -220,13 +220,13 @@ fitted.deeptrafo <- function(
 
     if(is.null(newdata)){
 
-      newdata <- deepregression:::prepare_data(object$init_params$parsed_formulas_contents,
-                                               gamdata = object$init_params$gamdata$data_trafos)
+      newdata <- prepare_data(object$init_params$parsed_formulas_contents,
+                              gamdata = object$init_params$gamdata$data_trafos)
 
     }else{
 
-      newdata <- deepregression:::prepare_newdata(object$init_params$parsed_formulas_contents, newdata,
-                                                  gamdata = object$init_params$gamdata$data_trafos)
+      newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata,
+                                 gamdata = object$init_params$gamdata$data_trafos)
 
     }
 
