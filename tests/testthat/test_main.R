@@ -1,5 +1,7 @@
 context("Test deeptrafo")
 
+# devtools::load_all("../../../deepregression/")
+
 check_methods <- function(m, newdata, test_plots = TRUE)
 {
 
@@ -48,6 +50,9 @@ check_methods <- function(m, newdata, test_plots = TRUE)
   expect_equal(dim(h), c(this_n,this_n))
   i <- trf_fun(newdata$y, type = "cdf", grid=TRUE)
   expect_equal(dim(i), c(this_n,this_n))
+
+  # logLik
+  expect_is(logLik(m), "numeric")
 
 }
 
@@ -168,12 +173,13 @@ test_that("ordinal NLL works", {
 })
 
 test_that("model with fixed weight", {
-  
+
   data("wine", package = "ordinal")
   m <- deeptrafo(response ~ temp, data = wine,
                  weight_options = weight_control(
-                   warmstart_weights = list(list(), list("temp" = 0))
+                   warmstart_weights = list(list(), list(), list("temp" = 0))
                    )
                  )
-  
+  expect_equal(coef(m, which_param = "h2")$temp, matrix(0))
+
 })

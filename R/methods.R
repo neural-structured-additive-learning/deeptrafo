@@ -248,3 +248,20 @@ map_param_string_to_index <- function(which_param)
 
 }
 
+#' @method logLik deeptrafo
+#' @export
+logLik.deeptrafo <- function(
+  object,
+  y = NULL,
+  newdata = NULL,
+  convert_fun = sum,
+  ...
+)
+{
+  if (is.null(newdata)) {
+    y <- object$init_params$y
+    y_pred <- fitted(object)
+  }
+
+ - convert_fun(object$model$loss(object$init_params$y, fitted(object))$numpy())
+}
