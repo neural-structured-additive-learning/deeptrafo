@@ -454,7 +454,7 @@ nll_ordinal <- function(base_distribution = "logistic") {
       t2 <- tf_stride_cols(y_true, ncol(y_true))
       lik <- t1 * tfd_cdf(bd, upr) + t2 * (1 - tfd_cdf(bd, lwr)) +
         (1 - t1) * (1 - t2) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
-      neglogLik <- - tf$math$log(lik)
+      neglogLik <- - tf$math$reduce_sum(tf$math$log(lik))
       return(neglogLik)
     }
   )
