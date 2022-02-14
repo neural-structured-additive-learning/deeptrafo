@@ -1,5 +1,7 @@
 context("Test deeptrafo")
 
+devtools::load_all("../../../deepregression/")
+
 check_methods <- function(m, newdata)
 {
 
@@ -84,12 +86,13 @@ test_that("unconditional ordinal model", {
 
 test_that("ordinal model", {
 
-  dat <- data.frame(y = ordered(sample(1:6, 100, replace = TRUE)),
+  ncl <- 6L
+  dat <- data.frame(y = ordered(sample(1:ncl, 100, replace = TRUE)),
                     x = rnorm(100), z = rnorm(100))
   fml <- y ~ s(z)
   m <- deeptrafo(fml, dat)
   hist <- fit(m, epochs = 2L)
-  expect_equal(m$init_params$trafo_options$order_bsp, 5L)
+  expect_equal(m$init_params$trafo_options$order_bsp, ncl - 1L)
   expect_false(any(is.nan(hist$metrics$loss)))
 
 })
@@ -108,9 +111,10 @@ test_that("autoregressive transformation model", {
 })
 
 test_that("ordinal NLL works", {
+
   df <- data.frame(y = ordered(rep(1:5, each = 5)))
   m <- deeptrafo(y ~ 1, data = df)
-  fit(m, validation_split = NULL, epochs = 1e3, batch_size = nrow(df))
+  fit(m, validation_split = NULL, epochs = 10, batch_size = nrow(df))
   coef(m); coef(m, "h2")
 
   cf0 <- qlogis((1:4)/5)
@@ -120,7 +124,7 @@ test_that("ordinal NLL works", {
 
   tmp <- get_weights(m$model)
   tmp[[2]][] <- 0.0
-  tmp[[1]][] <- sp_inv(cf)
+  tmp[[1]][] <- sp_inv(cf0)
   set_weights(m$model, tmp)
 
   cf <- coef(m, which = "h1")
@@ -130,4 +134,5 @@ test_that("ordinal NLL works", {
 
   expect_equal(ll0, ll, tolerance = 1e-5)
   expect_equal(cf0, unname(unlist(cf))[1:4], tol = 1e-4)
+
 })
