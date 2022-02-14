@@ -9,7 +9,7 @@ deeptrafo(
   data,
   lag_formula = NULL,
   ordered = is.ordered(data[[all.vars(fml)[1]]]),
-  order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]), 10L),
+  order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]) - 1L, 10L),
   addconst_interaction = NULL,
   split_between_h1_h2 = 1L,
   atm_toplayer = function(x) layer_dense(x, units = 1L),
@@ -63,16 +63,12 @@ Fitting Deep Conditional Transformation Models
 }
 \examples{
 data("wine", package = "ordinal")
+wine$noise <- rnorm(nrow(wine))
 fml <- rating ~ 1
-inps <- list(
-  eval_ord_upr(model.response(model.frame(fml, wine))),
-  eval_ord_lwr(model.response(model.frame(fml, wine))),
-  matrix(1, nrow = nrow(wine)),
-  matrix(1, nrow = nrow(wine))
-)
 m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
 m \%>\% fit(epochs = 100, batch_size = nrow(wine))
-m \%>\% predict(apply_fun = identity)
+predfun <- m \%>\% predict(wine)
+predfun(wine$rating, type = "trafo")
 plot(m)
 coef(m, which_param = "h1")
 coef(m, which_param = "h2")

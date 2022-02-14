@@ -26,24 +26,24 @@ plot.deeptrafo <- function(
 )
 {
 
-  get_weight_fun = if(which_param == "h1") 
+  get_weight_fun = if(which_param == "h1")
     get_weight_by_name_ia else get_weight_by_name
-   
+
   which_param <- map_param_string_to_index(which_param)
-  
+
   class(x) <- class(x)[-1]
   return(plot(x, which = which, which_param = which_param,
-              only_data = only_data, grid_length = grid_length, 
+              only_data = only_data, grid_length = grid_length,
               get_weight_fun = get_weight_fun, ...))
 
 }
 
 get_weight_by_name_ia <- function(x, name, param_nr)
 {
-  
+
   matrix(get_weight_by_name(x, name, param_nr),
          ncol = x$init_params$trafo_options$order_bsp + 1L)
-  
+
 }
 
 #' @param x deeptrafo object
@@ -72,11 +72,11 @@ coef.deeptrafo <- function(
   # else, return lags
   class(object) <- class(object)[-1]
   ret <- coef(object, which_param = which_param, type = type)
-  
+
   if (is_interaction)
-    ret <- lapply(ret, function(r) 
+    ret <- lapply(ret, function(r)
       reshape_softplus_cumsum(r, order_bsp_p1 = get_order_bsp_p1(object)))
-  
+
   return(ret)
 
 }
@@ -109,15 +109,15 @@ predict.deeptrafo <- function(
     type <- match.arg(type)
 
     if(is.null(newdata))
-      newdata <- prepare_data(object$init_params$parsed_formulas_contents, 
+      newdata <- prepare_data(object$init_params$parsed_formulas_contents,
                               gamdata = object$init_params$gamdata$data_trafos)
-    
+
     newdata[[object$init_params$response_varname]] <- y
-    
+
     mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
 
     if(type=="output") return(mod_output)
-    
+
     w_eta <- mod_output[, 1, drop = FALSE]
     aTtheta <- mod_output[, 2, drop = FALSE]
 
@@ -141,21 +141,21 @@ predict.deeptrafo <- function(
     yprimeTrans <- mod_output[, 3, drop = FALSE]
 
     theta <- get_theta(object)
-    
+
     if(grid)
     {
-      
+
       ymat <- lapply(object$init_params$parsed_formulas_contents[[1]],
                      function(pp) pp$predict(newdata))
-      
+
       obspp1 <- object$init_params$trafo_options$order_bsp + 1
       ay <- ymat[[1]] #[,1:obspp1]
       ayprime <- ymat[[2]]
-      xmat <- do.call("cbind", lapply(object$init_params$parsed_formulas_contents[[2]], 
+      xmat <- do.call("cbind", lapply(object$init_params$parsed_formulas_contents[[2]],
                                       function(pp) pp$predict(newdata)))
 
       grid_eval <- t(xmat%*%t(ay%*%theta))
-      
+
       grid_eval <- grid_eval +
         t(as.matrix(w_eta)[,rep(1,nrow(grid_eval))])
 
@@ -203,33 +203,33 @@ predict.deeptrafo <- function(
 #' @rdname methodTrafo
 #'
 fitted.deeptrafo <- function(
-  object, 
-  newdata = NULL, 
-  batch_size = NULL, 
+  object,
+  newdata = NULL,
+  batch_size = NULL,
   convert_fun = as.matrix,
   ...)
 {
 
   if(length(object$init_params$image_var)>0 | !is.null(batch_size)){
 
-    mod_output <- predict_gen(object, newdata, batch_size, 
-                              apply_fun = function(x) x, 
+    mod_output <- predict_gen(object, newdata, batch_size,
+                              apply_fun = function(x) x,
                               convert_fun = convert_fun)
 
   }else{
 
     if(is.null(newdata)){
-      
+
       newdata <- prepare_data(object$init_params$parsed_formulas_contents,
                               gamdata = object$init_params$gamdata$data_trafos)
-    
+
     }else{
-      
+
       newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata,
                                  gamdata = object$init_params$gamdata$data_trafos)
-      
+
     }
-    
+
     mod_output <- object$model(newdata)
 
   }
@@ -240,11 +240,11 @@ fitted.deeptrafo <- function(
 
 map_param_string_to_index <- function(which_param)
 {
-  
+
   switch (which_param,
           "h1" = 2,
           "h2" = 3
   )
-  
+
 }
 
