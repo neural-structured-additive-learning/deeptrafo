@@ -1,7 +1,5 @@
 context("Test deeptrafo")
 
-devtools::load_all("../../../deepregression/")
-
 check_methods <- function(m, newdata)
 {
 
