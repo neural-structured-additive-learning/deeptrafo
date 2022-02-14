@@ -53,7 +53,7 @@ check_methods <- function(m, newdata, test_plots = TRUE)
 
 gen_dat_ord <- function(ncl = 6L) {
   data.frame(y = ordered(sample.int(ncl, 100, replace = TRUE)),
-                    x = rnorm(100), z = rnorm(100))
+                    x = abs(rnorm(100)), z = rnorm(100))
 }
 
 test_ordinal <- function(fml, ...) {
@@ -108,9 +108,10 @@ test_that("ordinal model with smooth effects", {
 test_that("ordinal model with response-varying effects", {
 
   # Monotonicity problem
-  # test_ordinal(y | x ~ s(z))
+  test_ordinal(y | s(x) ~ s(z))
 
   # No monotonocity problem
+  test_ordinal(y | x ~ s(z))
   test_ordinal(y | I(x > 0.5) ~ s(z))
 
 })
