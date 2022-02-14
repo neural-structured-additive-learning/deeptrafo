@@ -106,3 +106,28 @@ test_that("autoregressive transformation model", {
   check_methods(m, newdata = dat)
 
 })
+
+test_that("ordinal NLL works", {
+  df <- data.frame(y = ordered(rep(1:5, each = 5)))
+  m <- deeptrafo(y ~ 1, data = df)
+  fit(m, validation_split = NULL, epochs = 1e3, batch_size = nrow(df))
+  coef(m); coef(m, "h2")
+
+  cf0 <- qlogis((1:4)/5)
+  ll0 <- - nrow(df) * log(1/5)
+
+  sp_inv <- function(x) c(x[1], log(exp(diff(x)) - 1), -Inf)
+
+  tmp <- get_weights(m$model)
+  tmp[[2]][] <- 0.0
+  tmp[[1]][] <- sp_inv(cf)
+  set_weights(m$model, tmp)
+
+  cf <- coef(m, which = "h1")
+
+  tloss <- nll_ordinal()
+  ll <- tloss(t(sapply(df$y, eval_ord)), fitted(m))$numpy()
+
+  expect_equal(ll0, ll, tolerance = 1e-5)
+  expect_equal(cf0, unname(unlist(cf))[1:4], tol = 1e-4)
+})
