@@ -1,6 +1,6 @@
 context("Test deeptrafo")
 
-check_methods <- function(m, newdata)
+check_methods <- function(m, newdata, test_plots = TRUE)
 {
 
   # fit
@@ -8,10 +8,12 @@ check_methods <- function(m, newdata)
   expect_is(hist, "keras_training_history")
 
   # plot
-  pret1 <- plot(m, which_param = "h1")
-  expect_is(pret1, "list")
-  pret2 <- plot(m, which_param = "h2")
-  expect_is(pret2, "list")
+  if (test_plots) {
+    pret1 <- plot(m, which_param = "h1")
+    expect_is(pret1, "list")
+    pret2 <- plot(m, which_param = "h2")
+    expect_is(pret2, "list")
+  }
 
   # coef
   ch1 <- coef(m, which = "h1")
@@ -47,7 +49,22 @@ check_methods <- function(m, newdata)
   i <- trf_fun(newdata$y, type = "cdf", grid=TRUE)
   expect_equal(dim(i), c(this_n,this_n))
 
+}
 
+gen_dat_ord <- function(ncl = 6L) {
+  data.frame(y = ordered(sample.int(ncl, 100, replace = TRUE)),
+                    x = rnorm(100), z = rnorm(100))
+}
+
+test_ordinal <- function(fml, ...) {
+  ncl <- 6L
+  dat <- gen_dat_ord(ncl)
+  m <- deeptrafo(fml, dat, ...)
+  expect_false(is.nan(m$model$loss(t(sapply(dat$y, eval_ord)), fitted(m))$numpy()))
+  hist <- fit(m, epochs = 2L)
+  expect_equal(m$init_params$trafo_options$order_bsp, ncl - 1L)
+  expect_false(any(is.nan(hist$metrics$loss)))
+  check_methods(m, dat, test_plots = FALSE)
 }
 
 test_that("simple additive model", {
@@ -72,26 +89,35 @@ test_that("unconditional additive model", {
 
 test_that("unconditional ordinal model", {
 
-  dat <- data.frame(y = ordered(sample(1:6, 100, replace = TRUE)),
-                    x = rnorm(100), z = rnorm(100))
-  fml <- y ~ 1
-  m <- deeptrafo(fml, dat)
-  hist <- fit(m, epochs = 2L)
-  expect_equal(m$init_params$trafo_options$order_bsp, 5L)
-  expect_false(any(is.nan(hist$metrics$loss)))
+  test_ordinal(y ~ 1)
 
 })
 
 test_that("ordinal model", {
 
-  ncl <- 6L
-  dat <- data.frame(y = ordered(sample(1:ncl, 100, replace = TRUE)),
-                    x = rnorm(100), z = rnorm(100))
-  fml <- y ~ s(z)
-  m <- deeptrafo(fml, dat)
-  hist <- fit(m, epochs = 2L)
-  expect_equal(m$init_params$trafo_options$order_bsp, ncl - 1L)
-  expect_false(any(is.nan(hist$metrics$loss)))
+  test_ordinal(y ~ x)
+
+})
+
+test_that("ordinal model with smooth effects", {
+
+  test_ordinal(y ~ s(z))
+
+})
+
+test_that("ordinal model with response-varying effects", {
+
+  test_ordinal(y | x ~ s(x))
+
+})
+
+test_that("ordinal model with NN component", {
+
+  nn <- keras_model_sequential() %>%
+    layer_dense(input_shape = 1L, units = 6L, activation = "relu") %>%
+    layer_dense(units = 1L)
+
+  test_ordinal(y ~ nn(x), list_of_deep_models = list(nn = nn))
 
 })
 
