@@ -44,7 +44,7 @@ deeptrafo <- function(
   ordered = is.ordered(data[[all.vars(fml)[1]]]),
   order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]) - 1L, 10L),
   addconst_interaction = NULL,
-  family = "normal",
+  family = ifelse(ordered, "logistic", "normal"),
   monitor_metrics = crps_stdnorm_metric,
   trafo_options = trafo_control(order_bsp = order_bsp,
                                 ordered = ordered),
@@ -152,6 +152,7 @@ deeptrafo <- function(
   )
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
+  ret$init_params$ordered <- ordered
 
   class(ret) <- c("deeptrafo", "deepregression")
   return(ret)
