@@ -66,8 +66,20 @@ test_that("autoregressive transformation model", {
   dat$ylag <- lag(dat$y)
   dat$ylag2 <- lag(dat$y, n=2L)
   dat <- na.omit(dat)
+  fml <- y ~ s(x) | z + s(z)
   m <- deeptrafo(fml, dat, lag_formula = ~ ylag + ylag2)
 
   check_methods(m, newdata = dat)
+  
+})
+
+test_that("model with fixed weight", {
+  
+  data("wine", package = "ordinal")
+  m <- deeptrafo(response ~ temp, data = wine,
+                 weight_options = weight_control(
+                   warmstart_weights = list(list(), list("temp" = 0))
+                   )
+                 )
   
 })
