@@ -41,15 +41,13 @@ deeptrafo <- function(
   formula,
   data,
   lag_formula = NULL,
-  ordered = is.ordered(data[[all.vars(fml)[1]]]),
-  count = is.integer(data[[all.vars(fml)[1]]]),
-  order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]) - 1L, 10L),
+  response_type = get_response_type(data[[all.vars(fml)[1]]]),
+  order_bsp = get_order(response_type, data[[all.vars(fml)[1]]]),
   addconst_interaction = NULL,
-  family = ifelse(ordered | count, "logistic", "normal"),
+  family = ifelse(response_type %in% c("ordered", "count"), "logistic", "normal"),
   monitor_metrics = crps_stdnorm_metric,
   trafo_options = trafo_control(order_bsp = order_bsp,
-                                ordered = ordered,
-                                count = count),
+                                response_type = response_type),
   ...
 )
 {
@@ -106,8 +104,7 @@ deeptrafo <- function(
 
   # define how to get a trafo model from predictor
   from_pred_to_trafo_fun <- from_preds_to_trafo(atm_toplayer = trafo_options$atm_toplayer,
-                                                const_ia = addconst_interaction,
-                                                ordered = trafo_options$ordered)
+                                                const_ia = addconst_interaction)
 
   atm_lag_processor <- atm_lag_processor_factory(rvar)
 
@@ -132,15 +129,8 @@ deeptrafo <- function(
   attr(additional_processor, "controls") <- trafo_options
 
   # Loss function
-  if (ordered) {
-    tloss <- nll_ordinal(family)
-    y <- t(sapply(y, eval_ord))
-  } else if (all(is.integer(y))) {
-    tloss <- nll_count(family)
-    y <- cbind(as.numeric(y == 0), y)
-  } else {
-    tloss <- neg_ll_trafo(family)
-  }
+  tloss <- get_loss(response_type, family)
+  y <- eval_response(y, response_type)
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
@@ -162,7 +152,7 @@ deeptrafo <- function(
   )
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
-  ret$init_params$ordered <- ordered
+  ret$init_params$response_type <- response_type
 
   class(ret) <- c("deeptrafo", "deepregression")
   return(ret)
@@ -332,8 +322,8 @@ atm_init <- function(atmnr, h1nr)
     function(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr,
              gaminputs)
       subnetwork_init(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr,
-                      pp_input_subset = atmnr,
-                      pp_layer_subset = h1nr,
+                      # pp_input_subset = atmnr,
+                      # pp_layer_subset = h1nr,
                       gaminputs = gaminputs,
                       summary_layer = layer_concatenate_identity)
   )
@@ -352,8 +342,7 @@ atm_init <- function(atmnr, h1nr)
 #' @export
 from_preds_to_trafo <- function(
   atm_toplayer = function(x) layer_dense(x, units = 1L),
-  const_ia = NULL,
-  ordered = FALSE
+  const_ia = NULL
 )
 {
 

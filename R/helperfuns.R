@@ -193,17 +193,17 @@ MonoMultiLayer <- R6::R6Class("MonoMultiLayer",
                                 kernel = NULL,
 
                                 dim_bsp = NULL,
-                                
+
                                 kernel_regularizer = NULL,
-                                
+
                                 # input_dim = NULL,
-                                
+
                                 initializer = NULL,
 
                                 initialize = function(output_dim, dim_bsp,
-                                                      # input_dim, 
+                                                      # input_dim,
                                                       kernel_regularizer,
-                                                      initializer = initializer_random_normal()) 
+                                                      initializer = initializer_random_normal())
                                 {
                                   self$output_dim <- output_dim
                                   self$dim_bsp <- dim_bsp
@@ -257,7 +257,7 @@ layer_combined_mono <- function(object,
                                 kernel_regularizer = NULL
                                 )
 {
-  
+
   function(object){
     objects <- tf$split(object, num_or_size_splits = 2L, axis=1L)
     tf$keras$layers$concatenate(lapply(1:length(objects), function(i)
@@ -271,7 +271,7 @@ layer_combined_mono <- function(object,
       )
     ))
   }
-  
+
 }
 
 
@@ -481,43 +481,43 @@ get_order_bsp_p1 <- function(x)
 }
 
 split_interaction_terms <- function(term){
-  
+
   splt <- trimws(strsplit(term, "%I%")[[1]])
   splt[1] <- paste0(splt[1], ")")
   splt[2] <- substr(splt[2], 1, nchar(splt[2])-1)
   return(splt)
-  
+
 }
 
 row_tensor <- function(A,B)
 {
-  
+
   kronecker(A, matrix(1, ncol = ncol(B))) *
     kronecker(matrix(1, ncol = ncol(A)), B)
-  
+
 }
 
 row_tensor_by_basis <- function(X, basis_dim){
-  
+
   row_tensor(X[,1:basis_dim],X[,(basis_dim+1):ncol(X)])
-  
+
 }
 
 h1_plotfun <- function(dim_basis){
-  
+
   return(
     function(pp, weights, grid_length = 40){
-      
+
       org_values <- pp$get_org_values()
-      
+
       BX <- row_tensor_by_basis(pp$data_trafo(), dim_basis)
-      
+
       plotData <-
         list(org_feature_name = pp$term,
              value = do.call("cbind", org_values),
              design_mat = BX,
              coef = weights)
-      
+
       this_x <- do.call(seq, c(as.list(range(plotData$value[,1])),
                                list(l=grid_length)))
       this_y <- do.call(seq, c(as.list(range(plotData$value[,2])),
@@ -529,18 +529,58 @@ h1_plotfun <- function(dim_basis){
       plotData$y <- this_y
       plotData$partial_effect <- row_tensor_by_basis(
         pp$predict_trafo(newdata = df), dim_basis) %*% weights
-      
+
       return(plotData)
-      
+
     }
-      
+
   )
-  
+
 }
 
 get_theta <- function(object)
 {
-  
+
   do.call("cbind", coef(object, which_param = "h1"))
-  
+
+}
+
+get_response_type <- function(y) {
+  ret <- if (is.ordered(y))
+    "ordered"
+  else if (is.integer(y))
+    "count"
+  # else if (is.Surv(y))
+  #   "survival"
+  else
+    "continuous"
+  ret
+}
+
+get_order <- function(response_type, y) {
+  ret <- if (response_type == "ordered")
+    nlevels(y) - 1L
+  else
+    10
+  ret
+}
+
+get_loss <- function(response_type, family) {
+  switch(
+    response_type,
+    "continuous" = neg_ll_trafo(family),
+    "ordered" = nll_ordinal(family),
+    "count" = nll_count(family),
+    "survival" = stop("Not implemented yet.")
+  )
+}
+
+eval_response <- function(y, response_type) {
+  switch(
+    response_type,
+    "continuous" = y,
+    "ordered" = t(sapply(y, eval_ord)),
+    "count" = cbind(as.numeric(y == 0L), y),
+    "survival" = stop("Not implemented yet.")
+  )
 }
