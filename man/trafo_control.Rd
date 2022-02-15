@@ -12,7 +12,8 @@ trafo_control(
   penalize_bsp = 0,
   order_bsp_penalty = 2,
   tf_bsps = FALSE,
-  ordered = FALSE
+  response_type = c("continuous", "ordered", "survival", "count"),
+  atm_toplayer = function(x) layer_dense(x, units = 1L)
 )
 }
 \arguments{
@@ -32,6 +33,11 @@ penalties}
 
 \item{tf_bsps}{logical; whether to use a TensorFlow implementation of the Bernstein polynomial
 functions}
+
+\item{response_type}{character; type of response can be continuous, ordered,
+survival, or count}
+
+\item{atm_toplayer}{function; a function specifying the layer on top of ATM lags}
 }
 \description{
 Options for transformation models
