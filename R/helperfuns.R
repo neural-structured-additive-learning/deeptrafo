@@ -545,13 +545,14 @@ get_theta <- function(object)
 
 }
 
+#' @importFrom survival is.Surv
 get_response_type <- function(y) {
   ret <- if (is.ordered(y))
     "ordered"
   else if (is.integer(y))
     "count"
-  # else if (is.Surv(y))
-  #   "survival"
+  else if (is.Surv(y))
+    "survival"
   else
     "continuous"
   ret
@@ -571,7 +572,7 @@ get_loss <- function(response_type, family) {
     "continuous" = neg_ll_trafo(family),
     "ordered" = nll_ordinal(family),
     "count" = nll_count(family),
-    "survival" = stop("Not implemented yet.")
+    "survival" = nll_surv(family)
   )
 }
 
@@ -581,6 +582,6 @@ eval_response <- function(y, response_type) {
     "continuous" = y,
     "ordered" = t(sapply(y, eval_ord)),
     "count" = cbind(as.numeric(y == 0L), y),
-    "survival" = stop("Not implemented yet.")
+    "survival" = as.matrix(y)
   )
 }

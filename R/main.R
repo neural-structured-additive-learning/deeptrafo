@@ -44,7 +44,7 @@ deeptrafo <- function(
   response_type = get_response_type(data[[all.vars(fml)[1]]]),
   order_bsp = get_order(response_type, data[[all.vars(fml)[1]]]),
   addconst_interaction = NULL,
-  family = ifelse(response_type %in% c("ordered", "count"), "logistic", "normal"),
+  family = ifelse(response_type != "continuous", "logistic", "normal"),
   monitor_metrics = crps_stdnorm_metric,
   trafo_options = trafo_control(order_bsp = order_bsp,
                                 response_type = response_type),
@@ -498,6 +498,54 @@ nll_count <- function(base_distribution = "logistic") {
       lik <- t1 * tfd_cdf(bd, upr) +
         (1 - t1) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
       neglogLik <- - tf$math$log(lik)
+      return(neglogLik)
+    }
+  )
+
+}
+
+#' negative log-likelihood for potentially right-censored survival responses
+#'
+#' @param base_distribution base or error distribution
+#'
+#' @return a function for the negative log-likelihood with outcome \code{y}
+#' and transformation model \code{model}. The transformation model is represented
+#' by a list of two, with first element a list of model outputs
+#' that are summed up and evaluated with the log-probability of the
+#' \code{basis_dist}, and second element a single-column tensor
+#' representing the determinant of the Jacobian and transformed
+#' using the log
+#'
+#' @import deepregression
+#' @export
+#'
+#'
+nll_surv <- function(base_distribution) {
+
+  if (is.character(base_distribution)) {
+    bd <- switch(base_distribution,
+                 "normal" = tfd_normal(loc = 0, scale = 1),
+                 "logistic" = tfd_logistic(loc = 0, scale = 1)
+    )
+  } else {
+    bd <- base_distribution
+  }
+
+  return(
+    function(y_true, y_pred){
+
+      event <- tf_stride_cols(y_true, 2L)
+
+      trafo <- layer_add(list(tf_stride_cols(y_pred, 1L),
+                              tf_stride_cols(y_pred, 2L)))
+
+      trafo_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 3L),
+                                                  1e-8, Inf))
+
+      ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
+      ll_right <- tf$math$log(tfd_cdf(bd, trafo))
+
+      neglogLik <- - event * ll_exact + (1 - event) * ll_right
       return(neglogLik)
     }
   )
