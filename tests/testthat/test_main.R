@@ -58,7 +58,7 @@ check_methods <- function(m, newdata, test_plots = TRUE)
 
 dgp_ordinal <- function(ncl = 6L, n = 100) {
   data.frame(y = ordered(sample.int(ncl, n, replace = TRUE)),
-                    x = abs(rnorm(n)), z = rnorm(n))
+             x = abs(rnorm(n)), z = rnorm(n))
 }
 
 dgp_count <- function(n = 100) {
