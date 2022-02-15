@@ -11,8 +11,8 @@ deeptrafo(
   response_type = get_response_type(data[[all.vars(fml)[1]]]),
   order_bsp = get_order(response_type, data[[all.vars(fml)[1]]]),
   addconst_interaction = NULL,
-  family = ifelse(response_type \%in\% c("ordered", "count"), "logistic", "normal"),
-  monitor_metrics = crps_stdnorm_metric,
+  family = "logistic",
+  monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order_bsp, response_type = response_type),
   ...
 )
