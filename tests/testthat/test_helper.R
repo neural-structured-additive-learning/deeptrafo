@@ -1,7 +1,23 @@
 context("Test deeptrafo helperfunctions")
 
+# response helpers --------------------------------------------------------
+
+test_that("response types", {
+  expect_equal(get_response_type(ordered(1)), "ordered")
+  expect_equal(get_response_type(1L), "count")
+  expect_equal(get_response_type(1.1), "continuous")
+})
+
+test_that("eval response types", {
+  expect_equal(eval_response(ordered(1:2), "ordered"), diag(2))
+  expect_equal(eval_response(0:2, "count"), cbind(c(1, 0, 0), y = 0:2))
+  expect_equal(eval_response(c(1.1, 3.2), "continuous"), c(1.1, 3.2))
+})
+
+# ATM helpers -------------------------------------------------------------
+
 test_that("atm_lag helpers", {
-  
+
   # form_lin <- ~ 1 + lag1 + lag2
   # form_nlin <- ~ 1 + s(lag1) + s(lag2)
   # form_mixed <- ~ 1 + s(lag1) + lag2
@@ -12,7 +28,7 @@ test_that("atm_lag helpers", {
   # form_mixednl <- ~ te(lag1, lag2) + s(lag3)
   # form_lass <- ~ lasso(lag1, lag2, lag3)
   # form_lass2 <- ~ lasso(lag1 + lag2 + lag3)
-  # 
+  #
   # res_form_lin <- apply_atm_lags(form_lin)
   # res_form_nlin <- apply_atm_lags(form_nlin)
   # res_form_mixed <- apply_atm_lags(form_mixed)
@@ -23,7 +39,7 @@ test_that("atm_lag helpers", {
   # res_form_mixednl <- apply_atm_lags(form_mixednl)
   # res_form_lass <- apply_atm_lags(form_lass)
   # res_form_lass2 <- apply_atm_lags(form_lass2)
-  # 
+  #
   # expect_equal(res_form_lin[[1]] , c("lag1", "lag2"))
   # expect_equal(res_form_nlin[[1]] , c("lag1", "lag2"))
   # expect_equal(res_form_mixed[[1]] , c("lag1", "lag2"))
@@ -34,9 +50,9 @@ test_that("atm_lag helpers", {
   # expect_equal(res_form_mixednl[[1]] , c("lag1", "lag2", "lag3"))
   # expect_equal(res_form_lass[[1]] , c("lag1", "lag2", "lag3"))
   # expect_equal(res_form_lass2[[1]] , c("lag1", "lag2", "lag3"))
-  # 
-  # 
-  
-  
+  #
+  #
+
+
 })
 

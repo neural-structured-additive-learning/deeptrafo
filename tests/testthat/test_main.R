@@ -182,7 +182,7 @@ test_that("ordinal NLL works", {
   tloss <- nll_ordinal()
   ll <- tloss(t(sapply(df$y, eval_ord)), fitted(m))$numpy()
 
-  expect_equal(ll0, ll, tolerance = 1e-5)
+  expect_equal(ll0, sum(ll), tolerance = 1e-5)
   expect_equal(cf0, unname(unlist(cf))[1:4], tol = 1e-4)
 
 })
