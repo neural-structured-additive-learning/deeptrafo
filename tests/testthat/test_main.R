@@ -56,21 +56,47 @@ check_methods <- function(m, newdata, test_plots = TRUE)
 
 }
 
-gen_dat_ord <- function(ncl = 6L) {
-  data.frame(y = ordered(sample.int(ncl, 100, replace = TRUE)),
-                    x = abs(rnorm(100)), z = rnorm(100))
+dgp_ordinal <- function(ncl = 6L, n = 100) {
+  data.frame(y = ordered(sample.int(ncl, n, replace = TRUE)),
+                    x = abs(rnorm(n)), z = rnorm(n))
 }
 
-test_ordinal <- function(fml, ...) {
-  ncl <- 6L
-  dat <- gen_dat_ord(ncl)
-  m <- deeptrafo(fml, dat, ...)
-  expect_false(is.nan(m$model$loss(t(sapply(dat$y, eval_ord)), fitted(m))$numpy()))
-  hist <- fit(m, epochs = 2L)
-  expect_equal(m$init_params$trafo_options$order_bsp, ncl - 1L)
-  expect_false(any(is.nan(hist$metrics$loss)))
-  check_methods(m, dat, test_plots = FALSE)
+dgp_count <- function(n = 100) {
+  data.frame(
+    y = sample.int(50, size = n, replace = TRUE),
+    x = abs(rnorm(n)),
+    z = rnorm(n),
+    f = factor(sample.int(2, size = n, replace = TRUE))
+  )
 }
+
+test_models <- function(fml, which = c("ordinal", "count"), ...) {
+
+  which <- match.arg(which)
+
+  DGP <- switch(which,
+    "ordinal" = dgp_ordinal,
+    "count" = dgp_count
+  )
+
+  dat <- DGP()
+  m <- deeptrafo(fml, dat, ...)
+
+  if (which == "ordered")
+    expect_false(any(is.nan(m$model$loss(t(sapply(dat$y, eval_ord)),
+                                         fitted(m))$numpy())))
+  hist <- fit(m, epochs = 2L)
+
+  if (which == "ordered")
+    expect_equal(m$init_params$trafo_options$order_bsp, ncl - 1L)
+
+  expect_false(any(is.nan(hist$metrics$loss)))
+
+  check_methods(m, dat, test_plots = FALSE)
+
+}
+
+# Additive models ---------------------------------------------------------
 
 test_that("simple additive model", {
 
@@ -92,33 +118,35 @@ test_that("unconditional additive model", {
 
 })
 
+# Ordinal -----------------------------------------------------------------
+
 test_that("unconditional ordinal model", {
 
-  test_ordinal(y ~ 1)
+  test_models(y ~ 1)
 
 })
 
 test_that("ordinal model", {
 
-  test_ordinal(y ~ x)
+  test_models(y ~ x)
 
 })
 
 test_that("ordinal model with smooth effects", {
 
-  test_ordinal(y ~ s(z))
+  test_models(y ~ s(z))
 
 })
 
 test_that("ordinal model with response-varying effects", {
 
-  test_ordinal(y | x ~ s(z))
+  test_models(y | x ~ s(z))
 
 })
 
 test_that("monotonicity problem (ordinal case)", {
 
-  test_ordinal(y | s(x) ~ z)
+  test_models(y | s(x) ~ z)
 
 })
 
@@ -128,20 +156,7 @@ test_that("ordinal model with NN component", {
     layer_dense(input_shape = 1L, units = 6L, activation = "relu") %>%
     layer_dense(units = 1L)
 
-  test_ordinal(y ~ nn(x), list_of_deep_models = list(nn = nn))
-
-})
-
-test_that("autoregressive transformation model", {
-
-  dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
-  dat$ylag <- lag(dat$y)
-  dat$ylag2 <- lag(dat$y, n=2L)
-  dat <- na.omit(dat)
-  fml <- y ~ s(x) | z + s(z)
-  m <- deeptrafo(fml, dat, lag_formula = ~ ylag + ylag2)
-
-  check_methods(m, newdata = dat)
+  test_models(y ~ nn(x), list_of_deep_models = list(nn = nn))
 
 })
 
@@ -171,6 +186,65 @@ test_that("ordinal NLL works", {
   expect_equal(cf0, unname(unlist(cf))[1:4], tol = 1e-4)
 
 })
+
+# Count models ------------------------------------------------------------
+
+test_that("unconditional count model", {
+
+  test_models(y ~ 1, which = "count")
+
+})
+
+test_that("count model", {
+
+  test_models(y ~ x, which = "count")
+
+})
+
+test_that("count model with smooth effects", {
+
+  test_models(y ~ s(z), which = "count")
+
+})
+
+test_that("count model with response-varying effects", {
+
+  test_models(y | f ~ s(z), which = "count")
+
+})
+
+test_that("monotonicity problem (count case)", {
+
+  test_models(y | s(x) ~ z, which = "count")
+
+})
+
+test_that("count model with NN component", {
+
+  nn <- keras_model_sequential() %>%
+    layer_dense(input_shape = 1L, units = 6L, activation = "relu") %>%
+    layer_dense(units = 1L)
+
+  test_models(y ~ nn(x), list_of_deep_models = list(nn = nn), which = "count")
+
+})
+
+# Autoregressive models ---------------------------------------------------
+
+test_that("autoregressive transformation model", {
+
+  dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+  dat$ylag <- lag(dat$y)
+  dat$ylag2 <- lag(dat$y, n=2L)
+  dat <- na.omit(dat)
+  fml <- y ~ s(x) | z + s(z)
+  m <- deeptrafo(fml, dat, lag_formula = ~ ylag + ylag2)
+
+  check_methods(m, newdata = dat)
+
+})
+
+# Misc --------------------------------------------------------------------
 
 test_that("model with fixed weight", {
 
