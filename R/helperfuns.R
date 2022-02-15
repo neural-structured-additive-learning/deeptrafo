@@ -545,14 +545,13 @@ get_theta <- function(object)
 
 }
 
-#' @importFrom survival is.Surv
 get_response_type <- function(y) {
   ret <- if (is.ordered(y))
     "ordered"
   else if (is.integer(y))
     "count"
-  else if (is.Surv(y))
-    "survival"
+  # else if (is.Surv(y))
+  #   "survival"
   else
     "continuous"
   ret
