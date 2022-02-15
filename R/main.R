@@ -33,7 +33,8 @@
 #' plot(m)
 #' coef(m, which_param = "h1")
 #' coef(m, which_param = "h2")
-#'
+#' 
+#' @importFrom mlt R
 #' @export
 #' @details
 #'
