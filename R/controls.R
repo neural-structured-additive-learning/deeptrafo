@@ -11,7 +11,8 @@
 #'     penalties
 #' @param tf_bsps logical; whether to use a TensorFlow implementation of the Bernstein polynomial
 #'     functions
-#' @param ordered logical; TODO->LK
+#' @param response_type character; type of response can be continuous, ordered,
+#'     survival, or count
 #' @param atm_toplayer function; a function specifying the layer on top of ATM lags
 #' @export
 #'
@@ -22,8 +23,11 @@ trafo_control <- function(order_bsp = 10L,
                           penalize_bsp = 0,
                           order_bsp_penalty = 2,
                           tf_bsps = FALSE,
-                          ordered = FALSE,
+                          response_type = c("continuous", "ordered", "survival", "count"),
                           atm_toplayer = function(x) layer_dense(x, units = 1L)) {
+
+  response_type <- match.arg(response_type)
+
   # define support (either function or dummy function outputting the supplied range)
   if (!is.function(support)) {
 
@@ -63,7 +67,13 @@ trafo_control <- function(order_bsp = 10L,
 
   }
 
-  if (ordered) {
+  if (response_type == "count") {
+    y_basis_fun_prime <- function(y, orderbsp = order_bsp, suppy = supp(y)) {
+      eval_bsp(y - 1L, order = orderbsp, supp = suppy)
+    }
+  }
+
+  if (response_type == "ordered") {
     y_basis_fun <- function(y, orderbsp = order_bsp, suppy = suppy) {
       eval_ord_upr(y)
     }
@@ -79,7 +89,7 @@ trafo_control <- function(order_bsp = 10L,
          y_basis_fun_prime = y_basis_fun_prime,
          penalize_bsp = penalize_bsp,
          order_bsp_penalty = order_bsp_penalty,
-         ordered = ordered,
+         response_type = response_type,
          order_bsp = order_bsp,
          atm_toplayer = atm_toplayer,
          supp = supp)

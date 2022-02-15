@@ -8,20 +8,18 @@ deeptrafo(
   formula,
   data,
   lag_formula = NULL,
-  ordered = is.ordered(data[[all.vars(fml)[1]]]),
-  order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]) - 1L, 10L),
+  response_type = get_response_type(data[[all.vars(fml)[1]]]),
+  order_bsp = get_order(response_type, data[[all.vars(fml)[1]]]),
   addconst_interaction = NULL,
-  split_between_h1_h2 = 1L,
-  atm_toplayer = function(x) layer_dense(x, units = 1L),
-  family = "normal",
-  monitor_metrics = crps_stdnorm_metric,
-  trafo_options = trafo_control(order_bsp = order_bsp, ordered = ordered),
+  family = "logistic",
+  monitor_metrics = NULL,
+  trafo_options = trafo_control(order_bsp = order_bsp, response_type = response_type),
   ...
 )
 }
 \arguments{
 \item{formula}{Formula specifying the outcome, shift, interaction and shared
-terms as \code{response ~ shifting | interacting | shared}}
+terms as \code{response | interacting ~ shifting | shared}}
 
 \item{data}{list or data.frame with data; must include y as column}
 
@@ -36,10 +34,6 @@ If \code{NULL}, terms are left unchanged. If 0 and predictors have negative valu
 design matrix, the minimum value of all predictors is added to ensure positivity.
 If > 0, the minimum value plus the \code{addconst_interaction} is added to each predictor
 in the interaction term.}
-
-\item{split_between_h1_h2}{integer; for shared layer use
-defines how many of the last layer's hidden units are added to the h2
-term (while the rest is used for the h2 term)}
 
 \item{family, }{tfd_distribution or string; the base distribution for
 transformation models. If string, can be \code{"normal"} or \code{"logistic"}.}

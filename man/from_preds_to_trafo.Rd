@@ -6,15 +6,11 @@
 \usage{
 from_preds_to_trafo(
   atm_toplayer = function(x) layer_dense(x, units = 1L),
-  split = 1L,
-  const_ia = NULL,
-  ordered = FALSE
+  const_ia = NULL
 )
 }
 \arguments{
 \item{atm_toplayer}{function to be applied on top of the transformed lags}
-
-\item{split}{see \code{split_between_h1_h2} from \code{?deeptrafo}}
 
 \item{const_ia}{see \code{addconst_interaction} from \code{?deeptrafo}
 \code{deepregression}}

@@ -10,7 +10,7 @@
 \method{plot}{deeptrafo}(
   x,
   which = NULL,
-  which_param = "h1",
+  which_param = "h2",
   only_data = FALSE,
   grid_length = 40,
   ...

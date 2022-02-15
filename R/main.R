@@ -41,13 +41,13 @@ deeptrafo <- function(
   formula,
   data,
   lag_formula = NULL,
-  ordered = is.ordered(data[[all.vars(fml)[1]]]),
-  order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]) - 1L, 10L),
+  response_type = get_response_type(data[[all.vars(fml)[1]]]),
+  order_bsp = get_order(response_type, data[[all.vars(fml)[1]]]),
   addconst_interaction = NULL,
-  family = ifelse(ordered, "logistic", "normal"),
-  monitor_metrics = crps_stdnorm_metric,
+  family = "logistic",
+  monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order_bsp,
-                                ordered = ordered),
+                                response_type = response_type),
   ...
 )
 {
@@ -90,6 +90,7 @@ deeptrafo <- function(
 
   # Extract response variable
   y <- model.response(model.frame(formula(fml, lhs = 1, rhs = 0), data = data))
+  y <- response(y)
 
   # check for ATMs
   if(!is.null(lag_formula)){
@@ -104,8 +105,7 @@ deeptrafo <- function(
 
   # define how to get a trafo model from predictor
   from_pred_to_trafo_fun <- from_preds_to_trafo(atm_toplayer = trafo_options$atm_toplayer,
-                                                const_ia = addconst_interaction,
-                                                ordered = trafo_options$ordered)
+                                                const_ia = addconst_interaction)
 
   atm_lag_processor <- atm_lag_processor_factory(rvar)
 
@@ -129,8 +129,8 @@ deeptrafo <- function(
 
   attr(additional_processor, "controls") <- trafo_options
 
-  tloss <- ifelse(trafo_options$ordered, nll_ordinal(family), neg_ll_trafo(family))
-  if (ordered) y <- t(sapply(y, eval_ord))
+  # Loss function
+  tloss <- get_loss(response_type, family)
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
@@ -152,7 +152,7 @@ deeptrafo <- function(
   )
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
-  ret$init_params$ordered <- ordered
+  ret$init_params$response_type <- response_type
 
   class(ret) <- c("deeptrafo", "deepregression")
   return(ret)
@@ -168,7 +168,8 @@ h1_init <- function(yterms, h1pred)
 {
   return(
     function(pp, deep_top, orthog_fun, split_fun, shared_layers,
-             param_nr, selectfun_in, selectfun_lay, gaminputs, summary_layer=NULL){
+             param_nr, selectfun_in, selectfun_lay, gaminputs,
+             summary_layer = NULL){
 
       # instead of passing the respective pp,
       # subsetting is done within subnetwork_init
@@ -322,8 +323,8 @@ atm_init <- function(atmnr, h1nr)
     function(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr,
              gaminputs)
       subnetwork_init(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr,
-                      pp_input_subset = atmnr,
-                      pp_layer_subset = h1nr,
+                      # pp_input_subset = atmnr,
+                      # pp_layer_subset = h1nr,
                       gaminputs = gaminputs,
                       summary_layer = layer_concatenate_identity)
   )
@@ -342,8 +343,7 @@ atm_init <- function(atmnr, h1nr)
 #' @export
 from_preds_to_trafo <- function(
   atm_toplayer = function(x) layer_dense(x, units = 1L),
-  const_ia = NULL,
-  ordered = FALSE
+  const_ia = NULL
 )
 {
 
@@ -354,7 +354,7 @@ from_preds_to_trafo <- function(
     # aPrimeTtheta <- tf_stride_cols(list_pred_param$h1pred, 2L)
     h1pred_ncol <- list_pred_param$h1pred$shape[[2]]
     shift_pred <- list_pred_param$h2
-    if(h1pred_ncol>2){
+    if(h1pred_ncol > 2){
 
       lag_pred <- tf_stride_cols(list_pred_param$h1pred, 3, h1pred_ncol) %>% atm_toplayer()
 
@@ -407,9 +407,9 @@ neg_ll_trafo <- function(base_distribution) {
   return(
     function(y, model){
 
-      first_term <- bd %>% tfd_log_prob(layer_add(list(tf_stride_cols(model,1L),
-                                                       tf_stride_cols(model,2L))))
-      sec_term <- tf$math$log(tf$clip_by_value(tf_stride_cols(model,3L), 1e-8, Inf))
+      first_term <- bd %>% tfd_log_prob(layer_add(list(tf_stride_cols(model, 1L),
+                                                       tf_stride_cols(model, 2L))))
+      sec_term <- tf$math$log(tf$clip_by_value(tf_stride_cols(model, 3L), 1e-8, Inf))
       neglogLik <- -1 * tf$add(first_term, sec_term)
       return(neglogLik)
     }
@@ -420,7 +420,6 @@ neg_ll_trafo <- function(base_distribution) {
 #' negative log-likelihood of an ordinal transformation model
 #'
 #' @param base_distribution base or error distribution
-#' @param K number of classes in the ordinal outcome
 #'
 #' @return a function for the negative log-likelihood with outcome \code{y_true}
 #' and transformation model \code{y_pred}. The transformation model is represented
@@ -452,10 +451,159 @@ nll_ordinal <- function(base_distribution = "logistic") {
       upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
                             tf_stride_cols(y_pred, 1L)))
       t1 <- tf_stride_cols(y_true, 1L)
-      t2 <- tf_stride_cols(y_true, ncol(y_true))
+      t2 <- tf_stride_cols(y_true, 3L)
       lik <- t1 * tfd_cdf(bd, upr) + t2 * (1 - tfd_cdf(bd, lwr)) +
         (1 - t1) * (1 - t2) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
-      neglogLik <- - tf$math$reduce_sum(tf$math$log(lik))
+      neglogLik <- - tf$math$log(lik)
+      return(neglogLik)
+    }
+  )
+
+}
+
+#' negative log-likelihood for count transformation models
+#'
+#' @param base_distribution base or error distribution
+#'
+#' @return a function for the negative log-likelihood with outcome \code{y_true}
+#' and transformation model \code{y_pred}. The transformation model is represented
+#' by a list of two, with first element a list of model outputs
+#' that are summed up and evaluated with the log-probability of the
+#' \code{base_dist}, and second element a single-column tensor
+#' representing the determinant of the Jacobian and transformed
+#' using the log
+#'
+#' @import deepregression
+#' @export
+#'
+#'
+nll_count <- function(base_distribution = "logistic") {
+
+  if (is.character(base_distribution)) {
+    bd <- switch(base_distribution,
+                 "normal" = tfd_normal(loc = 0, scale = 1),
+                 "logistic" = tfd_logistic(loc = 0, scale = 1)
+    )
+  } else {
+    bd <- base_distribution
+  }
+
+  return(
+    function(y_true, y_pred){
+      lwr <- layer_add(list(tf_stride_cols(y_pred, 3L),
+                            tf_stride_cols(y_pred, 1L)))
+      upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
+                            tf_stride_cols(y_pred, 1L)))
+      t1 <- tf_stride_cols(y_true, 1L)
+      lik <- t1 * tfd_cdf(bd, upr) +
+        (1 - t1) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
+      neglogLik <- - tf$math$log(lik)
+      return(neglogLik)
+    }
+  )
+
+}
+
+#' negative log-likelihood for potentially right-censored survival responses
+#'
+#' @param base_distribution base or error distribution
+#'
+#' @return a function for the negative log-likelihood with outcome \code{y}
+#' and transformation model \code{model}. The transformation model is represented
+#' by a list of two, with first element a list of model outputs
+#' that are summed up and evaluated with the log-probability of the
+#' \code{basis_dist}, and second element a single-column tensor
+#' representing the determinant of the Jacobian and transformed
+#' using the log
+#'
+#' @import deepregression
+#' @export
+#'
+#'
+nll_surv <- function(base_distribution) {
+
+  if (is.character(base_distribution)) {
+    bd <- switch(base_distribution,
+                 "normal" = tfd_normal(loc = 0, scale = 1),
+                 "logistic" = tfd_logistic(loc = 0, scale = 1)
+    )
+  } else {
+    bd <- base_distribution
+  }
+
+  return(
+    function(y_true, y_pred){
+
+      cright <- tf_stride_cols(y_true, 3L)
+
+      trafo <- layer_add(list(tf_stride_cols(y_pred, 1L),
+                              tf_stride_cols(y_pred, 2L)))
+
+      trafo_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 3L),
+                                                  1e-8, Inf))
+
+      ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
+      ll_right <- tf$math$log(1 - tfd_cdf(bd, trafo))
+
+      neglogLik <- - ((1 - cright) * ll_exact + cright * ll_right)
+      return(neglogLik)
+    }
+  )
+
+}
+
+#' generic negative log-likelihood for transformation models
+#'
+#' @param base_distribution base distribution / error distribution / inverse link
+#'
+#' @return a function for the negative log-likelihood with outcome \code{y}
+#' and transformation model \code{model}. The transformation model is represented
+#' by a list of two, with first element a list of model outputs
+#' that are summed up and evaluated with the log-probability of the
+#' \code{basis_dist}, and second element a single-column tensor
+#' representing the determinant of the Jacobian and transformed
+#' using the log
+#'
+#' @import deepregression
+#' @export
+#'
+nll <- function(base_distribution) {
+
+  if (is.character(base_distribution)) {
+    bd <- switch(base_distribution,
+                 "normal" = tfd_normal(loc = 0, scale = 1),
+                 "logistic" = tfd_logistic(loc = 0, scale = 1)
+    )
+  } else {
+    bd <- base_distribution
+  }
+
+  return(
+    function(y_true, y_pred){
+
+      cleft <- tf_stride_cols(y_true, 1L)
+      exact <- tf_stride_cols(y_true, 2L)
+      cright <- tf_stride_cols(y_true, 3L)
+      cint <- tf_stride_cols(y_true, 4L)
+
+      # <FIXME>
+      #   Generic NLL needs another basis eval for y_lower.
+      #</FIXME>
+      trafo <- layer_add(list(tf_stride_cols(y_pred, 1L),
+                              tf_stride_cols(y_pred, 2L)))
+      trafo_lwr <- layer_add(list(tf_stride_cols(y_pred, 1L),
+                                  tf_stride_cols(y_pred, 3L)))
+      trafo_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 3L),
+                                                  1e-8, Inf))
+
+      ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
+      ll_right <- tf$math$log(tfd_cdf(bd, trafo))
+      ll_left <- tf$math$log(1 - tfd_cdf(bd, trafo))
+      ll_int <- tf$math$log(tfd_cdf(bd, trafo) - tfd_cdf(bd, trafo_lwr))
+
+      neglogLik <- - (cleft * ll_left + exact * ll_exact + cright * ll_right +
+                        cint * ll_int)
+
       return(neglogLik)
     }
   )
