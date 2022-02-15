@@ -23,6 +23,7 @@ trafo_control <- function(order_bsp = 10L,
                           order_bsp_penalty = 2,
                           tf_bsps = FALSE,
                           ordered = FALSE,
+                          count = FALSE,
                           atm_toplayer = function(x) layer_dense(x, units = 1L)) {
   # define support (either function or dummy function outputting the supplied range)
   if (!is.function(support)) {
@@ -61,6 +62,12 @@ trafo_control <- function(order_bsp = 10L,
       eval_bsp_prime(y, order = orderbsp, supp = suppy)
     }
 
+  }
+
+  if (count) {
+    y_basis_fun_prime <- function(y, orderbsp = order_bsp, suppy = supp(y)) {
+      eval_bsp(y - 1L, order = orderbsp, supp = suppy)
+    }
   }
 
   if (ordered) {

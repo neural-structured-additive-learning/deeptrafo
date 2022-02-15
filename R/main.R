@@ -42,12 +42,14 @@ deeptrafo <- function(
   data,
   lag_formula = NULL,
   ordered = is.ordered(data[[all.vars(fml)[1]]]),
+  count = is.integer(data[[all.vars(fml)[1]]]),
   order_bsp = ifelse(ordered, nlevels(data[[all.vars(fml)[1]]]) - 1L, 10L),
   addconst_interaction = NULL,
-  family = ifelse(ordered, "logistic", "normal"),
+  family = ifelse(ordered | count, "logistic", "normal"),
   monitor_metrics = crps_stdnorm_metric,
   trafo_options = trafo_control(order_bsp = order_bsp,
-                                ordered = ordered),
+                                ordered = ordered,
+                                count = count),
   ...
 )
 {
@@ -129,8 +131,16 @@ deeptrafo <- function(
 
   attr(additional_processor, "controls") <- trafo_options
 
-  tloss <- ifelse(trafo_options$ordered, nll_ordinal(family), neg_ll_trafo(family))
-  if (ordered) y <- t(sapply(y, eval_ord))
+  # Loss function
+  if (ordered) {
+    tloss <- nll_ordinal(family)
+    y <- t(sapply(y, eval_ord))
+  } else if (all(is.integer(y))) {
+    tloss <- nll_count(family)
+    y <- cbind(as.numeric(y == 0), y)
+  } else {
+    tloss <- neg_ll_trafo(family)
+  }
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
@@ -420,7 +430,6 @@ neg_ll_trafo <- function(base_distribution) {
 #' negative log-likelihood of an ordinal transformation model
 #'
 #' @param base_distribution base or error distribution
-#' @param K number of classes in the ordinal outcome
 #'
 #' @return a function for the negative log-likelihood with outcome \code{y_true}
 #' and transformation model \code{y_pred}. The transformation model is represented
@@ -455,7 +464,51 @@ nll_ordinal <- function(base_distribution = "logistic") {
       t2 <- tf_stride_cols(y_true, ncol(y_true))
       lik <- t1 * tfd_cdf(bd, upr) + t2 * (1 - tfd_cdf(bd, lwr)) +
         (1 - t1) * (1 - t2) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
-      neglogLik <- - tf$math$reduce_sum(tf$math$log(lik))
+      neglogLik <- - tf$math$log(lik)
+      return(neglogLik)
+    }
+  )
+
+}
+
+#' negative log-likelihood for count transformation models
+#'
+#' @param base_distribution base or error distribution
+#'
+#' @return a function for the negative log-likelihood with outcome \code{y_true}
+#' and transformation model \code{y_pred}. The transformation model is represented
+#' by a list of two, with first element a list of model outputs
+#' that are summed up and evaluated with the log-probability of the
+#' \code{base_dist}, and second element a single-column tensor
+#' representing the determinant of the Jacobian and transformed
+#' using the log
+#'
+#' @import deepregression
+#' @export
+#'
+#'
+nll_count <- function(base_distribution = "logistic") {
+
+  if (is.character(base_distribution)) {
+    bd <- switch(base_distribution,
+                 "normal" = tfd_normal(loc = 0, scale = 1),
+                 "logistic" = tfd_logistic(loc = 0, scale = 1)
+    )
+  } else {
+    bd <- base_distribution
+  }
+
+  return(
+    function(y_true, y_pred){
+      lwr <- layer_add(list(tf_stride_cols(y_pred, 3L),
+                            tf_stride_cols(y_pred, 1L)))
+      upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
+                            tf_stride_cols(y_pred, 1L)))
+      t1 <- tf_stride_cols(y_true, 1L)
+      ty <- tf_stride_cols(y_true, 2L)
+      lik <- t1 * tfd_cdf(bd, upr) +
+        (1 - t1) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
+      neglogLik <- - tf$math$log(lik)
       return(neglogLik)
     }
   )
