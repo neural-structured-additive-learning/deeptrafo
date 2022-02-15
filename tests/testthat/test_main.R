@@ -180,7 +180,7 @@ test_that("ordinal NLL works", {
   cf <- coef(m, which = "h1")
 
   tloss <- nll_ordinal()
-  ll <- tloss(t(sapply(df$y, eval_ord)), fitted(m))$numpy()
+  ll <- tloss(response(df$y), fitted(m))$numpy()
 
   expect_equal(ll0, sum(ll), tolerance = 1e-5)
   expect_equal(cf0, unname(unlist(cf))[1:4], tol = 1e-4)
@@ -237,7 +237,7 @@ test_that("autoregressive transformation model", {
   dat$ylag <- lag(dat$y)
   dat$ylag2 <- lag(dat$y, n=2L)
   dat <- na.omit(dat)
-  fml <- y ~ s(x) | z + s(z)
+  fml <- y | s(x) ~ z + s(z)
   m <- deeptrafo(fml, dat, lag_formula = ~ ylag + ylag2)
 
   check_methods(m, newdata = dat)
