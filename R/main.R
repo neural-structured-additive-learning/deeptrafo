@@ -1,23 +1,27 @@
-#' Fitting Deep Conditional Transformation Models
+#' Deep Conditional Transformation Models
 #'
-#' @param formula Formula specifying the outcome, shift, interaction and shared
+#' @param formula Formula specifying the response, shift, interaction and shared
 #'     terms as \code{response | interacting ~ shifting | shared}
-#' @param list_of_formulas list of formulas where the first element corresponds to
-#'     a transformation h_1 as specified in DCTMs, the second element to h_2 as specified
-#'     in DCTMs and a third element for shared layers used in both
 #' @param lag_formula formula representing the optional predictor for lags of the
-#'     response as defined for ATMs
-#' @param data list or data.frame with data; must include y as column
-#' @param order_bsp integer; order of Bernstein polynomials
+#'     response as defined for auto-regressive transformation models (ATMs)
+#' @param data \code{list} or \code{data.frame} containing both structured and
+#'     unstructured data
+#' @param response_type character; type of response. One of \code{"continuous"},
+#'     \code{"survival"}, \code{"count"}, \code{"ordered"}
+#' @param order integer; order of Bernstein polynomials or number of levels for
+#'     ordinal responses
 #' @param addconst_interaction positive constant;
 #'     a constant added to the additive predictor of the interaction term.
-#'     If \code{NULL}, terms are left unchanged. If 0 and predictors have negative values in their
-#'     design matrix, the minimum value of all predictors is added to ensure positivity.
-#'     If > 0, the minimum value plus the \code{addconst_interaction} is added to each predictor
-#'     in the interaction term.
-#' @param family, tfd_distribution or string; the base distribution for
-#'     transformation models. If string, can be \code{"normal"} or \code{"logistic"}.
-#' @param trafo_options options for transformation models such as the basis function used
+#'     If \code{NULL}, terms are left unchanged. If 0 and predictors have
+#'     negative values in their design matrix, the minimum value of all predictors
+#'     is added to ensure positivity. If > 0, the minimum value plus the
+#'     \code{addconst_interaction} is added to each predictor in the interaction
+#'     term.
+#' @param family \code{tfd_distribution} or character; the base distribution for
+#'     transformation models. If character, can be \code{"normal"}, \code{"logistic"}
+#'     or \code{"gumbel"}.
+#' @param trafo_options options for transformation models such as the basis
+#'     function used
 #' @param ... Arguments passed to \code{deepregression}
 #'
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
@@ -43,11 +47,11 @@ deeptrafo <- function(
   data,
   lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(fml)[1]]]),
-  order_bsp = get_order(response_type, data[[all.vars(fml)[1]]]),
+  order = get_order(response_type, data[[all.vars(fml)[1]]]),
   addconst_interaction = NULL,
   family = "logistic",
   monitor_metrics = NULL,
-  trafo_options = trafo_control(order_bsp = order_bsp,
+  trafo_options = trafo_control(order_bsp = order,
                                 response_type = response_type),
   ...
 )
