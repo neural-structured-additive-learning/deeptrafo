@@ -77,7 +77,7 @@ basis_processor <- function(term, data, output_dim = NULL, param_nr, controls){
 
   name <- makelayername(term, param_nr)
   bfy <- controls$y_basis_fun(data[[extractvar(term)]])
-  suppy <- range(data[[extractvar(term)]])
+  suppy <- controls$supp(data[[extractvar(term)]])
 
   dim_basis <- ncol(bfy)
   penalty_basis <- controls$basis_penalty
@@ -100,7 +100,7 @@ basisprime_processor <- function(term, data, output_dim = NULL, param_nr, contro
 
   name <- makelayername(term, param_nr)
   bfy <- controls$y_basis_fun_prime(data[[extractvar(term)]])
-  suppy <- range(data[[extractvar(term)]])
+  suppy <- controls$supp(data[[extractvar(term)]])
 
   dim_basis <- ncol(bfy)
   predict_trafo_bs <- function(newdata)

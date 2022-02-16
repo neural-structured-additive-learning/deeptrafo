@@ -1,23 +1,27 @@
-#' Fitting Deep Conditional Transformation Models
+#' Deep Conditional Transformation Models
 #'
-#' @param formula Formula specifying the outcome, shift, interaction and shared
+#' @param formula Formula specifying the response, shift, interaction and shared
 #'     terms as \code{response | interacting ~ shifting | shared}
-#' @param list_of_formulas list of formulas where the first element corresponds to
-#'     a transformation h_1 as specified in DCTMs, the second element to h_2 as specified
-#'     in DCTMs and a third element for shared layers used in both
 #' @param lag_formula formula representing the optional predictor for lags of the
-#'     response as defined for ATMs
-#' @param data list or data.frame with data; must include y as column
-#' @param order_bsp integer; order of Bernstein polynomials
+#'     response as defined for auto-regressive transformation models (ATMs)
+#' @param data \code{list} or \code{data.frame} containing both structured and
+#'     unstructured data
+#' @param response_type character; type of response. One of \code{"continuous"},
+#'     \code{"survival"}, \code{"count"}, \code{"ordered"}
+#' @param order integer; order of Bernstein polynomials or number of levels for
+#'     ordinal responses
 #' @param addconst_interaction positive constant;
 #'     a constant added to the additive predictor of the interaction term.
-#'     If \code{NULL}, terms are left unchanged. If 0 and predictors have negative values in their
-#'     design matrix, the minimum value of all predictors is added to ensure positivity.
-#'     If > 0, the minimum value plus the \code{addconst_interaction} is added to each predictor
-#'     in the interaction term.
-#' @param family, tfd_distribution or string; the base distribution for
-#'     transformation models. If string, can be \code{"normal"} or \code{"logistic"}.
-#' @param trafo_options options for transformation models such as the basis function used
+#'     If \code{NULL}, terms are left unchanged. If 0 and predictors have
+#'     negative values in their design matrix, the minimum value of all predictors
+#'     is added to ensure positivity. If > 0, the minimum value plus the
+#'     \code{addconst_interaction} is added to each predictor in the interaction
+#'     term.
+#' @param family \code{tfd_distribution} or character; the base distribution for
+#'     transformation models. If character, can be \code{"normal"}, \code{"logistic"}
+#'     or \code{"gumbel"}.
+#' @param trafo_options options for transformation models such as the basis
+#'     function used
 #' @param ... Arguments passed to \code{deepregression}
 #'
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
@@ -25,7 +29,7 @@
 #' @examples
 #' data("wine", package = "ordinal")
 #' wine$noise <- rnorm(nrow(wine))
-#' fml <- rating ~ 1
+#' fml <- rating ~ 0 + temp
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
 #' m %>% fit(epochs = 100, batch_size = nrow(wine))
 #' predfun <- m %>% predict(wine)
@@ -33,7 +37,7 @@
 #' plot(m)
 #' coef(m, which_param = "h1")
 #' coef(m, which_param = "h2")
-#' 
+#'
 #' @importFrom mlt R
 #' @export
 #' @details
@@ -43,11 +47,11 @@ deeptrafo <- function(
   data,
   lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(fml)[1]]]),
-  order_bsp = get_order(response_type, data[[all.vars(fml)[1]]]),
+  order = get_order(response_type, data[[all.vars(fml)[1]]]),
   addconst_interaction = NULL,
   family = "logistic",
   monitor_metrics = NULL,
-  trafo_options = trafo_control(order_bsp = order_bsp,
+  trafo_options = trafo_control(order_bsp = order,
                                 response_type = response_type),
   ...
 )
@@ -61,8 +65,7 @@ deeptrafo <- function(
   rvar <- all.vars(formula)[1]
 
   # Placeholder Intercept
-  int <- as.numeric(attr(terms(formula(formula, lhs = 0, rhs = 1L)),
-                         "intercept"))
+  int <- 1
 
   # Set up formulas for basis
   if (ninteracting > 1L) {
@@ -495,9 +498,10 @@ nll_count <- function(base_distribution = "logistic") {
                             tf_stride_cols(y_pred, 1L)))
       upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
                             tf_stride_cols(y_pred, 1L)))
-      t1 <- tf_stride_cols(y_true, 1L)
-      lik <- t1 * tfd_cdf(bd, upr) +
-        (1 - t1) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
+      cleft <- tf_stride_cols(y_true, 1L)
+      cint <- tf_stride_cols(y_true, 4L)
+      lik <- cleft * tfd_cdf(bd, upr) +
+        cint * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
       neglogLik <- - tf$math$log(lik)
       return(neglogLik)
     }
@@ -535,6 +539,7 @@ nll_surv <- function(base_distribution) {
   return(
     function(y_true, y_pred){
 
+      exact <- tf_stride_cols(y_true, 2L)
       cright <- tf_stride_cols(y_true, 3L)
 
       trafo <- layer_add(list(tf_stride_cols(y_pred, 1L),
@@ -544,9 +549,9 @@ nll_surv <- function(base_distribution) {
                                                   1e-8, Inf))
 
       ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
-      ll_right <- tf$math$log(1 - tfd_cdf(bd, trafo))
+      ll_right <- tf$math$log(tfd_survival_function(bd, trafo))
 
-      neglogLik <- - ((1 - cright) * ll_exact + cright * ll_right)
+      neglogLik <- - (exact * ll_exact + cright * ll_right)
       return(neglogLik)
     }
   )
@@ -573,7 +578,8 @@ nll <- function(base_distribution) {
   if (is.character(base_distribution)) {
     bd <- switch(base_distribution,
                  "normal" = tfd_normal(loc = 0, scale = 1),
-                 "logistic" = tfd_logistic(loc = 0, scale = 1)
+                 "logistic" = tfd_logistic(loc = 0, scale = 1),
+                 "gumbel" = tfd_gumbel(loc = 0, scale = 1)
     )
   } else {
     bd <- base_distribution

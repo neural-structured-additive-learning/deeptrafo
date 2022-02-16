@@ -2,6 +2,8 @@ context("Test deeptrafo")
 
 # devtools::load_all("../../../deepregression/")
 
+# FUNs --------------------------------------------------------------------
+
 check_methods <- function(m, newdata, test_plots = TRUE)
 {
 
@@ -70,25 +72,35 @@ dgp_count <- function(n = 100) {
   )
 }
 
-test_models <- function(fml, which = c("ordinal", "count"), ...) {
+dgp_surv <- function(n = 100) {
+  data.frame(
+    y = survival::Surv(abs(rnorm(n, sd = 10)), sample(0:1, n, TRUE)),
+    x = abs(rnorm(n)),
+    z = rnorm(n),
+    f = factor(sample.int(2, size = n, replace = TRUE))
+  )
+}
+
+test_models <- function(fml, which = c("ordinal", "count", "survival"), ...) {
 
   which <- match.arg(which)
 
   DGP <- switch(which,
     "ordinal" = dgp_ordinal,
-    "count" = dgp_count
+    "count" = dgp_count,
+    "survival" = dgp_surv
   )
 
   dat <- DGP()
   m <- deeptrafo(fml, dat, ...)
 
-  if (which == "ordered")
+  if (which == "ordinal")
     expect_false(any(is.nan(m$model$loss(t(sapply(dat$y, eval_ord)),
                                          fitted(m))$numpy())))
   hist <- fit(m, epochs = 2L)
 
-  if (which == "ordered")
-    expect_equal(m$init_params$trafo_options$order_bsp, ncl - 1L)
+  if (which == "ordinal")
+    expect_equal(m$init_params$trafo_options$order_bsp, 5L)
 
   expect_false(any(is.nan(hist$metrics$loss)))
 
@@ -226,6 +238,48 @@ test_that("count model with NN component", {
     layer_dense(units = 1L)
 
   test_models(y ~ nn(x), list_of_deep_models = list(nn = nn), which = "count")
+
+})
+
+# Survival models --------------------------------------------------------
+
+test_that("unconditional survival model", {
+
+  test_models(y ~ 1, which = "survival")
+
+})
+
+test_that("survival model", {
+
+  test_models(y ~ x, which = "survival")
+
+})
+
+test_that("survival model with smooth effects", {
+
+  test_models(y ~ s(z), which = "survival")
+
+})
+
+test_that("survival model with response-varying effects", {
+
+  test_models(y | f ~ s(z), which = "survival")
+
+})
+
+test_that("monotonicity problem (survival case)", {
+
+  test_models(y | s(x) ~ z, which = "survival")
+
+})
+
+test_that("survival model with NN component", {
+
+  nn <- keras_model_sequential() %>%
+    layer_dense(input_shape = 1L, units = 6L, activation = "relu") %>%
+    layer_dense(units = 1L)
+
+  test_models(y ~ nn(x), list_of_deep_models = list(nn = nn), which = "survival")
 
 })
 

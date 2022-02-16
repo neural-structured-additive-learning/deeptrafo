@@ -77,13 +77,13 @@ eval_bsp_prime <- function(y, order = 3, supp = range(y)) {
   y <- (y - supp[1]) / diff(supp)
   res <- sapply(0:order, function(m) {
 
-    first_t <- dbeta(y, m, order - m + 1) / order
-    sec_t <- dbeta(y, m + 1, order - m) / order
+    first_t <- dbeta(y, m, order - m + 1)
+    sec_t <- dbeta(y, m + 1, order - m)
 
     first_t[is.infinite(first_t)] <- 0L
     sec_t[is.infinite(sec_t)] <- 0L
 
-    (first_t - sec_t) * order
+    (first_t - sec_t) * (1 / diff(supp))
   })
   if(is.null(dim(res)))
     res <- matrix(res, nrow=1)
@@ -335,7 +335,7 @@ softplus <- function(x) log(exp(x)+1)
 reshape_softplus_cumsum <- function(x, order_bsp_p1)
 {
 
-  x <- matrix(x, nrow = order_bsp_p1, byrow=T)
+  x <- matrix(x, nrow = order_bsp_p1, byrow = TRUE)
   x[2:nrow(x),] <- softplus(x[2:nrow(x),])
   apply(x, 2, cumsum)
 
@@ -344,12 +344,12 @@ reshape_softplus_cumsum <- function(x, order_bsp_p1)
 correct_min_val <- function(pcf, addconst = 10)
 {
 
-  minval <- suppressWarnings(min(pcf$linterms[,sapply(pcf$linterms, is.numeric)], na.rm = T))
+  minval <- suppressWarnings(min(pcf$linterms[,sapply(pcf$linterms, is.numeric)], na.rm = TRUE))
   if(!is.null(pcf$smoothterms))
     minval <- min(c(minval,
                     suppressWarnings(sapply(pcf$smoothterms,
                                             function(x) min(x[[1]]$X)))))
-  if(minval<0)
+  if (minval < 0)
   {
 
     minval <- minval - addconst
@@ -370,7 +370,8 @@ correct_min_val <- function(pcf, addconst = 10)
 
   }
 
-  if(minval==Inf) return(pcf)
+  if (minval == Inf)
+    return(pcf)
 
   attr(pcf,"minval") <- minval
 
