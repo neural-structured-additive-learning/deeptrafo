@@ -538,6 +538,7 @@ nll_surv <- function(base_distribution) {
   return(
     function(y_true, y_pred){
 
+      exact <- tf_stride_cols(y_true, 2L)
       cright <- tf_stride_cols(y_true, 3L)
 
       trafo <- layer_add(list(tf_stride_cols(y_pred, 1L),
@@ -547,9 +548,9 @@ nll_surv <- function(base_distribution) {
                                                   1e-8, Inf))
 
       ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
-      ll_right <- tf$math$log(1 - tfd_cdf(bd, trafo))
+      ll_right <- tf$math$log(tfd_survival_function(bd, trafo))
 
-      neglogLik <- - ((1 - cright) * ll_exact + cright * ll_right)
+      neglogLik <- - (exact * ll_exact + cright * ll_right)
       return(neglogLik)
     }
   )
