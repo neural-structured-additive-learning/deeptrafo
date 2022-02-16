@@ -498,9 +498,10 @@ nll_count <- function(base_distribution = "logistic") {
                             tf_stride_cols(y_pred, 1L)))
       upr <- layer_add(list(tf_stride_cols(y_pred, 2L),
                             tf_stride_cols(y_pred, 1L)))
-      t1 <- tf_stride_cols(y_true, 1L)
-      lik <- t1 * tfd_cdf(bd, upr) +
-        (1 - t1) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
+      cleft <- tf_stride_cols(y_true, 1L)
+      cint <- tf_stride_cols(y_true, 4L)
+      lik <- cleft * tfd_cdf(bd, upr) +
+        cint * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
       neglogLik <- - tf$math$log(lik)
       return(neglogLik)
     }
