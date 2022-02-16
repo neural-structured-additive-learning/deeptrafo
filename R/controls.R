@@ -67,6 +67,21 @@ trafo_control <- function(order_bsp = 10L,
 
   }
 
+  if (response_type == "survival") {
+
+    supp <- function(x) support(x[, 1])
+
+    y_basis_fun <- function(y, orderbsp = order_bsp, suppy = supp(y)) {
+      eval_bsp(y[, 1], order = orderbsp, supp = suppy)
+    }
+
+    y_basis_fun_prime <- function(y, orderbsp = order_bsp,
+                                  suppy = supp(y) / diff(supp(y))) {
+      eval_bsp_prime(y[, 1], order = orderbsp, supp = suppy)
+    }
+
+  }
+
   if (response_type == "count") {
     y_basis_fun_prime <- function(y, orderbsp = order_bsp, suppy = supp(y)) {
       eval_bsp(y - 1L, order = orderbsp, supp = suppy)
