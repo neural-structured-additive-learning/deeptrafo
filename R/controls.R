@@ -52,18 +52,43 @@ trafo_control <- function(order_bsp = 10L,
 
   if (is.null(y_basis_fun)) {
 
-    y_basis_fun <- function(y, orderbsp = order_bsp, suppy = supp(y)) {
-      eval_bsp(y, order = orderbsp, supp = suppy)
-    }
+    y_basis_fun <- switch(
+      response_type,
+      "continuous" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
+        eval_bsp(y, order = orderbsp, supp = suppy)
+      },
+      "survival" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
+        eval_bsp(y[, 1], order = orderbsp, supp = suppy)
+      },
+      "count" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
+        eval_bsp(y, order = orderbsp, supp = suppy)
+      },
+      "ordered" = function(y, orderbsp = order_bsp, suppy = suppy) {
+        eval_ord_upr(y)
+      }
+    )
 
   }
 
   if (is.null(y_basis_fun_prime)) {
 
-    y_basis_fun_prime <- function(y, orderbsp = order_bsp,
-                                  suppy = supp(y) / diff(supp(y))) {
-      eval_bsp_prime(y, order = orderbsp, supp = suppy)
-    }
+    y_basis_fun_prime <- switch(
+      response_type,
+      "continuous" = function(y, orderbsp = order_bsp,
+                              suppy = supp(y) / diff(supp(y))) {
+        eval_bsp_prime(y, order = orderbsp, supp = suppy)
+      },
+      "survival" = function(y, orderbsp = order_bsp,
+                            suppy = supp(y) / diff(supp(y))) {
+        eval_bsp_prime(y[, 1], order = orderbsp, supp = suppy)
+      },
+      "count" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
+        eval_bsp(y - 1L, order = orderbsp, supp = suppy)
+      },
+      "ordered" = function(y, orderbsp = order_bsp, suppy = suppy) {
+        eval_ord_lwr(y)
+      }
+    )
 
   }
 
@@ -71,44 +96,26 @@ trafo_control <- function(order_bsp = 10L,
 
     supp <- function(x) support(x[, 1])
 
-    y_basis_fun <- function(y, orderbsp = order_bsp, suppy = supp(y)) {
-      eval_bsp(y[, 1], order = orderbsp, supp = suppy)
-    }
-
-    y_basis_fun_prime <- function(y, orderbsp = order_bsp,
-                                  suppy = supp(y) / diff(supp(y))) {
-      eval_bsp_prime(y[, 1], order = orderbsp, supp = suppy)
-    }
-
-  }
-
-  if (response_type == "count") {
-    y_basis_fun_prime <- function(y, orderbsp = order_bsp, suppy = supp(y)) {
-      eval_bsp(y - 1L, order = orderbsp, supp = suppy)
-    }
   }
 
   if (response_type == "ordered") {
-    y_basis_fun <- function(y, orderbsp = order_bsp, suppy = suppy) {
-      eval_ord_upr(y)
-    }
-    y_basis_fun_prime <- function(y, orderbsp = order_bsp, suppy = suppy) {
-      eval_ord_lwr(y)
-    }
+
     penalize_bsp <- 0
     order_bsp_penalty <- 1
+
   }
 
   return(
-    list(y_basis_fun = y_basis_fun,
-         y_basis_fun_prime = y_basis_fun_prime,
-         penalize_bsp = penalize_bsp,
-         order_bsp_penalty = order_bsp_penalty,
-         response_type = response_type,
-         order_bsp = order_bsp,
-         atm_toplayer = atm_toplayer,
-         supp = supp)
-
+    list(
+      y_basis_fun = y_basis_fun,
+      y_basis_fun_prime = y_basis_fun_prime,
+      penalize_bsp = penalize_bsp,
+      order_bsp_penalty = order_bsp_penalty,
+      response_type = response_type,
+      order_bsp = order_bsp,
+      atm_toplayer = atm_toplayer,
+      supp = supp
+    )
   )
 
 }
