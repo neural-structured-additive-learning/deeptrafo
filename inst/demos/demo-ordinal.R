@@ -63,5 +63,3 @@ m <- deeptrafo(y ~ mim(x), data = df, list_of_deep_models = list(mim = mim),
 fit(m, epochs = 5L)
 coef(m, which = "h1")
 coef(m, which = "h2")
-predfun <- predict(m, newdata = df)
-predfun(y = df$y, type = "pdf")
