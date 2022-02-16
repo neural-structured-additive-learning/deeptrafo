@@ -39,6 +39,12 @@ trafo_control <- function(order_bsp = 10L,
 
   }
 
+  if (response_type == "survival") {
+
+    supp <- function(x) support(x[, 1])
+
+  }
+
   # define bsp functions
   if (tf_bsps & is.null(y_basis_fun) & is.null(y_basis_fun_prime)) {
 
@@ -75,11 +81,11 @@ trafo_control <- function(order_bsp = 10L,
     y_basis_fun_prime <- switch(
       response_type,
       "continuous" = function(y, orderbsp = order_bsp,
-                              suppy = supp(y) / diff(supp(y))) {
+                              suppy = supp(y)) { # / diff(supp(y))) {
         eval_bsp_prime(y, order = orderbsp, supp = suppy)
       },
       "survival" = function(y, orderbsp = order_bsp,
-                            suppy = supp(y) / diff(supp(y))) {
+                            suppy = supp(y)) { # / diff(supp(y))) {
         eval_bsp_prime(y[, 1], order = orderbsp, supp = suppy)
       },
       "count" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
@@ -92,11 +98,6 @@ trafo_control <- function(order_bsp = 10L,
 
   }
 
-  if (response_type == "survival") {
-
-    supp <- function(x) support(x[, 1])
-
-  }
 
   if (response_type == "ordered") {
 

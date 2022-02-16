@@ -77,13 +77,13 @@ eval_bsp_prime <- function(y, order = 3, supp = range(y)) {
   y <- (y - supp[1]) / diff(supp)
   res <- sapply(0:order, function(m) {
 
-    first_t <- dbeta(y, m, order - m + 1) / order
-    sec_t <- dbeta(y, m + 1, order - m) / order
+    first_t <- dbeta(y, m, order - m + 1)
+    sec_t <- dbeta(y, m + 1, order - m)
 
     first_t[is.infinite(first_t)] <- 0L
     sec_t[is.infinite(sec_t)] <- 0L
 
-    (first_t - sec_t) * order
+    (first_t - sec_t) * (1 / diff(supp))
   })
   if(is.null(dim(res)))
     res <- matrix(res, nrow=1)
