@@ -104,9 +104,6 @@ test_models <- function(fml, which = c("ordinal", "count", "survival"), ...) {
 
   expect_false(any(is.nan(hist$metrics$loss)))
 
-  if (which == "survival")
-    dat$y <- dat$y[, 1]
-
   check_methods(m, dat, test_plots = FALSE)
 
 }
