@@ -29,7 +29,7 @@
 #' @examples
 #' data("wine", package = "ordinal")
 #' wine$noise <- rnorm(nrow(wine))
-#' fml <- rating ~ 1
+#' fml <- rating ~ 0 + temp
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
 #' m %>% fit(epochs = 100, batch_size = nrow(wine))
 #' predfun <- m %>% predict(wine)
@@ -65,8 +65,7 @@ deeptrafo <- function(
   rvar <- all.vars(formula)[1]
 
   # Placeholder Intercept
-  int <- as.numeric(attr(terms(formula(formula, lhs = 0, rhs = 1L)),
-                         "intercept"))
+  int <- 1
 
   # Set up formulas for basis
   if (ninteracting > 1L) {
