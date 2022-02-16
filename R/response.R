@@ -25,8 +25,8 @@ get_response_type <- function(y) {
     "ordered"
   else if (is.integer(y))
     "count"
-  # else if (is.Surv(y))
-  #   "survival"
+  else if (survival::is.Surv(y))
+    "survival"
   else
     "continuous"
   ret

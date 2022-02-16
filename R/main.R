@@ -33,7 +33,7 @@
 #' plot(m)
 #' coef(m, which_param = "h1")
 #' coef(m, which_param = "h2")
-#' 
+#'
 #' @importFrom mlt R
 #' @export
 #' @details
@@ -92,6 +92,11 @@ deeptrafo <- function(
   # Extract response variable
   y <- model.response(model.frame(formula(fml, lhs = 1, rhs = 0), data = data))
   y <- response(y)
+
+  # Override response in case of survival time
+  # <FIXME> Look for more elegant solution </FIXME>
+  if (response_type == "survival")
+    data[[extractvar(rvar)]] <- data[[extractvar(rvar)]][, 1]
 
   # check for ATMs
   if(!is.null(lag_formula)){
