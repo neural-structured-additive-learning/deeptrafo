@@ -30,8 +30,13 @@ unlist(coef(m, which = "h2"))
 tm <- Polr(rating ~ 1, data = wine)
 
 m <- deeptrafo(rating ~ 1, data = wine,
+               weight_options = weight_control(
+                 warmstart_weights = list(list(), list(), list("1" = 0)),
+                 specific_weight_options = list(list(), list(), list("1" = list(trainable = FALSE)))),
                optimizer = optimizer_adam(learning_rate = 0.1, decay = 1e-4))
+coef(m, "h2")
 fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
+coef(m, "h2")
 
 coef(tm, with_baseline = TRUE)
 unlist(coef(m, which = "h1"))[-5] + unlist(coef(m, which = "h2"))
