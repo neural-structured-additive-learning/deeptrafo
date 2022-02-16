@@ -573,7 +573,8 @@ nll <- function(base_distribution) {
   if (is.character(base_distribution)) {
     bd <- switch(base_distribution,
                  "normal" = tfd_normal(loc = 0, scale = 1),
-                 "logistic" = tfd_logistic(loc = 0, scale = 1)
+                 "logistic" = tfd_logistic(loc = 0, scale = 1),
+                 "gumbel" = tfd_gumbel(loc = 0, scale = 1)
     )
   } else {
     bd <- base_distribution
