@@ -14,6 +14,14 @@ test_that("eval response types", {
   expect_equal(eval_response(c(1.1, 3.2), "continuous"), c(1.1, 3.2))
 })
 
+# test_that("make grids of responses", {
+#   tn <- 50
+#   expect_length(make_grid(rnorm(10), tn)$y, tn)
+#   expect_length(make_grid(1:10)$y, 10L)
+#   expect_length(make_grid(ordered(1:5))$y, 5L)
+#   expect_length(make_grid(survival::Surv(rchisq(10, df = 1), rep(0, 10)), n = tn)$y, tn)
+# })
+
 # ATM helpers -------------------------------------------------------------
 
 test_that("atm_lag helpers", {

@@ -29,7 +29,7 @@ unlist(coef(m, which = "shifting"))
 
 # Unconditional case ------------------------------------------------------
 
-tm <- Colr(surv ~ 1, data = GBSG2, order = 6, support = range(GBSG2$surv))
+tm <- Colr(surv ~ 1, data = GBSG2, order = 6)
 cfb <- coef(tm, with_baseline = TRUE)
 
 m <- deeptrafo(surv ~ 1, data = GBSG2, order = 6,

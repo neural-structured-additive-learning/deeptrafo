@@ -105,9 +105,15 @@ coef.deeptrafo <- function(
 predict.deeptrafo <- function(
   object,
   newdata = NULL,
+  type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
+  batch_size = NULL,
   ...
 )
 {
+
+  # TODO: make prediction possible for one observation only
+  type <- match.arg(type)
+  # grid <- FALSE
 
   rname <- object$init_params$response_varname
   rtype <- object$init_params$response_type
@@ -116,114 +122,109 @@ predict.deeptrafo <- function(
   discrete <- as.numeric(rtype %in% c("count", "ordered"))
   bd <- get_bd(fam)
 
-  # TODO: make prediction possible for one observation only; fix type mismatch pdf grid
-  trafo_fun <- function(y, type = c("trafo", "pdf", "cdf", "interaction",
-                                    "shift", "output"),
-                        grid = FALSE, batch_size = NULL)
-  {
+  y <- newdata[[rname]]
 
-    type <- match.arg(type)
-    ry <- response(y)
-    cleft <- ry[, "cleft", drop = FALSE]
-    cint <- ry[, "cinterval", drop = FALSE]
-    cright <- ry[, "cright", drop = FALSE]
+  # if (is.null(y)) {
+  #
+  #   y <- make_grid(object$init_params$response)
+  #   grid <- TRUE
+  #
+  # }
 
-    if (is.null(newdata))
-      newdata <- prepare_data(object$init_params$parsed_formulas_contents,
-                              gamdata = object$init_params$gamdata$data_trafos)
+  ry <- response(y)
+  cleft <- ry[, "cleft", drop = FALSE]
+  cint <- ry[, "cinterval", drop = FALSE]
+  cright <- ry[, "cright", drop = FALSE]
 
-    newdata[[rname]] <- y
+  if (is.null(newdata))
+    newdata <- prepare_data(object$init_params$parsed_formulas_contents,
+                            gamdata = object$init_params$gamdata$data_trafos)
 
-    mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
+  newdata[[rname]] <- y
 
-    if (type == "output")
-      return(mod_output)
+  mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
 
-    w_eta <- mod_output[, 1, drop = FALSE]
-    aTtheta <- mod_output[, 2, drop = FALSE]
-    apTtheta <- mod_output[, 3, drop = FALSE]
+  if (type == "output")
+    return(mod_output)
 
-    if (type == "interaction")
-      return(cbind(interaction = as.matrix(aTtheta), as.data.frame(newdata)))
+  w_eta <- mod_output[, 1, drop = FALSE]
+  aTtheta <- mod_output[, 2, drop = FALSE]
+  apTtheta <- mod_output[, 3, drop = FALSE]
 
-    if (type == "shift")
-      return(cbind(shift = as.matrix(w_eta), as.data.frame(newdata)))
+  if (type == "interaction")
+    return(cbind(interaction = as.matrix(aTtheta), as.data.frame(newdata)))
 
-    ytransf <- aTtheta + w_eta
-    yprimeTrans <- apTtheta + discrete * w_eta
+  if (type == "shift")
+    return(cbind(shift = as.matrix(w_eta), as.data.frame(newdata)))
 
-    if (!grid) {
+  ytransf <- aTtheta + w_eta
+  yprimeTrans <- apTtheta + discrete * w_eta
 
-      if (discrete) {
 
-        pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)) +
-          cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransf)
+  if (discrete) {
 
-      } else {
+    pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)) +
+      cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransf)
 
-        pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
+  } else {
 
-      }
-
-    }
-
-    theta <- get_theta(object)
-
-    if (grid) {
-
-      ymat <- lapply(object$init_params$parsed_formulas_contents[[1]],
-                     function(pp) pp$predict(newdata))
-      xmat <- do.call("cbind", lapply(object$init_params$parsed_formulas_contents[[2]],
-                                      function(pp) pp$predict(newdata)))
-
-      ay <- ymat[[1L]]
-      ayprime <- ymat[[2L]]
-      grid_eval <- t(xmat %*% t(ay %*% theta))
-      shift <- t(as.matrix(w_eta)[, rep(1, nrow(grid_eval))])
-      grid_eval <- grid_eval + shift
-
-      if (type == "pdf") {
-
-        grid_prime_eval <- t(xmat %*% t(ayprime %*% theta)) + discrete * shift
-
-        if (discrete) {
-
-          cint <- t(cint[, rep(1, ncol(grid_eval))])
-          cleft <- t(cleft[, rep(1, ncol(grid_eval))])
-          cright <- t(cright[, rep(1, ncol(grid_eval))])
-
-          pdf <- cint * (tfd_cdf(bd, grid_eval) - tfd_cdf(bd, grid_prime_eval)) +
-            cleft * tfd_cdf(bd, grid_eval) + cright * tfd_survival_function(bd, grid_eval)
-          pdf <- as.matrix(pdf)
-          pdf[pdf < 0] <- 0
-
-        } else {
-
-          pdf <- as.matrix(tfd_prob(bd, grid_eval)) * as.matrix(grid_prime_eval)
-
-        }
-
-      }
-
-      type <- paste0("grid_", type)
-
-    }
-
-    ret <- switch(
-      type,
-      "trafo" = (ytransf %>% as.matrix),
-      "pdf" = pdf %>% as.matrix,
-      "cdf" = (bd %>% tfd_cdf(ytransf) %>% as.matrix),
-      "grid_trafo" = grid_eval %>% as.matrix,
-      "grid_pdf" = pdf %>% as.matrix,
-      "grid_cdf" = (bd %>% tfd_cdf(grid_eval) %>% as.matrix)
-    )
-
-    return(ret)
+    pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
 
   }
 
-  return(trafo_fun)
+  theta <- get_theta(object)
+
+  # if (grid) {
+  #
+  #   ymat <- lapply(object$init_params$parsed_formulas_contents[[1]],
+  #                  function(pp) pp$predict(newdata))
+  #   xmat <- do.call("cbind", lapply(object$init_params$parsed_formulas_contents[[2]],
+  #                                   function(pp) pp$predict(newdata)))
+  #
+  #   ay <- ymat[[1L]]
+  #   ayprime <- ymat[[2L]]
+  #   grid_eval <- t(xmat %*% t(ay %*% theta))
+  #   shift <- t(as.matrix(w_eta)[, rep(1, nrow(grid_eval))])
+  #   grid_eval <- grid_eval + shift
+  #
+  #   if (type == "pdf") {
+  #
+  #     grid_prime_eval <- t(xmat %*% t(ayprime %*% theta)) + discrete * shift
+  #
+  #     if (discrete) {
+  #
+  #       cint <- t(cint[, rep(1, ncol(grid_eval))])
+  #       cleft <- t(cleft[, rep(1, ncol(grid_eval))])
+  #       cright <- t(cright[, rep(1, ncol(grid_eval))])
+  #
+  #       pdf <- cint * (tfd_cdf(bd, grid_eval) - tfd_cdf(bd, grid_prime_eval)) +
+  #         cleft * tfd_cdf(bd, grid_eval) + cright * tfd_survival_function(bd, grid_eval)
+  #       pdf <- as.matrix(pdf)
+  #       pdf[pdf < 0] <- 0
+  #
+  #     } else {
+  #
+  #       pdf <- as.matrix(tfd_prob(bd, grid_eval)) * as.matrix(grid_prime_eval)
+  #
+  #     }
+  #
+  #   }
+  #
+  #   type <- paste0("grid_", type)
+  #
+  # }
+
+  ret <- switch(
+    type,
+    "trafo" = (ytransf %>% as.matrix),
+    "pdf" = pdf %>% as.matrix,
+    "cdf" = (bd %>% tfd_cdf(ytransf) %>% as.matrix),
+    "grid_trafo" = grid_eval %>% as.matrix,
+    "grid_pdf" = pdf %>% as.matrix,
+    "grid_cdf" = (bd %>% tfd_cdf(grid_eval) %>% as.matrix)
+  )
+
+  return(ret)
 
 }
 

@@ -93,8 +93,8 @@ deeptrafo <- function(
   list_of_formulas[sapply(list_of_formulas, is.null)] <- NULL
 
   # Extract response variable
-  y <- model.response(model.frame(formula(fml, lhs = 1, rhs = 0), data = data))
-  y <- response(y)
+  resp <- model.response(model.frame(formula(fml, lhs = 1, rhs = 0), data = data))
+  y <- response(resp)
 
   # check for ATMs
   if(!is.null(lag_formula)){
@@ -157,6 +157,7 @@ deeptrafo <- function(
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
   ret$init_params$response_type <- response_type
+  ret$init_params$response <- resp
 
   class(ret) <- c("deeptrafo", "deepregression")
   return(ret)
