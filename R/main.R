@@ -48,7 +48,7 @@ deeptrafo <- function(
   lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(fml)[1]]]),
   order = get_order(response_type, data[[all.vars(fml)[1]]]),
-  addconst_interaction = NULL,
+  addconst_interaction = 0,
   family = "logistic",
   monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order,
@@ -139,7 +139,8 @@ deeptrafo <- function(
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
     h1_init(yterms = which(names(list_of_formulas) == "yterms"),
-            h1pred = which(names(list_of_formulas) == "h1pred"))
+            h1pred = which(names(list_of_formulas) == "h1pred"),
+            add_const_positiv = addconst_interaction)
   snwb[[which(names(list_of_formulas) == "yterms")]] <- function(...) return(NULL)
 
   ret <- do.call("deepregression",
@@ -168,7 +169,7 @@ deeptrafo <- function(
 #' @param yterms,h1pred positions of the left and right RWT term
 #' @return returns a subnetwork_init function with pre-defined arguments
 #'
-h1_init <- function(yterms, h1pred)
+h1_init <- function(yterms, h1pred, add_const_positiv = 0)
 {
   return(
     function(pp, deep_top, orthog_fun, split_fun, shared_layers,
@@ -258,7 +259,7 @@ h1_init <- function(yterms, h1pred)
           lapply(1:length(pp_in), function(i) pp_lay[[layer_matching[i]]]$layer(
             tf_row_tensor(
               pp_y[[j]]$layer(inputs_y[[j]]),
-              inputs[[i]]
+              tf$add(inputs[[i]], add_const_positiv)
             )
           )
           )
@@ -458,7 +459,7 @@ nll_ordinal <- function(base_distribution = "logistic") {
       t2 <- tf_stride_cols(y_true, 3L)
       lik <- t1 * tfd_cdf(bd, upr) + t2 * (1 - tfd_cdf(bd, lwr)) +
         (1 - t1) * (1 - t2) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
-      neglogLik <- - tf$math$log(lik)
+      neglogLik <- - tf$math$log(tf$clip_by_value(lik, 1e-8, Inf))
       return(neglogLik)
     }
   )
@@ -502,7 +503,7 @@ nll_count <- function(base_distribution = "logistic") {
       cint <- tf_stride_cols(y_true, 4L)
       lik <- cleft * tfd_cdf(bd, upr) +
         cint * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
-      neglogLik <- - tf$math$log(lik)
+      neglogLik <- - tf$math$log(tf$clip_by_value(lik, 1e-8, Inf))
       return(neglogLik)
     }
   )
