@@ -18,7 +18,13 @@
 
 \method{coef}{deeptrafo}(object, which_param = c("shifting", "interacting"), type = NULL, ...)
 
-\method{predict}{deeptrafo}(object, newdata = NULL, ...)
+\method{predict}{deeptrafo}(
+  object,
+  newdata = NULL,
+  type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
+  batch_size = NULL,
+  ...
+)
 
 \method{fitted}{deeptrafo}(object, newdata = NULL, batch_size = NULL, convert_fun = as.matrix, ...)
 }
