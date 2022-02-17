@@ -10,13 +10,13 @@
 \method{plot}{deeptrafo}(
   x,
   which = NULL,
-  which_param = "shifting",
+  which_param = c("shifting", "interacting"),
   only_data = FALSE,
   grid_length = 40,
   ...
 )
 
-\method{coef}{deeptrafo}(object, which_param = "interacting", type = NULL, ...)
+\method{coef}{deeptrafo}(object, which_param = c("shifting", "interacting"), type = NULL, ...)
 
 \method{predict}{deeptrafo}(object, newdata = NULL, ...)
 

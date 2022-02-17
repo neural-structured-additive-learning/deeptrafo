@@ -66,9 +66,9 @@ fml <- rating ~ 0 + temp
 m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
 m \%>\% fit(epochs = 100, batch_size = nrow(wine))
 predfun <- m \%>\% predict(wine)
-predfun(wine$rating, type = "trafo")
+predfun(wine$rating, type = "pdf")
 plot(m)
-coef(m, which_param = "h1")
-coef(m, which_param = "h2")
+coef(m, which_param = "interacting")
+coef(m, which_param = "shifting")
 
 }

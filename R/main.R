@@ -33,7 +33,6 @@
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
 #' m %>% fit(epochs = 100, batch_size = nrow(wine))
 #' predfun <- m %>% predict(wine)
-#' debugonce(predfun)
 #' predfun(wine$rating, type = "pdf")
 #' plot(m)
 #' coef(m, which_param = "interacting")

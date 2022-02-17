@@ -123,6 +123,10 @@ predict.deeptrafo <- function(
   {
 
     type <- match.arg(type)
+    ry <- response(y)
+    cleft <- ry[, "cleft", drop = FALSE]
+    cint <- ry[, "cinterval", drop = FALSE]
+    cright <- ry[, "cright", drop = FALSE]
 
     if (is.null(newdata))
       newdata <- prepare_data(object$init_params$parsed_formulas_contents,
@@ -148,13 +152,18 @@ predict.deeptrafo <- function(
     ytransf <- aTtheta + w_eta
     yprimeTrans <- apTtheta + discrete * w_eta
 
-    if (discrete) {
-      # TODO: Fix left, right censored cases
-      pdf <- tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)
+    if (!grid) {
 
-    } else {
+      if (discrete) {
 
-      pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
+        pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)) +
+          cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransf)
+
+      } else {
+
+        pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
+
+      }
 
     }
 
@@ -179,7 +188,14 @@ predict.deeptrafo <- function(
 
         if (discrete) {
 
-          pdf <- tfd_cdf(bd, grid_eval) - tfd_cdf(bd, grid_prime_eval)
+          cint <- t(cint[, rep(1, ncol(grid_eval))])
+          cleft <- t(cleft[, rep(1, ncol(grid_eval))])
+          cright <- t(cright[, rep(1, ncol(grid_eval))])
+
+          pdf <- cint * (tfd_cdf(bd, grid_eval) - tfd_cdf(bd, grid_prime_eval)) +
+            cleft * tfd_cdf(bd, grid_eval) + cright * tfd_survival_function(bd, grid_eval)
+          pdf <- as.matrix(pdf)
+          pdf[pdf < 0] <- 0
 
         } else {
 
@@ -198,8 +214,8 @@ predict.deeptrafo <- function(
       "trafo" = (ytransf %>% as.matrix),
       "pdf" = pdf %>% as.matrix,
       "cdf" = (bd %>% tfd_cdf(ytransf) %>% as.matrix),
-      "grid_trafo" = grid_eval,
-      "grid_pdf" = pdf,
+      "grid_trafo" = grid_eval %>% as.matrix,
+      "grid_pdf" = pdf %>% as.matrix,
       "grid_cdf" = (bd %>% tfd_cdf(grid_eval) %>% as.matrix)
     )
 
