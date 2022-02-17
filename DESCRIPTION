@@ -8,7 +8,7 @@ Authors@R: c(
     )
 Description:
     Allows for the specification of deep conditional transformation models
-Depends: R (>= 4.0.0), Formula, tensorflow, keras, tfprobability
+Depends: R (>= 4.0.0), Formula, tensorflow, keras, tfprobability, mlt, survival
 Imports: deepregression
 License: GPL-3
 Encoding: UTF-8
