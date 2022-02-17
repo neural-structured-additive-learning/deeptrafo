@@ -19,19 +19,24 @@ plot.deeptrafo <- function(
   x,
   which = NULL,
   # which of the nonlinear structured effects
-  which_param = "shifting", # for which parameter
+  which_param = c("shifting", "interacting"), # for which parameter
   only_data = FALSE,
   grid_length = 40,
   ... # passed to plot function
 )
 {
 
-  get_weight_fun <- if (which_param == "interacting")
-    get_weight_by_name_ia else get_weight_by_name
+  which_param <- match.arg(which_param)
+
+  get_weight_fun <- switch(
+    which_param,
+    "interacting" = get_weight_by_name_ia,
+    "shifting" = get_weight_by_name
+  )
 
   which_param <- map_param_string_to_index(which_param)
-
   class(x) <- class(x)[-1]
+
   return(plot(x, which = which, which_param = which_param,
               only_data = only_data, grid_length = grid_length,
               get_weight_fun = get_weight_fun, ...))
@@ -60,11 +65,13 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 #'
 coef.deeptrafo <- function(
   object,
-  which_param = "interacting",
+  which_param = c("shifting", "interacting"),
   type = NULL,
   ...
 )
 {
+
+  which_param <- match.arg(which_param)
 
   is_interaction <- which_param == "interacting"
   which_param <- map_param_string_to_index(which_param)
@@ -102,81 +109,98 @@ predict.deeptrafo <- function(
 )
 {
 
+  rname <- object$init_params$response_varname
+  rtype <- object$init_params$response_type
+  order <- object$init_params$trafo_options$order_bsp
+  fam <- object$init_params$family
+  discrete <- as.numeric(rtype %in% c("count", "ordered"))
+  bd <- get_bd(fam)
+
   # TODO: make prediction possible for one observation only; fix type mismatch pdf grid
-  trafo_fun <- function(y, type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
+  trafo_fun <- function(y, type = c("trafo", "pdf", "cdf", "interaction",
+                                    "shift", "output"),
                         grid = FALSE, batch_size = NULL)
   {
+
     type <- match.arg(type)
 
-    if(is.null(newdata))
+    if (is.null(newdata))
       newdata <- prepare_data(object$init_params$parsed_formulas_contents,
                               gamdata = object$init_params$gamdata$data_trafos)
 
-    newdata[[object$init_params$response_varname]] <- y
+    newdata[[rname]] <- y
 
     mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
 
-    if(type=="output") return(mod_output)
+    if (type == "output")
+      return(mod_output)
 
     w_eta <- mod_output[, 1, drop = FALSE]
     aTtheta <- mod_output[, 2, drop = FALSE]
+    apTtheta <- mod_output[, 3, drop = FALSE]
 
-    if(type=="interaction"){
+    if (type == "interaction")
+      return(cbind(interaction = as.matrix(aTtheta), as.data.frame(newdata)))
 
-      ret <- cbind(interaction = as.matrix(aTtheta),
-                   as.data.frame(newdata)
-      )
+    if (type == "shift")
+      return(cbind(shift = as.matrix(w_eta), as.data.frame(newdata)))
 
-      return(ret)
-
-    }
-
-    if(type=="shift"){
-
-      return(cbind(shift = as.matrix(w_eta),
-                   as.data.frame(newdata)))
-
-    }
     ytransf <- aTtheta + w_eta
-    yprimeTrans <- mod_output[, 3, drop = FALSE]
+    yprimeTrans <- apTtheta + discrete * w_eta
+
+    if (discrete) {
+      # TODO: Fix left, right censored cases
+      pdf <- tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)
+
+    } else {
+
+      pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
+
+    }
 
     theta <- get_theta(object)
 
-    if(grid)
-    {
+    if (grid) {
 
       ymat <- lapply(object$init_params$parsed_formulas_contents[[1]],
                      function(pp) pp$predict(newdata))
-
-      obspp1 <- object$init_params$trafo_options$order_bsp + 1
-      ay <- ymat[[1]] #[,1:obspp1]
-      ayprime <- ymat[[2]]
       xmat <- do.call("cbind", lapply(object$init_params$parsed_formulas_contents[[2]],
                                       function(pp) pp$predict(newdata)))
 
-      grid_eval <- t(xmat%*%t(ay%*%theta))
+      ay <- ymat[[1L]]
+      ayprime <- ymat[[2L]]
+      grid_eval <- t(xmat %*% t(ay %*% theta))
+      shift <- t(as.matrix(w_eta)[, rep(1, nrow(grid_eval))])
+      grid_eval <- grid_eval + shift
 
-      grid_eval <- grid_eval +
-        t(as.matrix(w_eta)[,rep(1,nrow(grid_eval))])
+      if (type == "pdf") {
 
-      if(type=="pdf")
-        grid_prime_eval <- t(xmat%*%t(ayprime%*%theta))
+        grid_prime_eval <- t(xmat %*% t(ayprime %*% theta)) + discrete * shift
 
-      type <- paste0("grid_",type)
+        if (discrete) {
+
+          pdf <- tfd_cdf(bd, grid_eval) - tfd_cdf(bd, grid_prime_eval)
+
+        } else {
+
+          pdf <- as.matrix(tfd_prob(bd, grid_eval)) * as.matrix(grid_prime_eval)
+
+        }
+
+      }
+
+      type <- paste0("grid_", type)
 
     }
 
-    ret <- switch (type,
-                   trafo = (ytransf %>% as.matrix),
-                   pdf = ((tfd_normal(0,1) %>% tfd_prob(ytransf) %>%
-                             as.matrix)*as.matrix(yprimeTrans)),
-                   cdf = (tfd_normal(0,1) %>% tfd_cdf(ytransf) %>%
-                            as.matrix),
-                   grid_trafo = grid_eval,
-                   grid_pdf = ((tfd_normal(0,1) %>% tfd_prob(grid_eval) %>%
-                                  as.matrix)*as.matrix(grid_prime_eval)),
-                   grid_cdf = (tfd_normal(0,1) %>% tfd_cdf(grid_eval) %>%
-                                 as.matrix)
+    ret <- switch(
+      type,
+      "trafo" = (ytransf %>% as.matrix),
+      "pdf" = pdf %>% as.matrix,
+      "cdf" = (bd %>% tfd_cdf(ytransf) %>% as.matrix),
+      "grid_trafo" = grid_eval,
+      "grid_pdf" = pdf,
+      "grid_cdf" = (bd %>% tfd_cdf(grid_eval) %>% as.matrix)
     )
 
     return(ret)
@@ -210,20 +234,20 @@ fitted.deeptrafo <- function(
   ...)
 {
 
-  if(length(object$init_params$image_var)>0 | !is.null(batch_size)){
+  if(length(object$init_params$image_var)>0 | !is.null(batch_size)) {
 
     mod_output <- predict_gen(object, newdata, batch_size,
                               apply_fun = function(x) x,
                               convert_fun = convert_fun)
 
-  }else{
+  } else{
 
-    if(is.null(newdata)){
+    if(is.null(newdata)) {
 
       newdata <- prepare_data(object$init_params$parsed_formulas_contents,
                               gamdata = object$init_params$gamdata$data_trafos)
 
-    }else{
+    } else{
 
       newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata,
                                  gamdata = object$init_params$gamdata$data_trafos)
@@ -241,9 +265,10 @@ fitted.deeptrafo <- function(
 map_param_string_to_index <- function(which_param)
 {
 
-  switch (which_param,
-          "interacting" = 2,
-          "shifting" = 3
+  switch(
+    which_param,
+    "interacting" = 2,
+    "shifting" = 3
   )
 
 }
@@ -254,14 +279,26 @@ logLik.deeptrafo <- function(
   object,
   y = NULL,
   newdata = NULL,
-  convert_fun = sum,
+  convert_fun = function(x, ...) - sum(x, ...),
   ...
 )
 {
+
   if (is.null(newdata)) {
     y <- object$init_params$y
     y_pred <- fitted(object)
   }
 
- - convert_fun(object$model$loss(object$init_params$y, fitted(object))$numpy())
+ convert_fun(object$model$loss(object$init_params$y, fitted(object))$numpy())
+
+}
+
+# Helpers -----------------------------------------------------------------
+
+get_bd <- function(family) {
+  switch(family,
+         "normal" = tfd_normal(loc = 0, scale = 1),
+         "logistic" = tfd_logistic(loc = 0, scale = 1),
+         "gumbel" = tfd_gumbel(loc = 0, scale = 1)
+  )
 }

@@ -33,7 +33,8 @@
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
 #' m %>% fit(epochs = 100, batch_size = nrow(wine))
 #' predfun <- m %>% predict(wine)
-#' predfun(wine$rating, type = "trafo")
+#' debugonce(predfun)
+#' predfun(wine$rating, type = "pdf")
 #' plot(m)
 #' coef(m, which_param = "interacting")
 #' coef(m, which_param = "shifting")
@@ -440,12 +441,13 @@ neg_ll_trafo <- function(base_distribution) {
 nll_ordinal <- function(base_distribution = "logistic") {
 
   if (is.character(base_distribution)) {
-    bd <- switch(base_distribution,
-                 "normal" = tfd_normal(loc = 0, scale = 1),
-                 "logistic" = tfd_logistic(loc = 0, scale = 1)
-    )
+
+    bd <- get_bd(base_distribution)
+
   } else {
+
     bd <- base_distribution
+
   }
 
   return(
@@ -484,12 +486,13 @@ nll_ordinal <- function(base_distribution = "logistic") {
 nll_count <- function(base_distribution = "logistic") {
 
   if (is.character(base_distribution)) {
-    bd <- switch(base_distribution,
-                 "normal" = tfd_normal(loc = 0, scale = 1),
-                 "logistic" = tfd_logistic(loc = 0, scale = 1)
-    )
+
+    bd <- get_bd(base_distribution)
+
   } else {
+
     bd <- base_distribution
+
   }
 
   return(
@@ -528,10 +531,9 @@ nll_count <- function(base_distribution = "logistic") {
 nll_surv <- function(base_distribution) {
 
   if (is.character(base_distribution)) {
-    bd <- switch(base_distribution,
-                 "normal" = tfd_normal(loc = 0, scale = 1),
-                 "logistic" = tfd_logistic(loc = 0, scale = 1)
-    )
+
+    bd <- get_bd(base_distribution)
+
   } else {
     bd <- base_distribution
   }
@@ -576,11 +578,7 @@ nll_surv <- function(base_distribution) {
 nll <- function(base_distribution) {
 
   if (is.character(base_distribution)) {
-    bd <- switch(base_distribution,
-                 "normal" = tfd_normal(loc = 0, scale = 1),
-                 "logistic" = tfd_logistic(loc = 0, scale = 1),
-                 "gumbel" = tfd_gumbel(loc = 0, scale = 1)
-    )
+    bd <- get_bd(base_distribution)
   } else {
     bd <- base_distribution
   }

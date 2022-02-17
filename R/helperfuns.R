@@ -1,3 +1,6 @@
+
+# Ordinal bases -----------------------------------------------------------
+
 eval_ord <- function(y) {
   stopifnot(is.ordered(y))
   c(model.matrix(~ 0 + y, data = data.frame(y = y),
@@ -38,6 +41,8 @@ eval_ord_prime <- function(y) {
   resp[] <- 0
   return(resp)
 }
+
+# Bernstein bases ---------------------------------------------------------
 
 eval_bsp <- function(y, order = 3, supp = range(y)) {
 
