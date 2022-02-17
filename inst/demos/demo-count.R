@@ -25,7 +25,7 @@ m <- deeptrafo(SG5 ~ 0 + AOT + AFS, data = birds, order = 6,
 fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(birds))
 
 coef(tm)
-unlist(coef(m, which = "h2"))
+unlist(coef(m, which = "shifting"))
 
 # Unconditional case ------------------------------------------------------
 
@@ -37,12 +37,12 @@ m <- deeptrafo(SG5 ~ 1, data = birds, order = 6,
                  warmstart_weights = list(list(), list(), list("1" = 0)),
                  specific_weight_options = list(list(), list(), list("1" = list(trainable = FALSE)))),
                optimizer = optimizer_adam(learning_rate = 0.05, decay = 1e-3))
-coef(m, "h2")
+coef(m, "shifting")
 fit(m, epochs = 2e3, validation_split = NULL, batch_size = nrow(birds))
-coef(m, "h2")
+coef(m, "shifting")
 
 coef(tm, with_baseline = TRUE)
-unlist(coef(m, which = "h1"))
+unlist(coef(m, which = "interacting"))
 
 logLik(tm)
 logLik(m)

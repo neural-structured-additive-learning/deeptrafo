@@ -542,7 +542,7 @@ h1_plotfun <- function(dim_basis){
 get_theta <- function(object)
 {
 
-  do.call("cbind", coef(object, which_param = "h1"))
+  do.call("cbind", coef(object, which_param = "interacting"))
 
 }
 

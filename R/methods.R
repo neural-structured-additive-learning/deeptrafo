@@ -2,7 +2,7 @@
 #'
 #' @param x deeptrafo object
 #' @param which which effect to plot, default selects all.
-#' @param which_param character; either \code{"h1"} or \code{"h2"}
+#' @param which_param character; either \code{"interacting"} or \code{"shifting"}
 #' 1 corresponds to the shift term, 2 to the interaction term.
 #' @param only_data logical, if TRUE, only the data for plotting is returned
 #' @param grid_length the length of an equidistant grid at which a two-dimensional function
@@ -19,14 +19,14 @@ plot.deeptrafo <- function(
   x,
   which = NULL,
   # which of the nonlinear structured effects
-  which_param = "h2", # for which parameter
+  which_param = "shifting", # for which parameter
   only_data = FALSE,
   grid_length = 40,
   ... # passed to plot function
 )
 {
 
-  get_weight_fun = if(which_param == "h1")
+  get_weight_fun <- if (which_param == "interacting")
     get_weight_by_name_ia else get_weight_by_name
 
   which_param <- map_param_string_to_index(which_param)
@@ -51,7 +51,7 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 #' coefficients should be returned (default is first parameter)
 #' @param type either NULL (all types of coefficients are returned),
 #' "linear" for linear coefficients or "smooth" for coefficients of;
-#' Note that \code{type} is currently not used for \code{"h1"}
+#' Note that \code{type} is currently not used for \code{"interacting"}
 #' @param ... further arguments, passed to fit, plot or predict function
 #'
 #' @method coef deeptrafo
@@ -60,13 +60,13 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 #'
 coef.deeptrafo <- function(
   object,
-  which_param = "h1",
+  which_param = "interacting",
   type = NULL,
   ...
 )
 {
 
-  is_interaction <- which_param == "h1"
+  is_interaction <- which_param == "interacting"
   which_param <- map_param_string_to_index(which_param)
 
   # else, return lags
@@ -242,8 +242,8 @@ map_param_string_to_index <- function(which_param)
 {
 
   switch (which_param,
-          "h1" = 2,
-          "h2" = 3
+          "interacting" = 2,
+          "shifting" = 3
   )
 
 }

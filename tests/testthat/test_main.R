@@ -13,16 +13,16 @@ check_methods <- function(m, newdata, test_plots = TRUE)
 
   # plot
   if (test_plots) {
-    pret1 <- plot(m, which_param = "h1")
+    pret1 <- plot(m, which_param = "interacting")
     expect_is(pret1, "list")
-    pret2 <- plot(m, which_param = "h2")
+    pret2 <- plot(m, which_param = "shifting")
     expect_is(pret2, "list")
   }
 
   # coef
-  ch1 <- coef(m, which = "h1")
+  ch1 <- coef(m, which = "interacting")
   expect_is(ch1, "list")
-  ch2 <- coef(m, which = "h2")
+  ch2 <- coef(m, which = "shifting")
   expect_is(ch2, "list")
 
   # fitted
@@ -177,7 +177,7 @@ test_that("ordinal NLL works", {
   df <- data.frame(y = ordered(rep(1:5, each = 5)))
   m <- deeptrafo(y ~ 1, data = df)
   fit(m, validation_split = NULL, epochs = 10, batch_size = nrow(df))
-  coef(m); coef(m, "h2")
+  coef(m); coef(m, "shifting")
 
   cf0 <- qlogis((1:4)/5)
   ll0 <- - nrow(df) * log(1/5)
@@ -189,7 +189,7 @@ test_that("ordinal NLL works", {
   tmp[[1]][] <- sp_inv(cf0)
   set_weights(m$model, tmp)
 
-  cf <- coef(m, which = "h1")
+  cf <- coef(m, which = "interacting")
 
   tloss <- nll_ordinal()
   ll <- tloss(response(df$y), fitted(m))$numpy()
@@ -308,6 +308,6 @@ test_that("model with fixed weight", {
                    warmstart_weights = list(list(), list(), list("temp" = 0))
                    )
                  )
-  expect_equal(coef(m, which_param = "h2")$temp, matrix(0))
+  expect_equal(coef(m, which_param = "shifting")$temp, matrix(0))
 
 })

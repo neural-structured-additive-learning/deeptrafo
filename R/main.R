@@ -35,8 +35,8 @@
 #' predfun <- m %>% predict(wine)
 #' predfun(wine$rating, type = "trafo")
 #' plot(m)
-#' coef(m, which_param = "h1")
-#' coef(m, which_param = "h2")
+#' coef(m, which_param = "interacting")
+#' coef(m, which_param = "shifting")
 #'
 #' @importFrom mlt R
 #' @export

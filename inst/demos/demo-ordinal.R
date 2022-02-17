@@ -23,7 +23,7 @@ m <- deeptrafo(rating ~ 0 + temp + contact, data = wine,
 fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
 
 coef(tm)
-unlist(coef(m, which = "h2"))
+unlist(coef(m, which = "shifting"))
 
 # Unconditional case ------------------------------------------------------
 
@@ -34,12 +34,12 @@ m <- deeptrafo(rating ~ 1, data = wine,
                  warmstart_weights = list(list(), list(), list("1" = 0)),
                  specific_weight_options = list(list(), list(), list("1" = list(trainable = FALSE)))),
                optimizer = optimizer_adam(learning_rate = 0.1, decay = 1e-4))
-coef(m, "h2")
+coef(m, "shifting")
 fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
-coef(m, "h2")
+coef(m, "shifting")
 
 coef(tm, with_baseline = TRUE)
-unlist(coef(m, which = "h1"))[-5] + unlist(coef(m, which = "h2"))
+unlist(coef(m, which = "interacting"))[-5] + unlist(coef(m, which = "shifting"))
 
 # Image data --------------------------------------------------------------
 
@@ -66,5 +66,5 @@ mim <- keras_model_sequential() %>%
 m <- deeptrafo(y ~ mim(x), data = df, list_of_deep_models = list(mim = mim),
                optimizer = optimizer_adam(learning_rate = 1e-4))
 fit(m, epochs = 5L)
-coef(m, which = "h1")
-coef(m, which = "h2")
+coef(m, which = "interacting")
+coef(m, which = "shifting")

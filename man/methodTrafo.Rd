@@ -10,13 +10,13 @@
 \method{plot}{deeptrafo}(
   x,
   which = NULL,
-  which_param = "h2",
+  which_param = "shifting",
   only_data = FALSE,
   grid_length = 40,
   ...
 )
 
-\method{coef}{deeptrafo}(object, which_param = "h1", type = NULL, ...)
+\method{coef}{deeptrafo}(object, which_param = "interacting", type = NULL, ...)
 
 \method{predict}{deeptrafo}(object, newdata = NULL, ...)
 
@@ -41,7 +41,7 @@ is evaluated for plotting.}
 
 \item{type}{either NULL (all types of coefficients are returned),
 "linear" for linear coefficients or "smooth" for coefficients of;
-Note that \code{type} is currently not used for \code{"h1"}}
+Note that \code{type} is currently not used for \code{"interacting"}}
 
 \item{newdata}{optional new data, either data.frame or list}
 
