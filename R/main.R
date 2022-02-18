@@ -257,10 +257,8 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
 
         outputs <- lapply(1:length(pp_y), function(j) layer_add_identity(
           lapply(1:length(pp_in), function(i) pp_lay[[layer_matching[i]]]$layer(
-            tf_row_tensor(
               pp_y[[j]]$layer(inputs_y[[j]]),
               tf$add(inputs[[i]], add_const_positiv)
-            )
           )
           )
         ))
