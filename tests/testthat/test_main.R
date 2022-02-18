@@ -1,6 +1,6 @@
 
-# devtools::load_all("../deepregression/")
-# devtools::load_all(".")
+devtools::load_all("../deepregression/")
+devtools::load_all(".")
 # devtools::load_all("../../../deepregression/")
 
 context("Test deeptrafo")
@@ -166,7 +166,7 @@ test_that("ordinal model with response-varying effects", {
 
 test_that("monotonicity problem (ordinal case)", {
 
-  # test_models(y | s(x) ~ z)
+  test_models(y | s(x) ~ z)
 
 })
 
@@ -235,7 +235,7 @@ test_that("count model with response-varying effects", {
 
 test_that("monotonicity problem (count case)", {
 
-  # test_models(y | s(x) ~ z, which = "count")
+  test_models(y | s(x) ~ z, which = "count")
 
 })
 
@@ -277,7 +277,7 @@ test_that("survival model with response-varying effects", {
 
 test_that("monotonicity problem (survival case)", {
 
-  # test_models(y | s(x) ~ z, which = "survival")
+  test_models(y | s(x) ~ z, which = "survival")
 
 })
 
