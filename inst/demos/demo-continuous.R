@@ -45,9 +45,7 @@ coef(m); coef(m, "shifting")
 logLik(tm)
 logLik(m)
 
-m$model$loss(m$init_params$y, fitted(m))
-
-# fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
+# m$model$loss(m$init_params$y, fitted(m))
 
 coef(tm, with_baseline = TRUE)
 unlist(coef(m, which = "interacting"))

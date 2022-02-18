@@ -291,6 +291,11 @@ map_param_string_to_index <- function(which_param)
 }
 
 #' @method logLik deeptrafo
+#' @param object deeptrafo object;
+#' @param y vector; optional response
+#' @param newdata data.frame; optional new data
+#' @param convert_fun function; applied to the log-likelihood values of all observations
+#' @param ... currently not used
 #' @export
 logLik.deeptrafo <- function(
   object,
