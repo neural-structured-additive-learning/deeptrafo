@@ -24,22 +24,32 @@ ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
                                              penalty_iat),
                                         c(dim_basis, dim_iat))
 
+  
   thetas_layer <- layer_mono_multi(
     units = output_dim,
     dim_bsp = dim_basis,
     kernel_regularizer = combined_penalty,
     name = name
   )
+  
+  if(!is.null(spec) && "dnn" %in% names(environment(controls$procs[[spec]]))) # deep network in ia
+  {
 
-  layer <- function(x, ...){
-
-    # input_theta_y <- tf_stride_cols(x, 1L, dim_basis)
-    # interact_pred <- tf_stride_cols(x, dim_basis+1L, dim_basis+dim_iat)
-    # AoB <- tf_row_tensor(input_theta_y, interact_pred)
-    # return(AoB %>% thetas_layer())
-
-    x %>% thetas_layer()
-
+    layer <- function(bspy, iaterm, ...){
+      
+      iat_dnn_out <- iat$layer(iaterm)
+      tf_row_tensor(bspy, iat_dnn_out) %>% thetas_layer()
+      
+    }
+    
+  }else{
+    
+    layer <- function(bspy, iaterm, ...){
+      
+      tf_row_tensor(bspy, iaterm) %>% thetas_layer()
+      
+    }
+    
   }
 
   if(!is.null(iat$plot_fun)){

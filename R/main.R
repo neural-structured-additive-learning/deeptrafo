@@ -31,12 +31,9 @@
 #' wine$noise <- rnorm(nrow(wine))
 #' fml <- rating ~ 0 + temp
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
-#' m %>% fit(epochs = 100, batch_size = nrow(wine))
-#' predfun <- m %>% predict(wine)
-#' predfun(wine$rating, type = "trafo")
-#' plot(m)
-#' coef(m, which_param = "h1")
-#' coef(m, which_param = "h2")
+#' m %>% fit(epochs = 20, batch_size = nrow(wine))
+#' coef(m, which_param = "interacting")
+#' coef(m, which_param = "shifting")
 #'
 #' @importFrom mlt R
 #' @export
@@ -48,7 +45,7 @@ deeptrafo <- function(
   lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(fml)[1]]]),
   order = get_order(response_type, data[[all.vars(fml)[1]]]),
-  addconst_interaction = NULL,
+  addconst_interaction = 0,
   family = "logistic",
   monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order,
@@ -93,8 +90,8 @@ deeptrafo <- function(
   list_of_formulas[sapply(list_of_formulas, is.null)] <- NULL
 
   # Extract response variable
-  y <- model.response(model.frame(formula(fml, lhs = 1, rhs = 0), data = data))
-  y <- response(y)
+  resp <- model.response(model.frame(formula(fml, lhs = 1, rhs = 0), data = data))
+  y <- response(resp)
 
   # check for ATMs
   if(!is.null(lag_formula)){
@@ -139,7 +136,8 @@ deeptrafo <- function(
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
     h1_init(yterms = which(names(list_of_formulas) == "yterms"),
-            h1pred = which(names(list_of_formulas) == "h1pred"))
+            h1pred = which(names(list_of_formulas) == "h1pred"),
+            add_const_positiv = addconst_interaction)
   snwb[[which(names(list_of_formulas) == "yterms")]] <- function(...) return(NULL)
 
   ret <- do.call("deepregression",
@@ -157,6 +155,7 @@ deeptrafo <- function(
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
   ret$init_params$response_type <- response_type
+  ret$init_params$response <- resp
 
   class(ret) <- c("deeptrafo", "deepregression")
   return(ret)
@@ -168,7 +167,7 @@ deeptrafo <- function(
 #' @param yterms,h1pred positions of the left and right RWT term
 #' @return returns a subnetwork_init function with pre-defined arguments
 #'
-h1_init <- function(yterms, h1pred)
+h1_init <- function(yterms, h1pred, add_const_positiv = 0)
 {
   return(
     function(pp, deep_top, orthog_fun, split_fun, shared_layers,
@@ -256,10 +255,8 @@ h1_init <- function(yterms, h1pred)
 
         outputs <- lapply(1:length(pp_y), function(j) layer_add_identity(
           lapply(1:length(pp_in), function(i) pp_lay[[layer_matching[i]]]$layer(
-            tf_row_tensor(
               pp_y[[j]]$layer(inputs_y[[j]]),
-              inputs[[i]]
-            )
+              tf$add(inputs[[i]], add_const_positiv)
           )
           )
         ))
@@ -440,12 +437,13 @@ neg_ll_trafo <- function(base_distribution) {
 nll_ordinal <- function(base_distribution = "logistic") {
 
   if (is.character(base_distribution)) {
-    bd <- switch(base_distribution,
-                 "normal" = tfd_normal(loc = 0, scale = 1),
-                 "logistic" = tfd_logistic(loc = 0, scale = 1)
-    )
+
+    bd <- get_bd(base_distribution)
+
   } else {
+
     bd <- base_distribution
+
   }
 
   return(
@@ -458,7 +456,7 @@ nll_ordinal <- function(base_distribution = "logistic") {
       t2 <- tf_stride_cols(y_true, 3L)
       lik <- t1 * tfd_cdf(bd, upr) + t2 * (1 - tfd_cdf(bd, lwr)) +
         (1 - t1) * (1 - t2) * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
-      neglogLik <- - tf$math$log(lik)
+      neglogLik <- - tf$math$log(tf$clip_by_value(lik, 1e-8, Inf))
       return(neglogLik)
     }
   )
@@ -484,12 +482,13 @@ nll_ordinal <- function(base_distribution = "logistic") {
 nll_count <- function(base_distribution = "logistic") {
 
   if (is.character(base_distribution)) {
-    bd <- switch(base_distribution,
-                 "normal" = tfd_normal(loc = 0, scale = 1),
-                 "logistic" = tfd_logistic(loc = 0, scale = 1)
-    )
+
+    bd <- get_bd(base_distribution)
+
   } else {
+
     bd <- base_distribution
+
   }
 
   return(
@@ -502,7 +501,7 @@ nll_count <- function(base_distribution = "logistic") {
       cint <- tf_stride_cols(y_true, 4L)
       lik <- cleft * tfd_cdf(bd, upr) +
         cint * (tfd_cdf(bd, upr) - tfd_cdf(bd, lwr))
-      neglogLik <- - tf$math$log(lik)
+      neglogLik <- - tf$math$log(tf$clip_by_value(lik, 1e-8, Inf))
       return(neglogLik)
     }
   )
@@ -528,10 +527,9 @@ nll_count <- function(base_distribution = "logistic") {
 nll_surv <- function(base_distribution) {
 
   if (is.character(base_distribution)) {
-    bd <- switch(base_distribution,
-                 "normal" = tfd_normal(loc = 0, scale = 1),
-                 "logistic" = tfd_logistic(loc = 0, scale = 1)
-    )
+
+    bd <- get_bd(base_distribution)
+
   } else {
     bd <- base_distribution
   }
@@ -549,7 +547,7 @@ nll_surv <- function(base_distribution) {
                                                   1e-8, Inf))
 
       ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
-      ll_right <- tf$math$log(tfd_survival_function(bd, trafo))
+      ll_right <- tfd_log_survival_function(bd, trafo)
 
       neglogLik <- - (exact * ll_exact + cright * ll_right)
       return(neglogLik)
@@ -576,11 +574,7 @@ nll_surv <- function(base_distribution) {
 nll <- function(base_distribution) {
 
   if (is.character(base_distribution)) {
-    bd <- switch(base_distribution,
-                 "normal" = tfd_normal(loc = 0, scale = 1),
-                 "logistic" = tfd_logistic(loc = 0, scale = 1),
-                 "gumbel" = tfd_gumbel(loc = 0, scale = 1)
-    )
+    bd <- get_bd(base_distribution)
   } else {
     bd <- base_distribution
   }

@@ -14,6 +14,30 @@ test_that("eval response types", {
   expect_equal(eval_response(c(1.1, 3.2), "continuous"), c(1.1, 3.2))
 })
 
+# test_that("make grids of responses", {
+#   tn <- 50
+#   expect_length(make_grid(rnorm(10), tn)$y, tn)
+#   expect_length(make_grid(1:10)$y, 10L)
+#   expect_length(make_grid(ordered(1:5))$y, 5L)
+#   expect_length(make_grid(survival::Surv(rchisq(10, df = 1), rep(0, 10)), n = tn)$y, tn)
+# })
+
+# Formula helpers ---------------------------------------------------------
+
+test_that("formula parts work", {
+
+  expect_equal(forms2form(~ y, NULL, NULL, NULL), y ~ 1)
+  expect_equal(forms2form(~ y, ~ x, NULL, NULL), y | x ~ 1)
+  expect_equal(forms2form(~ y, NULL, ~ x, NULL), y ~ x)
+  expect_equal(forms2form(~ y, ~ z, ~ x, NULL), y | z ~ x)
+  expect_equal(forms2form(~ y, ~ z + dnn(abc), ~ x + f(g) + lasso(d), NULL),
+               y | z + dnn(abc) ~ x + f(g) + lasso(d))
+  expect_equal(forms2form(~ y, ~ x, ~ x, ~ x), y | x ~ x | x)
+  expect_error(forms2form(NULL, ~ x)) # response can't be NULL
+
+})
+
+
 # ATM helpers -------------------------------------------------------------
 
 test_that("atm_lag helpers", {

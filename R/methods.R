@@ -2,7 +2,7 @@
 #'
 #' @param x deeptrafo object
 #' @param which which effect to plot, default selects all.
-#' @param which_param character; either \code{"h1"} or \code{"h2"}
+#' @param which_param character; either \code{"interacting"} or \code{"shifting"}
 #' 1 corresponds to the shift term, 2 to the interaction term.
 #' @param only_data logical, if TRUE, only the data for plotting is returned
 #' @param grid_length the length of an equidistant grid at which a two-dimensional function
@@ -19,19 +19,24 @@ plot.deeptrafo <- function(
   x,
   which = NULL,
   # which of the nonlinear structured effects
-  which_param = "h2", # for which parameter
+  which_param = c("shifting", "interacting"), # for which parameter
   only_data = FALSE,
   grid_length = 40,
   ... # passed to plot function
 )
 {
 
-  get_weight_fun = if(which_param == "h1")
-    get_weight_by_name_ia else get_weight_by_name
+  which_param <- match.arg(which_param)
+
+  get_weight_fun <- switch(
+    which_param,
+    "interacting" = get_weight_by_name_ia,
+    "shifting" = get_weight_by_name
+  )
 
   which_param <- map_param_string_to_index(which_param)
-
   class(x) <- class(x)[-1]
+
   return(plot(x, which = which, which_param = which_param,
               only_data = only_data, grid_length = grid_length,
               get_weight_fun = get_weight_fun, ...))
@@ -51,7 +56,7 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 #' coefficients should be returned (default is first parameter)
 #' @param type either NULL (all types of coefficients are returned),
 #' "linear" for linear coefficients or "smooth" for coefficients of;
-#' Note that \code{type} is currently not used for \code{"h1"}
+#' Note that \code{type} is currently not used for \code{"interacting"}
 #' @param ... further arguments, passed to fit, plot or predict function
 #'
 #' @method coef deeptrafo
@@ -60,13 +65,15 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 #'
 coef.deeptrafo <- function(
   object,
-  which_param = "h1",
+  which_param = c("shifting", "interacting"),
   type = NULL,
   ...
 )
 {
 
-  is_interaction <- which_param == "h1"
+  which_param <- match.arg(which_param)
+
+  is_interaction <- which_param == "interacting"
   which_param <- map_param_string_to_index(which_param)
 
   # else, return lags
@@ -98,92 +105,85 @@ coef.deeptrafo <- function(
 predict.deeptrafo <- function(
   object,
   newdata = NULL,
+  y = newdata[[object$init_params$response_varname]],
+  type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
+  batch_size = NULL,
   ...
 )
 {
 
-  # TODO: make prediction possible for one observation only; fix type mismatch pdf grid
-  trafo_fun <- function(y, type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
-                        grid = FALSE, batch_size = NULL)
-  {
-    type <- match.arg(type)
+  # TODO: make prediction possible for one observation only
+  type <- match.arg(type)
 
-    if(is.null(newdata))
-      newdata <- prepare_data(object$init_params$parsed_formulas_contents,
-                              gamdata = object$init_params$gamdata$data_trafos)
+  rname <- object$init_params$response_varname
+  rtype <- object$init_params$response_type
+  order <- object$init_params$trafo_options$order_bsp
+  fam <- object$init_params$family
+  discrete <- as.numeric(rtype %in% c("count", "ordered"))
+  bd <- get_bd(fam)
 
-    newdata[[object$init_params$response_varname]] <- y
+  if (is.null(y))
+    y <- object$init_params$response
 
-    mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
+  ry <- response(y)
+  cleft <- ry[, "cleft", drop = FALSE]
+  cint <- ry[, "cinterval", drop = FALSE]
+  cright <- ry[, "cright", drop = FALSE]
 
-    if(type=="output") return(mod_output)
+  if (is.null(newdata))
+    newdata <- prepare_data(object$init_params$parsed_formulas_contents,
+                            gamdata = object$init_params$gamdata$data_trafos)
 
-    w_eta <- mod_output[, 1, drop = FALSE]
-    aTtheta <- mod_output[, 2, drop = FALSE]
+  newdata[[rname]] <- y
 
-    if(type=="interaction"){
+  mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
 
-      ret <- cbind(interaction = as.matrix(aTtheta),
-                   as.data.frame(newdata)
-      )
+  if (type == "output")
+    return(mod_output)
 
-      return(ret)
+  w_eta <- mod_output[, 1, drop = FALSE]
+  aTtheta <- mod_output[, 2, drop = FALSE]
+  apTtheta <- mod_output[, 3, drop = FALSE]
 
-    }
+  if (type == "interaction")
+    return(cbind(interaction = as.matrix(aTtheta), as.data.frame(newdata)))
 
-    if(type=="shift"){
+  if (type == "shift")
+    return(cbind(shift = as.matrix(w_eta), as.data.frame(newdata)))
 
-      return(cbind(shift = as.matrix(w_eta),
-                   as.data.frame(newdata)))
+  ytransf <- aTtheta + w_eta
+  yprimeTrans <- apTtheta + discrete * w_eta
 
-    }
-    ytransf <- aTtheta + w_eta
-    yprimeTrans <- mod_output[, 3, drop = FALSE]
 
-    theta <- get_theta(object)
+  if (discrete) {
 
-    if(grid)
-    {
+    pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)) +
+      cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransf)
 
-      ymat <- lapply(object$init_params$parsed_formulas_contents[[1]],
-                     function(pp) pp$predict(newdata))
+    cdf <- (cleft + cint) * as.matrix(tfd_cdf(bd, ytransf)) +
+      cright * as.matrix(tfd_cdf(bd, rep(1e8, nrow(cright))))
 
-      obspp1 <- object$init_params$trafo_options$order_bsp + 1
-      ay <- ymat[[1]] #[,1:obspp1]
-      ayprime <- ymat[[2]]
-      xmat <- do.call("cbind", lapply(object$init_params$parsed_formulas_contents[[2]],
-                                      function(pp) pp$predict(newdata)))
+  } else {
 
-      grid_eval <- t(xmat%*%t(ay%*%theta))
+    pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
 
-      grid_eval <- grid_eval +
-        t(as.matrix(w_eta)[,rep(1,nrow(grid_eval))])
-
-      if(type=="pdf")
-        grid_prime_eval <- t(xmat%*%t(ayprime%*%theta))
-
-      type <- paste0("grid_",type)
-
-    }
-
-    ret <- switch (type,
-                   trafo = (ytransf %>% as.matrix),
-                   pdf = ((tfd_normal(0,1) %>% tfd_prob(ytransf) %>%
-                             as.matrix)*as.matrix(yprimeTrans)),
-                   cdf = (tfd_normal(0,1) %>% tfd_cdf(ytransf) %>%
-                            as.matrix),
-                   grid_trafo = grid_eval,
-                   grid_pdf = ((tfd_normal(0,1) %>% tfd_prob(grid_eval) %>%
-                                  as.matrix)*as.matrix(grid_prime_eval)),
-                   grid_cdf = (tfd_normal(0,1) %>% tfd_cdf(grid_eval) %>%
-                                 as.matrix)
-    )
-
-    return(ret)
+    cdf <- bd %>% tfd_cdf(ytransf) %>% as.matrix
 
   }
 
-  return(trafo_fun)
+  theta <- get_theta(object)
+
+  ret <- switch(
+    type,
+    "trafo" = (ytransf %>% as.matrix),
+    "pdf" = pdf %>% as.matrix,
+    "cdf" = cdf %>% as.matrix# ,
+    # "grid_trafo" = grid_eval %>% as.matrix,
+    # "grid_pdf" = pdf %>% as.matrix,
+    # "grid_cdf" = (bd %>% tfd_cdf(grid_eval) %>% as.matrix)
+  )
+
+  return(ret)
 
 }
 
@@ -210,20 +210,20 @@ fitted.deeptrafo <- function(
   ...)
 {
 
-  if(length(object$init_params$image_var)>0 | !is.null(batch_size)){
+  if(length(object$init_params$image_var)>0 | !is.null(batch_size)) {
 
     mod_output <- predict_gen(object, newdata, batch_size,
                               apply_fun = function(x) x,
                               convert_fun = convert_fun)
 
-  }else{
+  } else{
 
-    if(is.null(newdata)){
+    if(is.null(newdata)) {
 
       newdata <- prepare_data(object$init_params$parsed_formulas_contents,
                               gamdata = object$init_params$gamdata$data_trafos)
 
-    }else{
+    } else{
 
       newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata,
                                  gamdata = object$init_params$gamdata$data_trafos)
@@ -241,36 +241,99 @@ fitted.deeptrafo <- function(
 map_param_string_to_index <- function(which_param)
 {
 
-  switch (which_param,
-          "h1" = 2,
-          "h2" = 3
+  switch(
+    which_param,
+    "interacting" = 2,
+    "shifting" = 3
   )
 
 }
 
+#' Log-likelihood method for deeptrafo objects
+#'
 #' @method logLik deeptrafo
 #' @param object deeptrafo object;
 #' @param y vector; optional response
-#' @param newdata data.frame; optional new data
+#' @param newdata list or data.frame; optional new data
 #' @param convert_fun function; applied to the log-likelihood values of all observations
 #' @param ... currently not used
+#'
 #' @export
+#'
 logLik.deeptrafo <- function(
   object,
   y = NULL,
   newdata = NULL,
-  convert_fun = sum,
+  convert_fun = function(x, ...) - sum(x, ...),
   ...
 )
 {
-  if (is.null(newdata) & is.null(y)) {
+
+  if (is.null(newdata)) {
     y <- object$init_params$y
     y_pred <- fitted(object)
   }
-  
-  if (!is.null(newdata)){
-    y_pred <- predict(object, newdata) 
-  }
-  
-  - convert_fun(object$model$loss(y, y_pred)$numpy())
+
+ convert_fun(object$model$loss(object$init_params$y, fitted(object))$numpy())
+
+}
+
+#' Simulate method for deeptrafo objects
+#'
+#' @method simulate deeptrafo
+#' @param object \code{"deeptrafo"} object
+#' @param nsim number of simulations; defaults to 1
+#' @param seed seed for generating samples; defaults to \code{NULL}
+#' @param newdata list or data.frame; optional new data
+#' @param ... further arguments to \link[predict.deeptrafo]{predict.deeptrafo}
+#'
+#' @export
+#'
+simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
+                               seed = NULL, ...) {
+
+  rtype <- object$init_params$response_type
+  rvar <- object$init_params$response_varname
+
+  if (!is.null(newdata))
+    ry <- newdata[[rvar]]
+  else
+    ry <- object$init_params$response
+
+
+  if (rtype != "ordered")
+    stop("Simulate not yet implemented for response types other than ordered.")
+
+  lvls <- sort(unique(ry))
+
+
+  cdf <- do.call("cbind", lapply(lvls, function(x) {
+    newy <- ry
+    newy[] <- x
+    predict(object, newdata = newdata, y = newy, type = "cdf") # , ... = ...)
+  }))
+
+  pmf <- apply(cbind(0, cdf), 1, diff)
+
+  ret <- lapply(1:nsim, function(x) {
+    ordered(apply(pmf, 2, function(probs) {
+      which(rmultinom(n = 1, size = 1, prob = probs) == 1)
+    }), levels = levels(lvls))
+  })
+
+  if (nsim == 1)
+    ret <- ret[[1]]
+
+  ret
+
+}
+
+# Helpers -----------------------------------------------------------------
+
+get_bd <- function(family) {
+  switch(family,
+         "normal" = tfd_normal(loc = 0, scale = 1),
+         "logistic" = tfd_logistic(loc = 0, scale = 1),
+         "gumbel" = tfd_gumbel(loc = 0, scale = 1)
+  )
 }

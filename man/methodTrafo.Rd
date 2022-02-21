@@ -10,15 +10,22 @@
 \method{plot}{deeptrafo}(
   x,
   which = NULL,
-  which_param = "h2",
+  which_param = c("shifting", "interacting"),
   only_data = FALSE,
   grid_length = 40,
   ...
 )
 
-\method{coef}{deeptrafo}(object, which_param = "h1", type = NULL, ...)
+\method{coef}{deeptrafo}(object, which_param = c("shifting", "interacting"), type = NULL, ...)
 
-\method{predict}{deeptrafo}(object, newdata = NULL, ...)
+\method{predict}{deeptrafo}(
+  object,
+  newdata = NULL,
+  y = newdata[[object$init_params$response_varname]],
+  type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
+  batch_size = NULL,
+  ...
+)
 
 \method{fitted}{deeptrafo}(object, newdata = NULL, batch_size = NULL, convert_fun = as.matrix, ...)
 }
@@ -41,7 +48,7 @@ is evaluated for plotting.}
 
 \item{type}{either NULL (all types of coefficients are returned),
 "linear" for linear coefficients or "smooth" for coefficients of;
-Note that \code{type} is currently not used for \code{"h1"}}
+Note that \code{type} is currently not used for \code{"interacting"}}
 
 \item{newdata}{optional new data, either data.frame or list}
 

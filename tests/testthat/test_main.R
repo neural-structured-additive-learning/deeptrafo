@@ -1,122 +1,23 @@
+
+# devtools::load_all("../deepregression/")
+# devtools::load_all(".")
+devtools::load_all("../../../deepregression/")
+
 context("Test deeptrafo")
 
-# devtools::load_all("../../../deepregression/")
-
-# FUNs --------------------------------------------------------------------
-
-check_methods <- function(m, newdata, test_plots = TRUE)
-{
-
-  # fit
-  hist <- m %>% fit(epochs = 2)
-  expect_is(hist, "keras_training_history")
-
-  # plot
-  if (test_plots) {
-    pret1 <- plot(m, which_param = "h1")
-    expect_is(pret1, "list")
-    pret2 <- plot(m, which_param = "h2")
-    expect_is(pret2, "list")
-  }
-
-  # coef
-  ch1 <- coef(m, which = "h1")
-  expect_is(ch1, "list")
-  ch2 <- coef(m, which = "h2")
-  expect_is(ch2, "list")
-
-  # fitted
-  fitt <- m %>% fitted()
-  expect_is(fitt, "matrix")
-
-  # predict
-  trf_fun <- m %>% predict.deeptrafo(newdata)
-  expect_is(trf_fun, "function")
-  a <- trf_fun(newdata$y)
-  this_n <- nrow(newdata)
-  expect_equal(dim(a), c(this_n,1))
-  b <- trf_fun(newdata$y, type = "pdf")
-  expect_equal(dim(b), c(this_n,1))
-  c <- trf_fun(newdata$y, type = "cdf")
-  expect_equal(dim(c), c(this_n,1))
-  d <- trf_fun(newdata$y, type = "interaction")
-  expect_equal(dim(d), c(this_n,1+ncol(newdata)))
-  e <- trf_fun(newdata$y, type = "shift")
-  expect_equal(dim(e), c(this_n,1+ncol(newdata)))
-  f <- trf_fun(newdata$y, type = "output")
-  expect_equal(nrow(f), this_n,1)
-  expect_gt(ncol(f), 2)
-  g <- trf_fun(newdata$y, type = "trafo", grid=TRUE)
-  expect_equal(dim(g), c(this_n,this_n))
-  h <- trf_fun(newdata$y, type = "pdf", grid=TRUE)
-  expect_equal(dim(h), c(this_n,this_n))
-  i <- trf_fun(newdata$y, type = "cdf", grid=TRUE)
-  expect_equal(dim(i), c(this_n,this_n))
-
-  # logLik
-  expect_is(logLik(m), "numeric")
-
-}
-
-dgp_ordinal <- function(ncl = 6L, n = 100) {
-  data.frame(y = ordered(sample.int(ncl, n, replace = TRUE)),
-             x = abs(rnorm(n)), z = rnorm(n))
-}
-
-dgp_count <- function(n = 100) {
-  data.frame(
-    y = sample.int(50, size = n, replace = TRUE),
-    x = abs(rnorm(n)),
-    z = rnorm(n),
-    f = factor(sample.int(2, size = n, replace = TRUE))
-  )
-}
-
-dgp_surv <- function(n = 100) {
-  data.frame(
-    y = survival::Surv(abs(rnorm(n, sd = 10)), sample(0:1, n, TRUE)),
-    x = abs(rnorm(n)),
-    z = rnorm(n),
-    f = factor(sample.int(2, size = n, replace = TRUE))
-  )
-}
-
-test_models <- function(fml, which = c("ordinal", "count", "survival"), ...) {
-
-  which <- match.arg(which)
-
-  DGP <- switch(which,
-    "ordinal" = dgp_ordinal,
-    "count" = dgp_count,
-    "survival" = dgp_surv
-  )
-
-  dat <- DGP()
-  m <- deeptrafo(fml, dat, ...)
-
-  if (which == "ordinal")
-    expect_false(any(is.nan(m$model$loss(t(sapply(dat$y, eval_ord)),
-                                         fitted(m))$numpy())))
-  hist <- fit(m, epochs = 2L)
-
-  if (which == "ordinal")
-    expect_equal(m$init_params$trafo_options$order_bsp, 5L)
-
-  expect_false(any(is.nan(hist$metrics$loss)))
-
-  check_methods(m, dat, test_plots = FALSE)
-
-}
+# source("tests/testthat/test-funs.R")
+source("test-funs.R")
 
 # Additive models ---------------------------------------------------------
 
 test_that("simple additive model", {
 
-  dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
-  fml <- y | s(x) ~ z + s(z)
+  dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100),
+                    f = factor(sample(0:1, 100, TRUE)))
+  fml <- y | f ~ z + s(z)
   m <- deeptrafo(fml, dat)
 
-  check_methods(m, newdata = dat)
+  check_methods(m, newdata = dat, test_plots = FALSE)
 
 })
 
@@ -127,6 +28,8 @@ test_that("unconditional additive model", {
   m <- deeptrafo(fml, dat)
   hist <- fit(m, epochs = 2L)
   expect_false(any(is.nan(hist$metrics$loss)))
+
+  check_methods(m, newdata = dat, test_plots = FALSE)
 
 })
 
@@ -177,7 +80,7 @@ test_that("ordinal NLL works", {
   df <- data.frame(y = ordered(rep(1:5, each = 5)))
   m <- deeptrafo(y ~ 1, data = df)
   fit(m, validation_split = NULL, epochs = 10, batch_size = nrow(df))
-  coef(m); coef(m, "h2")
+  coef(m); coef(m, "shifting")
 
   cf0 <- qlogis((1:4)/5)
   ll0 <- - nrow(df) * log(1/5)
@@ -189,7 +92,7 @@ test_that("ordinal NLL works", {
   tmp[[1]][] <- sp_inv(cf0)
   set_weights(m$model, tmp)
 
-  cf <- coef(m, which = "h1")
+  cf <- coef(m, which = "interacting")
 
   tloss <- nll_ordinal()
   ll <- tloss(response(df$y), fitted(m))$numpy()
@@ -280,6 +183,7 @@ test_that("survival model with NN component", {
     layer_dense(units = 1L)
 
   test_models(y ~ nn(x), list_of_deep_models = list(nn = nn), which = "survival")
+  test_models(y | nn(x) ~ 1, list_of_deep_models = list(nn = nn), which = "survival")
 
 })
 
@@ -308,6 +212,24 @@ test_that("model with fixed weight", {
                    warmstart_weights = list(list(), list(), list("temp" = 0))
                    )
                  )
-  expect_equal(coef(m, which_param = "h2")$temp, matrix(0))
+  expect_equal(coef(m, which_param = "shifting")$temp, matrix(0))
+
+})
+
+# Deep --------------------------------------------------------------------
+
+test_that("deep conditional model", {
+
+  dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+
+  deep_model <- function(x) x %>%
+    layer_dense(units = 32, activation = "relu", use_bias = FALSE) %>%
+    layer_dropout(rate = 0.2) %>%
+    layer_dense(units = 8, activation = "relu")
+
+  fml <- y | d(x) ~ z + s(z)
+  m <- deeptrafo(fml, dat, list_of_deep_models = list(d = deep_model))
+
+  check_methods(m, dat[1:10, ], FALSE, FALSE)
 
 })

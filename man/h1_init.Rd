@@ -4,7 +4,7 @@
 \alias{h1_init}
 \title{Initializes the Processed Additive Predictor for TM's Interaction}
 \usage{
-h1_init(yterms, h1pred)
+h1_init(yterms, h1pred, add_const_positiv = 0)
 }
 \arguments{
 \item{yterms, h1pred}{positions of the left and right RWT term}

@@ -20,6 +20,18 @@ response <- function(y) {
             type = get_response_type(y))
 }
 
+# make_grid <- function(y, n = 1e2) {
+#   rtype <- get_response_type(y)
+#   var <- switch(
+#     rtype,
+#     "continuous" = numeric_var(name = "y", support = range(y), bounds = c(-Inf, Inf)),
+#     "ordered" = ordered_var(name = "y", levels = levels(y), bounds = NA),
+#     "count" = numeric_var(name = "y", support = range(y)),
+#     "survival" = numeric_var(name = "y", support = range(y[, 1]), bounds = c(0, Inf))
+#   )
+#   mkgrid(var, n = n)
+# }
+
 get_response_type <- function(y) {
   ret <- if (is.ordered(y))
     "ordered"

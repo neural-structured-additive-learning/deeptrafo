@@ -23,7 +23,7 @@ m <- deeptrafo(cmedv ~ 0 + nox + age, data = BostonHousing2, order = 6,
 fit(m, epochs = 2e3, validation_split = NULL, batch_size = nrow(BostonHousing2))
 
 coef(tm)
-unlist(coef(m, which = "h2"))
+unlist(coef(m, which = "shifting"))
 
 # Unconditional case ------------------------------------------------------
 
@@ -40,14 +40,12 @@ tmp[[2]][] <- 0
 tmp[[1]][] <- c(cfb[1], log(exp(diff(cfb)) - 1 + 1e-6))
 set_weights(m$model, tmp)
 
-coef(m); coef(m, "h2")
+coef(m); coef(m, "shifting")
 
 logLik(tm)
 logLik(m)
 
-m$model$loss(m$init_params$y, fitted(m))
-
-# fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
+# m$model$loss(m$init_params$y, fitted(m))
 
 coef(tm, with_baseline = TRUE)
-unlist(coef(m, which = "h1"))
+unlist(coef(m, which = "interacting"))
