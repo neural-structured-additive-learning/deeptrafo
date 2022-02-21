@@ -10,7 +10,7 @@ deeptrafo(
   lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(fml)[1]]]),
   order = get_order(response_type, data[[all.vars(fml)[1]]]),
-  addconst_interaction = NULL,
+  addconst_interaction = 0,
   family = "logistic",
   monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
@@ -64,10 +64,7 @@ data("wine", package = "ordinal")
 wine$noise <- rnorm(nrow(wine))
 fml <- rating ~ 0 + temp
 m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
-m \%>\% fit(epochs = 100, batch_size = nrow(wine))
-predfun <- m \%>\% predict(wine)
-predfun(wine$rating, type = "pdf")
-plot(m)
+m \%>\% fit(epochs = 20, batch_size = nrow(wine))
 coef(m, which_param = "interacting")
 coef(m, which_param = "shifting")
 

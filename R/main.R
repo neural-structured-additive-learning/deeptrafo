@@ -31,10 +31,7 @@
 #' wine$noise <- rnorm(nrow(wine))
 #' fml <- rating ~ 0 + temp
 #' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
-#' m %>% fit(epochs = 100, batch_size = nrow(wine))
-#' predfun <- m %>% predict(wine)
-#' predfun(wine$rating, type = "pdf")
-#' plot(m)
+#' m %>% fit(epochs = 20, batch_size = nrow(wine))
 #' coef(m, which_param = "interacting")
 #' coef(m, which_param = "shifting")
 #'
