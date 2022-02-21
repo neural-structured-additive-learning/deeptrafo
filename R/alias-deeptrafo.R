@@ -1,5 +1,18 @@
-# Aliases
 
+#' Deep conditional transformation models with alternative formula interface
+#'
+#' @param response formula for the response; e.g., \code{~ y}
+#' @param intercept formula for the intercept function; e.g., \code{~ x},
+#'     for which interacting bases with the response will be set up
+#' @param shift formula for the shift part of the model; e.g., \code{~ s(x)}
+#' @param shared formula for sharing weights between predictors in the intercept
+#'     and shift part of the model
+#' @inheritParams deeptrafo
+#'
+#' @return See return statement of \code{\link[deeptransformation]{deeptrafo}}
+#'
+#' @export
+#'
 dctm <- function(
   response, intercept = NULL, shift = NULL,
   shared = NULL, data, lag_formula = NULL,

@@ -33,7 +33,7 @@ test_that("formula parts work", {
   expect_equal(forms2form(~ y, ~ z + dnn(abc), ~ x + f(g) + lasso(d), NULL),
                y | z + dnn(abc) ~ x + f(g) + lasso(d))
   expect_equal(forms2form(~ y, ~ x, ~ x, ~ x), y | x ~ x | x)
-
+  expect_error(forms2form(NULL, ~ x)) # response can't be NULL
 
 })
 
