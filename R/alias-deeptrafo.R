@@ -9,7 +9,7 @@
 #'     and shift part of the model
 #' @inheritParams deeptrafo
 #'
-#' @return See return statement of \code{\link[deeptransformation]{deeptrafo}}
+#' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
 #'
 #' @export
 #'
