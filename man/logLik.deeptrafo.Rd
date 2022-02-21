@@ -17,7 +17,7 @@
 
 \item{y}{vector; optional response}
 
-\item{newdata}{data.frame; optional new data}
+\item{newdata}{list or data.frame; optional new data}
 
 \item{convert_fun}{function; applied to the log-likelihood values of all observations}
 

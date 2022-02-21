@@ -8,7 +8,7 @@ context("Test aliases")
 # source("tests/testthat/test-funs.R")
 source("test-funs.R")
 
-test_alias <- function(rsp, int = NULL, shi = NULL,
+test_alias <- function(rsp, int = NULL, shi = NULL, FUN = dctm,
                        which = c("ordinal", "count", "survival"), ...) {
 
   which <- match.arg(which)
@@ -20,7 +20,7 @@ test_alias <- function(rsp, int = NULL, shi = NULL,
   )
 
   dat <- DGP()
-  m <- dctm(response = rsp, intercept = int, shift = shi, data = dat, ...)
+  m <- FUN(response = rsp, intercept = int, shift = shi, data = dat, ...)
 
   if (which == "ordinal")
     expect_false(any(is.nan(m$model$loss(t(sapply(dat$y, eval_ord)),
@@ -57,6 +57,7 @@ test_that("unconditional ordinal model", {
 test_that("ordinal model", {
 
   test_alias(~ y, NULL, ~ x)
+  test_alias(~ y, NULL, ~ x, FUN = ontram)
 
 })
 

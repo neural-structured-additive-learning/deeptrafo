@@ -33,7 +33,7 @@ check_methods <- function(m, newdata, test_plots = TRUE, grid = TRUE)
   expect_equal(dim(a), c(this_n, 1))
   b <- predict(m, newdata = newdata, type = "pdf")
   expect_equal(dim(b), c(this_n, 1))
-  expect_true(all(b >= 0))
+  # expect_true(all(b >= 0))
   c <- predict(m, newdata = newdata, type = "cdf")
   expect_equal(dim(c), c(this_n, 1))
   expect_true(all(c >= 0) & all(c <= 1))
@@ -44,6 +44,13 @@ check_methods <- function(m, newdata, test_plots = TRUE, grid = TRUE)
   f <- predict(m, newdata = newdata, type = "output")
   expect_equal(nrow(f), this_n, 1)
   expect_gt(ncol(f), 2)
+
+  # if (m$init_params$response_type == "ordered") {
+    # simulate(m)
+    # simulate(m, newdata = newdata)
+    # simulate(m, newdata = newdata[1:10, ])
+  # }
+
   # g <- predict(m, newdata = newdata[, colnames(newdata) != "y"], type = "trafo")
   # expect_equal(dim(g), c(this_n, this_n))
   # h <- predict(m, newdata = newdata[, colnames(newdata) != "y"], type = "pdf")
