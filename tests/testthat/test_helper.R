@@ -22,6 +22,22 @@ test_that("eval response types", {
 #   expect_length(make_grid(survival::Surv(rchisq(10, df = 1), rep(0, 10)), n = tn)$y, tn)
 # })
 
+# Formula helpers ---------------------------------------------------------
+
+test_that("formula parts work", {
+
+  expect_equal(forms2form(~ y, NULL, NULL, NULL), y ~ 1)
+  expect_equal(forms2form(~ y, ~ x, NULL, NULL), y | x ~ 1)
+  expect_equal(forms2form(~ y, NULL, ~ x, NULL), y ~ x)
+  expect_equal(forms2form(~ y, ~ z, ~ x, NULL), y | z ~ x)
+  expect_equal(forms2form(~ y, ~ z + dnn(abc), ~ x + f(g) + lasso(d), NULL),
+               y | z + dnn(abc) ~ x + f(g) + lasso(d))
+  expect_equal(forms2form(~ y, ~ x, ~ x, ~ x), y | x ~ x | x)
+
+
+})
+
+
 # ATM helpers -------------------------------------------------------------
 
 test_that("atm_lag helpers", {
