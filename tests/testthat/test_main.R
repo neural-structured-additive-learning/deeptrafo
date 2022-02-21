@@ -1,13 +1,13 @@
 
-# devtools::load_all("../deepregression/")
-# devtools::load_all(".")
+devtools::load_all("../deepregression/")
+devtools::load_all(".")
 # devtools::load_all("../../../deepregression/")
 
 context("Test deeptrafo")
 
 # FUNs --------------------------------------------------------------------
 
-check_methods <- function(m, newdata, test_plots = TRUE)
+check_methods <- function(m, newdata, test_plots = TRUE, grid = TRUE)
 {
 
   # fit
@@ -318,5 +318,23 @@ test_that("model with fixed weight", {
                    )
                  )
   expect_equal(coef(m, which_param = "shifting")$temp, matrix(0))
+
+})
+
+# Deep --------------------------------------------------------------------
+
+test_that("deep conditional model", {
+
+  dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+
+  deep_model <- function(x) x %>%
+    layer_dense(units = 32, activation = "relu", use_bias = FALSE) %>%
+    layer_dropout(rate = 0.2) %>%
+    layer_dense(units = 8, activation = "relu")
+
+  fml <- y | d(x) ~ z + s(z)
+  m <- deeptrafo(fml, dat, list_of_deep_models = list(d = deep_model))
+
+  check_methods(m, dat[1:10, ], FALSE, FALSE)
 
 })
