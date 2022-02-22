@@ -25,6 +25,12 @@
 #'
 #' @method ensemble deeptrafo
 #'
+#' @examples
+#' dat <- data.frame(y = rnorm(100), x = rnorm(100))
+#' m <- deeptrafo(y ~ 0 + x, data = dat)
+#' ens <- ensemble(m, n_ensemble = 2)
+#' coef(ens)
+#'
 #' @export
 ensemble.deeptrafo <- function(x, n_ensemble = 5, reinitialize = TRUE,
                                mylapply = lapply, verbose = FALSE, patience = 20,

@@ -59,3 +59,10 @@ ensemble of \code{"deeptrafo"} models with list of training histories
 \description{
 Deep ensembling for deeptrafo models
 }
+\examples{
+dat <- data.frame(y = rnorm(100), x = rnorm(100))
+m <- deeptrafo(y ~ 0 + x, data = dat)
+ens <- ensemble(m, n_ensemble = 2)
+coef(ens)
+
+}
