@@ -25,6 +25,15 @@ fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
 coef(tm)
 unlist(coef(m, which = "shifting"))
 
+# ontram alias ------------------------------------------------------------
+
+m <- ontram(response = ~ rating, shift = ~ 0 + temp + contact, data = wine,
+            optimizer = optimizer_adam(learning_rate = 0.1, decay = 1e-4))
+fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
+
+coef(tm)
+unlist(coef(m, which = "shifting"))
+
 # Unconditional case ------------------------------------------------------
 
 tm <- Polr(rating ~ 1, data = wine)
@@ -69,8 +78,11 @@ m <- deeptrafo(y ~ mim(x), data = df, list_of_deep_models = list(mim = mim),
                optimizer = optimizer_adam(learning_rate = 1e-4))
 
 # Complex intercept model
-# m <- deeptrafo(y | mim(x) ~ 1, data = df, list_of_deep_models = list(mim = mim),
-#                optimizer = optimizer_adam(learning_rate = 1e-4))
+# m <- ontram(response = ~ y,
+#             intercept = ~ mim(x),
+#             shift = ~ 0,
+#             data = df, list_of_deep_models = list(mim = mim),
+#             optimizer = optimizer_adam(learning_rate = 5e-5))
 
 fit(m, epochs = 10L)
 coef(m, which = "interacting")
