@@ -78,3 +78,16 @@ fitted.dtEnsemble <- function(object, newdata = NULL, batch_size = NULL,
                         batch_size = batch_size, convert_fun = convert_fun,
                         ... = ...)
 }
+
+#' @method predict dtEnsemble
+#' @inheritParams predict.deeptrafo
+#'
+#' @export
+#'
+predict.dtEnsemble <- function(
+  object, newdata = NULL, y = newdata[[object$init_params$response_varname]],
+  type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
+  batch_size = NULL, ...) {
+  .call_for_all_members(object, predict.deeptrafo, newdata = newdata, y = y,
+                        type = type, batch_size = batch_size, ... = ...)
+}
