@@ -40,8 +40,17 @@ test_that("simple additive model", {
 
   dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100),
                     f = factor(sample(0:1, 100, TRUE)))
-  m <- dctm(response = ~ y, intercept = ~ f, shift = ~ z + s(z), data = dat)
 
+  # DCTM
+  m <- dctm(response = ~ y, intercept = ~ f, shift = ~ z + s(z), data = dat)
+  check_methods(m, newdata = dat, test_plots = FALSE)
+
+  # Tram-like aliases
+  m <- deepBoxCox(y | f ~ z + s(z), data = dat)
+  check_methods(m, newdata = dat, test_plots = FALSE)
+  m <- deepLehmann(y | f ~ z + s(z), data = dat)
+  check_methods(m, newdata = dat, test_plots = FALSE)
+  m <- deepColr(y | f ~ z + s(z), data = dat)
   check_methods(m, newdata = dat, test_plots = FALSE)
 
 })
