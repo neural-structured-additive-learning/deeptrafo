@@ -25,6 +25,12 @@
 #'
 #' @method ensemble deeptrafo
 #'
+#' @examples
+#' dat <- data.frame(y = rnorm(100), x = rnorm(100))
+#' m <- deeptrafo(y ~ 0 + x, data = dat)
+#' ens <- ensemble(m, n_ensemble = 2)
+#' coef(ens)
+#'
 #' @export
 ensemble.deeptrafo <- function(x, n_ensemble = 5, reinitialize = TRUE,
                                mylapply = lapply, verbose = FALSE, patience = 20,
@@ -78,3 +84,46 @@ fitted.dtEnsemble <- function(object, newdata = NULL, batch_size = NULL,
                         batch_size = batch_size, convert_fun = convert_fun,
                         ... = ...)
 }
+
+#' @method predict dtEnsemble
+#' @inheritParams predict.deeptrafo
+#'
+#' @export
+#'
+predict.dtEnsemble <- function(
+  object, newdata = NULL, y = newdata[[object$init_params$response_varname]],
+  type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
+  batch_size = NULL, ...) {
+  .call_for_all_members(object, predict.deeptrafo, newdata = newdata, y = y,
+                        type = type, batch_size = batch_size, ... = ...)
+}
+
+#' @method logLik dtEnsemble
+#' @inheritParams logLik.deeptrafo
+#'
+#' @export
+#'
+logLik.dtEnsemble <- function(
+  object, y = NULL,
+  newdata = NULL,
+  convert_fun = function(x, ...) - sum(x, ...),
+  batch_size = NULL,
+  ...
+) {
+
+  indiv <- .call_for_all_members(object, logLik.deeptrafo, newdata = newdata, y = y,
+                                 convert_fun = convert_fun, ... = ...)
+
+  fitt <- fitted(object, newdata = newdata, batch_size = NULL)
+  y_pred <- apply(simplify2array(fitt), 1:2, mean)
+
+  if (is.null(y)) {
+    y <- object$init_params$y
+  }
+
+  ensemble_loss <- convert_fun(object$model$loss(y, y_pred)$numpy())
+
+  list(members = unlist(indiv), ensemble = ensemble_loss)
+
+}
+
