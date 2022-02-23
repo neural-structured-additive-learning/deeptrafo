@@ -27,6 +27,7 @@ ens <- ensemble(m, epochs = 2e2)
 
 coef(ens)
 fitted(ens, type = "cdf")
+logLik(ens)
 
 # cross-validation --------------------------------------------------------
 

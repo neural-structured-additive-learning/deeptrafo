@@ -274,12 +274,13 @@ logLik.deeptrafo <- function(
 )
 {
 
+  # TODO: logLik with newdata
   if (is.null(newdata)) {
     y <- object$init_params$y
-    y_pred <- fitted(object)
+    y_pred <- fitted.deeptrafo(object)
   }
 
- convert_fun(object$model$loss(object$init_params$y, fitted(object))$numpy())
+ convert_fun(object$model$loss(y, y_pred)$numpy())
 
 }
 

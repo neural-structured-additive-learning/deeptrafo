@@ -97,3 +97,33 @@ predict.dtEnsemble <- function(
   .call_for_all_members(object, predict.deeptrafo, newdata = newdata, y = y,
                         type = type, batch_size = batch_size, ... = ...)
 }
+
+#' @method logLik dtEnsemble
+#' @inheritParams logLik.deeptrafo
+#'
+#' @export
+#'
+logLik.dtEnsemble <- function(
+  object, y = NULL,
+  newdata = NULL,
+  convert_fun = function(x, ...) - sum(x, ...),
+  batch_size = NULL,
+  ...
+) {
+
+  indiv <- .call_for_all_members(object, logLik.deeptrafo, newdata = newdata, y = y,
+                                 convert_fun = convert_fun, ... = ...)
+
+  fitt <- fitted(object, newdata = newdata, batch_size = NULL)
+  y_pred <- apply(simplify2array(fitt), 1:2, mean)
+
+  if (is.null(y)) {
+    y <- object$init_params$y
+  }
+
+  ensemble_loss <- convert_fun(object$model$loss(y, y_pred)$numpy())
+
+  list(members = unlist(indiv), ensemble = ensemble_loss)
+
+}
+
