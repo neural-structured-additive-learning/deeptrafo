@@ -8,13 +8,13 @@ ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
                param_nr = param_nr, controls = controls)
   spec <- get_special(term, specials = names(controls$procs))
 
-  if(is.null(spec)){
-    if(term=="1"){
+  if (is.null(spec)) {
+    if (term == "1") {
       iat <- do.call(int_processor, args)
-    }else{
+    } else {
       iat <- do.call(lin_processor, args)
     }
-  }else iat <- do.call(controls$procs[[spec]], args)
+  } else iat <- do.call(controls$procs[[spec]], args)
 
   dim_iat <- iat$input_dim
   dim_basis <- controls$order_bsp + 1L
@@ -24,40 +24,40 @@ ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
                                              penalty_iat),
                                         c(dim_basis, dim_iat))
 
-  
+
   thetas_layer <- layer_mono_multi(
     units = output_dim,
     dim_bsp = dim_basis,
     kernel_regularizer = combined_penalty,
     name = name
   )
-  
-  if(!is.null(spec) && "dnn" %in% names(environment(controls$procs[[spec]]))) # deep network in ia
+
+  if (!is.null(spec) && "dnn" %in% names(environment(controls$procs[[spec]]))) # deep network in ia
   {
 
     layer <- function(bspy, iaterm, ...){
-      
+
       iat_dnn_out <- iat$layer(iaterm)
       tf_row_tensor(bspy, iat_dnn_out) %>% thetas_layer()
-      
+
     }
-    
-  }else{
-    
+
+  } else {
+
     layer <- function(bspy, iaterm, ...){
-      
+
       tf_row_tensor(bspy, iaterm) %>% thetas_layer()
-      
+
     }
-    
+
   }
 
-  if(!is.null(iat$plot_fun)){
+  if (!is.null(iat$plot_fun)) {
 
     get_org_values <- function() return(iat$get_org_values())
     plot_fun <- iat$plot_fun
 
-  }else{
+  } else {
 
     plot_fun <- NULL
     get_org_values <- NULL
@@ -73,7 +73,7 @@ ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
     input_dim = as.integer(dim_iat),
     layer = layer,
     coef = function(weights) as.matrix(weights),
-    partial_effect = function(weights, newdata=NULL){
+    partial_effect = function(weights, newdata = NULL){
       # X <- if(is.null(newdata)) data_trafo() else
       #   predict_trafo(newdata)
       # return(function(y) row_tensor(y, X) %*% weights)

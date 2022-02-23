@@ -94,7 +94,7 @@ deeptrafo <- function(
   y <- response(resp)
 
   # check for ATMs
-  if(!is.null(lag_formula)){
+  if (!is.null(lag_formula)) {
 
     # extract from lag formula the variables as simple sum and
     # layers for additional transformation
@@ -184,7 +184,7 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
 
       # generate pp parts
       gaminput_nrs <- sapply(pp_in, "[[", "gamdata_nr")
-      has_gaminp <- !sapply(gaminput_nrs,is.null)
+      has_gaminp <- !sapply(gaminput_nrs, is.null)
       gaminput_comb <- sapply(pp_in[which(has_gaminp)], "[[", "gamdata_combined")
       inputs <- makeInputs(pp_in, param_nr = param_nr)
       inputs_y <- makeInputs(pp_y, param_nr = 1)
@@ -208,7 +208,7 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
               list(gaminputs[[gaminput_nrs[[nr]]]], inputs[[nr]])
             )
 
-          }else{
+          } else {
 
             inputs[[nr]] <- gaminputs[[gaminput_nrs[[nr]]]]
 
@@ -219,7 +219,7 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
         inputs_to_replace <- which(has_gaminp)[gaminput_comb]
         keep_inputs_in_return <- setdiff(1:length(inputs), (which(has_gaminp)[!gaminput_comb]))
 
-      }else{
+      } else {
 
         inputs_to_replace <-  c()
         keep_inputs_in_return <- 1:length(inputs)
@@ -229,14 +229,13 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
       layer_matching <- 1:length(pp_in)
       names(layer_matching) <- layer_matching
 
-      if(!is.null(shared_layers))
-      {
+      if(!is.null(shared_layers)) {
 
         names_terms <- get_names_pfc(pp_in)
 
-        for(group in shared_layers){
+        for(group in shared_layers) {
 
-          layer_ref_nr <- which(names_terms==group[1])
+          layer_ref_nr <- which(names_terms == group[1])
           layer_opts <- get("layer_args", environment(pp_lay[[layer_ref_nr]]$layer))
           layer_opts$name <- paste0("shared_",
                                     makelayername(paste(group, collapse="_"),
@@ -244,8 +243,9 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
           layer_ref <- do.call(get("layer_class", environment(pp_lay[[layer_ref_nr]]$layer)),
                                layer_opts)
 
-          terms_replace_layer <- which(names_terms%in%group)
+          terms_replace_layer <- which(names_terms %in% group)
           layer_matching[terms_replace_layer] <- layer_ref_nr
+
           for(i in terms_replace_layer) pp_lay[[i]]$layer <- layer_ref
 
         }
@@ -263,11 +263,11 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
         outputs <- layer_concatenate_identity(outputs)
 
         # replace original inputs
-        if(length(org_inputs_for_concat)>0)
+        if (length(org_inputs_for_concat) > 0)
           inputs[inputs_to_replace] <- org_inputs_for_concat
         return(list(c(inputs_y,inputs[keep_inputs_in_return]), outputs))
 
-      }else{
+      } else {
 
         ## define the different types of elements
         stop("Not implemented yet.")
@@ -355,9 +355,11 @@ from_preds_to_trafo <- function(
     # aPrimeTtheta <- tf_stride_cols(list_pred_param$h1pred, 2L)
     h1pred_ncol <- list_pred_param$h1pred$shape[[2]]
     shift_pred <- list_pred_param$h2
-    if(h1pred_ncol > 2){
 
-      lag_pred <- tf_stride_cols(list_pred_param$h1pred, 3, h1pred_ncol) %>% atm_toplayer()
+    if (h1pred_ncol > 2) {
+
+      lag_pred <- tf_stride_cols(list_pred_param$h1pred, 3, h1pred_ncol) %>%
+        atm_toplayer()
 
       # overwrite the shift_pred by adding lags
       shift_pred <- layer_add(list(shift_pred, lag_pred))
