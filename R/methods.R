@@ -80,9 +80,14 @@ coef.deeptrafo <- function(
   class(object) <- class(object)[-1]
   ret <- coef(object, which_param = which_param, type = type)
 
-  if (is_interaction)
+  if (is_interaction) {
     ret <- lapply(ret, function(r)
       reshape_softplus_cumsum(r, order_bsp_p1 = get_order_bsp_p1(object)))
+
+    if (object$init_params$response_type == "ordered")
+      ret <- lapply(ret, function(r) r[-nrow(r), , drop = FALSE])
+
+  }
 
   return(ret)
 

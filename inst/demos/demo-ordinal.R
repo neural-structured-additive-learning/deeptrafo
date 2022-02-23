@@ -48,7 +48,7 @@ fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
 coef(m, "shifting")
 
 coef(tm, with_baseline = TRUE)
-unlist(coef(m, which = "interacting"))[-5] + unlist(coef(m, which = "shifting"))
+unlist(coef(m, which = "interacting")) + unlist(coef(m, which = "shifting"))
 
 # Image data --------------------------------------------------------------
 
