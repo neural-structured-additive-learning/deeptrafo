@@ -397,14 +397,14 @@ from_preds_to_trafo <- function(
 neg_ll_trafo <- function(base_distribution) {
 
   # evaluate base_distribution
-  if(is.null(base_distribution) ||
-     (is.character(base_distribution) & base_distribution=="normal")){
-    bd <- tfd_normal(loc = 0, scale = 1)
-  }else if((is.character(base_distribution) &
-            base_distribution=="logistic")){
-    bd <- tfd_logistic(loc = 0, scale = 1)
-  }else{
+  if (is.character(base_distribution)) {
+
+    bd <- get_bd(base_distribution)
+
+  } else {
+
     bd <- base_distribution
+
   }
 
   return(

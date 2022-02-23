@@ -82,6 +82,103 @@ ontram <- function(
 
 }
 
+#' Deep continuous outcome logistic regression
+#'
+#' @inheritParams deeptrafo
+#'
+#' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
+#'
+#' @examples
+#' df <- data.frame(y = rnorm(50), x = rnorm(50))
+#' m <- deepColr(y ~ x, data = df)
+#' fit(m, epochs = 2L)
+#'
+#' @export
+#'
+deepColr <- function(
+  formula, data, lag_formula = NULL,
+  response_type = get_response_type(data[[all.vars(response)[1]]]),
+  order = get_order(response_type, data[[all.vars(response)[1]]]),
+  addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
+  trafo_options = trafo_control(order_bsp = order, response_type = response_type),
+  ...
+) {
+
+  stopifnot(response_type %in% c("continuous", "survival"))
+
+  deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+            response_type = response_type, order = order,
+            addconst_interaction = addconst_interaction, family = family,
+            monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+            ... = ...)
+
+}
+
+#' Deep Lehmann-type transformation models
+#'
+#' @inheritParams deeptrafo
+#'
+#' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
+#'
+#' @examples
+#' df <- data.frame(y = rnorm(50), x = rnorm(50))
+#' m <- deepLehmann(y ~ x, data = df)
+#' fit(m, epochs = 2L)
+#'
+#' @export
+#'
+deepLehmann <- function(
+  formula, data, lag_formula = NULL,
+  response_type = get_response_type(data[[all.vars(response)[1]]]),
+  order = get_order(response_type, data[[all.vars(response)[1]]]),
+  addconst_interaction = 0, family = "gumbel", monitor_metrics = NULL,
+  trafo_options = trafo_control(order_bsp = order, response_type = response_type),
+  ...
+) {
+
+  stopifnot(response_type %in% c("continuous", "survival"))
+
+  deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+            response_type = response_type, order = order,
+            addconst_interaction = addconst_interaction, family = family,
+            monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+            ... = ...)
+
+}
+
+#' Deep BoxCox-type transformation models
+#'
+#' @inheritParams deeptrafo
+#'
+#' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
+#'
+#' @examples
+#' df <- data.frame(y = rnorm(50), x = rnorm(50))
+#' m <- deepBoxCox(y ~ x, data = df)
+#' fit(m, epochs = 2L)
+#'
+#' @export
+#'
+deepBoxCox <- function(
+  formula, data, lag_formula = NULL,
+  response_type = get_response_type(data[[all.vars(response)[1]]]),
+  order = get_order(response_type, data[[all.vars(response)[1]]]),
+  addconst_interaction = 0, family = "normal", monitor_metrics = NULL,
+  trafo_options = trafo_control(order_bsp = order, response_type = response_type),
+  ...
+) {
+
+  stopifnot(response_type %in% c("continuous", "survival"))
+
+  deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+            response_type = response_type, order = order,
+            addconst_interaction = addconst_interaction, family = family,
+            monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+            ... = ...)
+
+}
+
+
 # Helpers -----------------------------------------------------------------
 
 formula_parts <- function(x) {
