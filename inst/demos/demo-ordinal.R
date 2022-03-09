@@ -23,6 +23,7 @@ m <- deeptrafo(rating ~ 0 + temp + contact, data = wine,
 fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
 
 coef(tm)
+unlist(coef(m, which = "interacting"))
 unlist(coef(m, which = "shifting"))
 
 # ontram alias ------------------------------------------------------------
@@ -71,18 +72,17 @@ mim <- keras_model_sequential() %>%
   layer_flatten() %>%
   layer_dense(units = 64, activation = "relu") %>%
   layer_dense(units = 32, activation = "relu") %>%
-  layer_dense(units = 1, use_bias = FALSE)
+  layer_dense(units = 9, use_bias = FALSE)
 
 # Complex shift model
-m <- deeptrafo(y ~ mim(x), data = df, list_of_deep_models = list(mim = mim),
-               optimizer = optimizer_adam(learning_rate = 1e-4))
+# m <- deeptrafo(y ~ mim(x), data = df, list_of_deep_models = list(mim = mim),
+#                optimizer = optimizer_adam(learning_rate = 1e-4))
 
 # Complex intercept model
-# m <- ontram(response = ~ y,
-#             intercept = ~ mim(x),
-#             shift = ~ 0,
-#             data = df, list_of_deep_models = list(mim = mim),
-#             optimizer = optimizer_adam(learning_rate = 5e-5))
+m <- ontram(response = ~ y,
+            intercept = ~ deep(x),
+            data = df, list_of_deep_models = list(deep = mim),
+            optimizer = optimizer_adam(learning_rate = 5e-5))
 
 fit(m, epochs = 10L)
 coef(m, which = "interacting")
