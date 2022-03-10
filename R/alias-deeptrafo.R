@@ -30,11 +30,15 @@ dctm <- function(
 
   fml <- forms2form(response, intercept, shift, shared)
 
-  deeptrafo(formula = fml, data = data, lag_formula = lag_formula,
-            response_type = response_type, order = order,
-            addconst_interaction = addconst_interaction, family = family,
-            monitor_metrics = monitor_metrics, trafo_options = trafo_options,
-            ... = ...)
+  ret <- deeptrafo(formula = fml, data = data, lag_formula = lag_formula,
+                   response_type = response_type, order = order,
+                   addconst_interaction = addconst_interaction, family = family,
+                   monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+                   ... = ...)
+
+  class(ret) <- c("dctm", class(ret))
+
+  ret
 
 }
 
@@ -73,12 +77,16 @@ ontram <- function(
 
   stopifnot(is.ordered(data[[all.vars(response)[1]]][1]))
 
-  dctm(response = response, intercept = intercept, shift = shift, shared = shared,
-       data = data, lag_formula = lag_formula,
-       response_type = response_type, order = order,
-       addconst_interaction = addconst_interaction, family = family,
-       monitor_metrics = monitor_metrics, trafo_options = trafo_options,
-       ... = ...)
+  ret <- dctm(response = response, intercept = intercept, shift = shift,
+              shared = shared, data = data, lag_formula = lag_formula,
+              response_type = response_type, order = order,
+              addconst_interaction = addconst_interaction, family = family,
+              monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+              ... = ...)
+
+  class(ret) <- c("ontram", class(ret))
+
+  ret
 
 }
 
@@ -90,12 +98,12 @@ ontram <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' m <- deepColr(y ~ x, data = df)
+#' m <- ColrNN(y ~ x, data = df)
 #' fit(m, epochs = 2L)
 #'
 #' @export
 #'
-deepColr <- function(
+ColrNN <- function(
   formula, data, lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(response)[1]]]),
   order = get_order(response_type, data[[all.vars(response)[1]]]),
@@ -106,15 +114,19 @@ deepColr <- function(
 
   stopifnot(response_type %in% c("continuous", "survival"))
 
-  deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
-            response_type = response_type, order = order,
-            addconst_interaction = addconst_interaction, family = family,
-            monitor_metrics = monitor_metrics, trafo_options = trafo_options,
-            ... = ...)
+  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+                   response_type = response_type, order = order,
+                   addconst_interaction = addconst_interaction, family = family,
+                   monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+                   ... = ...)
+
+  class(ret) <- c("ColrNN", class(ret))
+
+  ret
 
 }
 
-#' Deep Lehmann-type transformation models
+#' Lehmann-type neural network transformation models
 #'
 #' @inheritParams deeptrafo
 #'
@@ -122,12 +134,12 @@ deepColr <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' m <- deepLehmann(y ~ x, data = df)
+#' m <- LehmannNN(y ~ x, data = df)
 #' fit(m, epochs = 2L)
 #'
 #' @export
 #'
-deepLehmann <- function(
+LehmanNN <- function(
   formula, data, lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(response)[1]]]),
   order = get_order(response_type, data[[all.vars(response)[1]]]),
@@ -138,15 +150,19 @@ deepLehmann <- function(
 
   stopifnot(response_type %in% c("continuous", "survival"))
 
-  deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
-            response_type = response_type, order = order,
-            addconst_interaction = addconst_interaction, family = family,
-            monitor_metrics = monitor_metrics, trafo_options = trafo_options,
-            ... = ...)
+  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+                   response_type = response_type, order = order,
+                   addconst_interaction = addconst_interaction, family = family,
+                   monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+                   ... = ...)
+
+  class(ret) <- c("LehmanNN", class(ret))
+
+  ret
 
 }
 
-#' Deep BoxCox-type transformation models
+#' BoxCox-type neural network transformation models
 #'
 #' @inheritParams deeptrafo
 #'
@@ -154,12 +170,12 @@ deepLehmann <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' m <- deepBoxCox(y ~ x, data = df)
+#' m <- BoxCoxNN(y ~ x, data = df)
 #' fit(m, epochs = 2L)
 #'
 #' @export
 #'
-deepBoxCox <- function(
+BoxCoxNN <- function(
   formula, data, lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(response)[1]]]),
   order = get_order(response_type, data[[all.vars(response)[1]]]),
@@ -170,11 +186,15 @@ deepBoxCox <- function(
 
   stopifnot(response_type %in% c("continuous", "survival"))
 
-  deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
-            response_type = response_type, order = order,
-            addconst_interaction = addconst_interaction, family = family,
-            monitor_metrics = monitor_metrics, trafo_options = trafo_options,
-            ... = ...)
+  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+                   response_type = response_type, order = order,
+                   addconst_interaction = addconst_interaction, family = family,
+                   monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+                   ... = ...)
+
+  class(ret) <- c("BoxCoxNN", class(ret))
+
+  ret
 
 }
 

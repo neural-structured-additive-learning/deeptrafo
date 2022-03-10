@@ -68,7 +68,7 @@ deeptrafo <- function(
   if (ninteracting > 1L) {
     interacting <- formula(fml, lhs = 2L, rhs = 0L)[[2]]
     h1_form <- paste0(
-      "~ -1 + ", paste(paste0("ia(", c(int, trimws(
+      "~ 0 + ", paste(paste0("ia(", c(int, trimws(
         strsplit(form2text(interacting), "+", fixed = TRUE)[[1]]
       )), ")"), collapse=" + ")
     )
