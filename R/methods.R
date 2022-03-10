@@ -77,8 +77,7 @@ coef.deeptrafo <- function(
   which_param <- map_param_string_to_index(which_param)
 
   # else, return lags
-  class(object) <- class(object)[-1]
-  ret <- coef(object, which_param = which_param, type = type)
+  ret <- coef.deepregression(object, which_param = which_param, type = type)
 
   if (is_interaction) {
     ret <- lapply(ret, function(r)
@@ -344,7 +343,8 @@ simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
 #'
 #' @export
 #'
-print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE, ...) {
+print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
+                            with_baseline = FALSE, ...) {
 
   if (print_model)
     print(x$model)
@@ -366,17 +366,18 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE, ...) {
   int <- ifelse(no_int, "~1", fml2txt(fmls[[2]]))
   shift <- ifelse(no_shift, "~1", fml2txt(fmls[[3]]))
 
-  cat("\t", mtype, "neural network transformation model\n\n")
+  cat("\t", mtype, "outcome neural network transformation model\n\n")
   cat("\nInteracting: ", int, "\n")
   cat("\nShifting: ", shift, "\n")
 
   if (print_coefs) {
-    cat("\nBaseline transformation:\n")
     cfb <- coef(x, which_param = "interacting")
     if (no_int) {
       names(cfb) <- x$init_params$response_varname
+    }
+    if (with_baseline) {
+      cat("\nBaseline transformation:\n")
       print(unlist(cfb))
-
     }
     cat("\nShift coefficients:\n")
     print(unlist(coef(x, which_param = "shifting")))

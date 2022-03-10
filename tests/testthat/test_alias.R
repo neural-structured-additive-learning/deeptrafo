@@ -42,7 +42,7 @@ test_that("simple additive model", {
                     f = factor(sample(0:1, 100, TRUE)))
 
   # DCTM
-  m <- dctm(response = ~ y, intercept = ~ f, shift = ~ z + s(z), data = dat)
+  m <- dctm(response = ~ y, intercept = ~ f, shift = ~ 0 + z + s(z), data = dat)
   check_methods(m, newdata = dat, test_plots = FALSE)
 
   # Tram-like aliases
