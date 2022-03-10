@@ -46,11 +46,11 @@ test_that("simple additive model", {
   check_methods(m, newdata = dat, test_plots = FALSE)
 
   # Tram-like aliases
-  m <- deepBoxCox(y | f ~ z + s(z), data = dat)
+  m <- BoxCoxNN(y | f ~ z + s(z), data = dat)
   check_methods(m, newdata = dat, test_plots = FALSE)
-  m <- deepLehmann(y | f ~ z + s(z), data = dat)
+  m <- LehmanNN(y | f ~ z + s(z), data = dat)
   check_methods(m, newdata = dat, test_plots = FALSE)
-  m <- deepColr(y | f ~ z + s(z), data = dat)
+  m <- ColrNN(y | f ~ z + s(z), data = dat)
   check_methods(m, newdata = dat, test_plots = FALSE)
 
 })
