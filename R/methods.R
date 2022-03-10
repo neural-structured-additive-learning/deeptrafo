@@ -35,11 +35,10 @@ plot.deeptrafo <- function(
   )
 
   which_param <- map_param_string_to_index(which_param)
-  class(x) <- class(x)[-1]
 
-  return(plot(x, which = which, which_param = which_param,
-              only_data = only_data, grid_length = grid_length,
-              get_weight_fun = get_weight_fun, ...))
+  return(plot.deepregression(x, which = which, which_param = which_param,
+                             only_data = only_data, grid_length = grid_length,
+                             get_weight_fun = get_weight_fun, ...))
 
 }
 
