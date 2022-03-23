@@ -9,7 +9,8 @@ embedding_size <- 100
 maxlen <- 100
 order_bsp <- 25
 
-if (!file.exists("data_splitted.RDS")) {
+if (!file.exists(file.path(bpath, "data_splitted.RDS"))) {
+
   library(keras)
   library(tidyverse)
   library(jsonlite)
@@ -51,7 +52,6 @@ if (!file.exists("data_splitted.RDS")) {
 
   movies <- movies[unlist(sapply(movies$genres, function(x)
     length(x) > 1 | (!("TV Movie" %in% x) & !("Foreign" %in% x)))), ]
-
 
   # vote_average
   ggplot(
@@ -160,16 +160,11 @@ if (!file.exists("data_splitted.RDS")) {
           x[test_ind])
 
     data_list[[repl]] <- list(train = train, test = test)
-
   }
 
   saveRDS(data_list, file.path(bpath, "data_splitted.RDS"))
-
-
-} else{
-  data_list <- readRDS("data_splitted.RDS")
-
-
+} else {
+  data_list <- readRDS(file.path(bpath, "data_splitted.RDS"))
 }
 
 res <- list()
