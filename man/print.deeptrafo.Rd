@@ -4,7 +4,7 @@
 \alias{print.deeptrafo}
 \title{Print method for deeptrafo objects}
 \usage{
-\method{print}{deeptrafo}(x, print_model = FALSE, print_coefs = TRUE, ...)
+\method{print}{deeptrafo}(x, print_model = FALSE, print_coefs = TRUE, with_baseline = FALSE, ...)
 }
 \arguments{
 \item{x}{deeptrafo object}
