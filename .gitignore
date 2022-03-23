@@ -3,3 +3,6 @@ Meta
 tests/testthat/*.pdf
 *.Rproj
 .Rproj.user/
+*.RDS
+*.csv
+
