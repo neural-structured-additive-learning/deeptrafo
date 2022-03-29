@@ -27,7 +27,9 @@ m <- deeptrafo(cmedv ~ 1, data = BostonHousing2,
 fit(m, epochs = 4e3, validation_split = NULL, batch_size = nrow(BostonHousing2))
 
 plot(ecdf(BostonHousing2$ocmedv))
-lines(levels(BostonHousing2$cmedv), c(plogis(unlist(coef(m, which = "interacting")) + unlist(coef(m))), 1), type = "s", col = "red")
+lines(levels(BostonHousing2$cmedv),
+      c(plogis(unlist(coef(m, which = "interacting")) +
+                 unlist(coef(m))), 1), type = "s", col = "red")
 
 ## Conditional
 m <- deeptrafo(cmedv ~ 0 + chas + nox, data = BostonHousing2,
