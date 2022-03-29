@@ -169,7 +169,7 @@ if (!file.exists(file.path(bpath, "data_splitted.RDS"))) {
 
 res <- list()
 res_list <- list()
-epochs <- 10000
+epochs <- 1e3
 nrCores <- 2 # length(data_list)
 
 # repeat analysis 10 times
@@ -190,64 +190,28 @@ res_list <- mclapply(1:length(data_list), function(repl) {
   # optimizer
   optimizer <- optimizer_adadelta(learning_rate = 0.1)
 
-  ##########################################################################
-  ###################### only structured ###################################
+  # Models ------------------------------------------------------------------
 
-  form_lists <- list(
-    shift = popularity ~ 1 +
-      s(budget) +
-      # s(popularity) +
-      s(release_date) +
-      s(runtime) +
-      genreAction +
-      genreAdventure +
-      genreAnimation +
-      genreComedy +
-      genreCrime +
-      genreDocumentary +
-      genreDrama +
-      genreFamily +
-      genreFantasy +
-      genreForeign +
-      genreHistory +
-      genreHorror +
-      genreMusic +
-      genreMystery +
-      genreRomance +
-      genreScience_Fiction +
-      genreThriller +
-      genreTV_Movie +
-      genreWar +
-      genreWestern,
-    interaction = ~ -1 +
-      # s(budget, bs = "bs") +
-      # s(popularity, bs = "bs") +
-      # s(release_date, bs = "bs") +
-      # s(runtime, bs = "bs") +
-      genreAction +
-      genreAdventure +
-      genreAnimation +
-      genreComedy +
-      genreCrime +
-      genreDocumentary +
-      genreDrama +
-      genreFamily +
-      genreFantasy +
-      genreForeign +
-      genreHistory +
-      genreHorror +
-      genreMusic +
-      genreMystery +
-      genreRomance +
-      genreScience_Fiction +
-      genreThriller +
-      genreTV_Movie +
-      genreWar +
-      genreWestern
-  )
+  # fml <- vote_count ~ s(budget) + s(popularity) + s(runtime) + s(revenue) + genreAction
+  train$vote_count <- as.integer(train$vote_count)
+  fml_deep <- vote_count ~ s(budget) + s(popularity) + s(runtime) + s(revenue) +
+    deep(texts) + genreAction
+
+  embd_mod <- function(x) x %>%
+    layer_embedding(input_dim = tokenizer$num_words,
+                    output_dim = embedding_size) %>%
+    layer_lstm(units = 10, return_sequences = TRUE) %>%
+    layer_dropout(rate = 0.3) %>%
+    layer_flatten() %>%
+    layer_dense(25) %>%
+    layer_dropout(rate = 0.1) %>%
+    layer_dense(5) %>%
+    layer_dropout(rate = 0.1) %>%
+    layer_dense(1)
 
   mod <- deeptrafo(
-    form_lists$shift,
+    fml_deep,
+    list_of_deep_models = list(deep = embd_mod),
     data = train,
     optimizer = optimizer,
     order = order_bsp
@@ -256,7 +220,7 @@ res_list <- mclapply(1:length(data_list), function(repl) {
   mod %>% fit(
     epochs = epochs,
     validation_split = 0.2,
-    batch_size = 256,
+    batch_size = 2^8,
     view_metrics = FALSE,
     verbose = TRUE,
     callbacks =
@@ -266,12 +230,11 @@ res_list <- mclapply(1:length(data_list), function(repl) {
       )
   )
 
-  # res[[1]] <- list(pls = pr_log_scores,
-  #                  shift = shift,
-  #                  theta = theta,
-  #                  plotData_shift = plotData_shift,
-  #                  plotData_theta = plotData_theta)
-  #
-  # str_w1 <- mod$model$get_layer(name="structured_nonlinear_1")$get_weights()
-  # str_w2 <- mod$model$get_layer(name="constraint_mono_layer_multi")$get_weights()
+  coef(mod, which_param = "interacting")
+  coef(mod, which_param = "shifting")
+  plot(mod, which = "s(budget)")
+  plot(mod, which = "s(popularity)")
+  plot(mod, which = "s(runtime)")
+  - logLik(mod) / length(train$genreAction)
+
 })
