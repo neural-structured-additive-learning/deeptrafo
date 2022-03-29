@@ -37,3 +37,5 @@ fit(m, epochs = 8e3, validation_split = NULL, batch_size = nrow(BostonHousing2))
 plot(tm, which = "baseline only")
 lines(levels(BostonHousing2$cmedv)[-length(levels(BostonHousing2$cmedv))],
       unlist(coef(m, which = "interacting")), type = "s", col = "red")
+legend("topleft", c("Bernstein 25", "Nonparametric"), col = c("black", "red"),
+       lwd = 2)
