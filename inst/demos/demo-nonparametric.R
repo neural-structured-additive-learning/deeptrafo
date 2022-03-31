@@ -49,3 +49,20 @@ lines(levels(BostonHousing2$ocmedv)[-length(levels(BostonHousing2$ocmedv))],
       unlist(coef(m, which = "interacting")), type = "s", col = "red")
 legend("topleft", c("Bernstein 25", "Nonparametric"), col = c("black", "red"),
        lwd = 2)
+
+# RPS for shift models
+rps <- function(mod, y_true, newdata) {
+
+  K <- ncol(y_true)
+  ycum <- t(apply(y_true, 1, cumsum))
+  cfb <- t(coef(mod, "interacting")[[1]][, rep(1, nrow(y_true))])
+  shift <- as.matrix(predict(mod, newdata = newdata, type = "shift")[, "shift", drop = FALSE])
+  shift <- shift[, rep(1, K - 1)]
+  cdf <- plogis(cfb + shift)
+  briers <- (cdf - ycum[, 1:(K - 1), drop = FALSE])^2
+  mean(briers)
+
+}
+
+rps(m, y_true = model.matrix(~ 0 + ocmedv, data = BostonHousing2),
+    newdata = BostonHousing2)
