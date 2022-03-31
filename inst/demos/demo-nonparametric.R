@@ -13,14 +13,14 @@ devtools::load_all(".")
 # Data --------------------------------------------------------------------
 
 data("BostonHousing2", package = "mlbench")
+BostonHousing2 <- BostonHousing2 %>%
+  mutate(ocmedv = ordered(cmedv),
+         nox = c(scale(nox)))
 
 # Model -------------------------------------------------------------------
 
 tm <- Colr(cmedv ~ nox + chas, data = BostonHousing2, order = 25,
            support = range(BostonHousing2$cmedv))
-
-BostonHousing2$cmedv <- BostonHousing2$cmedv
-BostonHousing2$ocmedv <- ordered(BostonHousing2$cmedv)
 
 if (FALSE) {
   # otm <- Polr(ocmedv ~ nox + chas, data = BostonHousing2) # takes long!
