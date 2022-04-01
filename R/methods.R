@@ -128,6 +128,8 @@ predict.deeptrafo <- function(
   if (!is.null(newdata)) {
     if (is.null(newdata[[rname]])) {
       ygrd <- make_grid(object$init_params$response, n = K)[[1]]
+      if (type == "shift")
+        ygrd <- ygrd[1]
       ret <- lapply(ygrd, \(ty) {
         newdata[[rname]] <- rep(ty, nrow(newdata))
         predict.deeptrafo(object, newdata = newdata, type = type,
