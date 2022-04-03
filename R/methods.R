@@ -35,11 +35,10 @@ plot.deeptrafo <- function(
   )
 
   which_param <- map_param_string_to_index(which_param)
-  class(x) <- class(x)[-1]
 
-  return(plot(x, which = which, which_param = which_param,
-              only_data = only_data, grid_length = grid_length,
-              get_weight_fun = get_weight_fun, ...))
+  return(plot.deepregression(x, which = which, which_param = which_param,
+                             only_data = only_data, grid_length = grid_length,
+                             get_weight_fun = get_weight_fun, ...))
 
 }
 
@@ -109,9 +108,9 @@ coef.deeptrafo <- function(
 predict.deeptrafo <- function(
   object,
   newdata = NULL,
-  y = newdata[[object$init_params$response_varname]],
-  type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
+  type = c("trafo", "pdf", "cdf", "interaction", "shift", "terms"),
   batch_size = NULL,
+  K = 1e2,
   ...
 )
 {
@@ -126,23 +125,33 @@ predict.deeptrafo <- function(
   discrete <- as.numeric(rtype %in% c("count", "ordered"))
   bd <- get_bd(fam)
 
-  if (is.null(y))
-    y <- object$init_params$response
+  if (!is.null(newdata)) {
+    if (is.null(newdata[[rname]])) {
+      ygrd <- make_grid(object$init_params$response, n = K)[[1]]
+      if (type == "shift")
+        ygrd <- ygrd[1]
+      ret <- lapply(ygrd, \(ty) {
+        newdata[[rname]] <- rep(ty, nrow(newdata))
+        predict.deeptrafo(object, newdata = newdata, type = type,
+                          batch_size = batch_size, K = K, ... = ...)
+      })
+      names(ret) <- as.character(ygrd)
+      return(ret)
+    }
+  }
 
-  ry <- response(y)
+  mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
+
+  if (is.null(newdata))
+    ry <- response(object$init_params$response)
+  else
+    ry <- response(newdata[[rname]])
+
   cleft <- ry[, "cleft", drop = FALSE]
   cint <- ry[, "cinterval", drop = FALSE]
   cright <- ry[, "cright", drop = FALSE]
 
-  if (is.null(newdata))
-    newdata <- prepare_data(object$init_params$parsed_formulas_contents,
-                            gamdata = object$init_params$gamdata$data_trafos)
-
-  newdata[[rname]] <- y
-
-  mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
-
-  if (type == "output")
+  if (type == "terms")
     return(mod_output)
 
   w_eta <- mod_output[, 1, drop = FALSE]
@@ -150,14 +159,13 @@ predict.deeptrafo <- function(
   apTtheta <- mod_output[, 3, drop = FALSE]
 
   if (type == "interaction")
-    return(cbind(interaction = as.matrix(aTtheta), as.data.frame(newdata)))
+    return(as.matrix(aTtheta))
 
   if (type == "shift")
-    return(cbind(shift = as.matrix(w_eta), as.data.frame(newdata)))
+    return(as.matrix(w_eta))
 
   ytransf <- aTtheta + w_eta
   yprimeTrans <- apTtheta + discrete * w_eta
-
 
   if (discrete) {
 
@@ -181,13 +189,10 @@ predict.deeptrafo <- function(
     type,
     "trafo" = (ytransf %>% as.matrix),
     "pdf" = pdf %>% as.matrix,
-    "cdf" = cdf %>% as.matrix# ,
-    # "grid_trafo" = grid_eval %>% as.matrix,
-    # "grid_pdf" = pdf %>% as.matrix,
-    # "grid_cdf" = (bd %>% tfd_cdf(grid_eval) %>% as.matrix)
+    "cdf" = cdf %>% as.matrix
   )
 
-  return(ret)
+  ret
 
 }
 
@@ -214,20 +219,20 @@ fitted.deeptrafo <- function(
   ...)
 {
 
-  if(length(object$init_params$image_var)>0 | !is.null(batch_size)) {
+  if (length(object$init_params$image_var) > 0 | !is.null(batch_size)) {
 
     mod_output <- predict_gen(object, newdata, batch_size,
                               apply_fun = function(x) x,
                               convert_fun = convert_fun)
 
-  } else{
+  } else {
 
-    if(is.null(newdata)) {
+    if (is.null(newdata)) {
 
       newdata <- prepare_data(object$init_params$parsed_formulas_contents,
                               gamdata = object$init_params$gamdata$data_trafos)
 
-    } else{
+    } else {
 
       newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata,
                                  gamdata = object$init_params$gamdata$data_trafos)
@@ -238,7 +243,7 @@ fitted.deeptrafo <- function(
 
   }
 
-  return(convert_fun(mod_output))
+  convert_fun(mod_output)
 
 }
 
