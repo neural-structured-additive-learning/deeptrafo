@@ -101,6 +101,7 @@ coef.deeptrafo <- function(
 #' determining the returned value
 #'
 #' @method predict deeptrafo
+#' @importFrom variables numeric_var ordered_var
 #' @export
 #'
 #' @rdname methodTrafo
@@ -131,7 +132,7 @@ predict.deeptrafo <- function(
       if (type == "shift")
         ygrd <- ygrd[1]
       ret <- lapply(ygrd, \(ty) {
-        newdata[[rname]] <- rep(ty, nrow(newdata))
+        newdata[[rname]] <- rep(ty, NROW(newdata[[1]]))
         predict.deeptrafo(object, newdata = newdata, type = type,
                           batch_size = batch_size, K = K, ... = ...)
       })
@@ -165,34 +166,43 @@ predict.deeptrafo <- function(
     return(as.matrix(w_eta))
 
   ytransf <- aTtheta + w_eta
-  yprimeTrans <- apTtheta + discrete * w_eta
 
-  if (discrete) {
+  if (type == "trafo")
+    return(ytransf %>% as.matrix)
 
-    pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)) +
-      cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransf)
+  if (type == "cdf") {
 
-    cdf <- (cleft + cint) * as.matrix(tfd_cdf(bd, ytransf)) +
-      cright * as.matrix(tfd_cdf(bd, rep(1e8, nrow(cright))))
+    if (discrete) {
 
-  } else {
+      cdf <- (cleft + cint) * as.matrix(tfd_cdf(bd, ytransf)) +
+        cright * as.matrix(tfd_cdf(bd, rep(1e8, nrow(cright))))
 
-    pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
+    } else {
 
-    cdf <- bd %>% tfd_cdf(ytransf) %>% as.matrix
+      cdf <- bd %>% tfd_cdf(ytransf)
+
+    }
+
+    return(cdf %>% as.matrix)
+
+  } else if (type == "pdf") {
+
+    yprimeTrans <- apTtheta + discrete * w_eta
+
+    if (discrete) {
+
+      pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)) +
+        cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransf)
+
+    } else {
+
+      pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
+
+    }
+
+    return(pdf %>% as.matrix)
 
   }
-
-  theta <- get_theta(object)
-
-  ret <- switch(
-    type,
-    "trafo" = (ytransf %>% as.matrix),
-    "pdf" = pdf %>% as.matrix,
-    "cdf" = cdf %>% as.matrix
-  )
-
-  ret
 
 }
 

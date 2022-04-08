@@ -130,6 +130,12 @@ if (!file.exists(file.path(bpath, "data_splitted.RDS"))) {
 
   # create input list
   data <- append(movies, text_embd)
+  
+  # transformations
+  data$vote_count <- as.integer(data$vote_count)
+  data$budget <- log(data$budget + 1)
+  data$revenue <- log(data$revenue + 1)
+  data$popularity <- log(data$popularity + 1)
 
   rm(movies, text_embd)
   gc()
@@ -188,12 +194,9 @@ res_list <- mclapply(1:length(data_list), function(repl) {
   test <- data_list[[repl]]$test
 
   # optimizer
-  optimizer <- optimizer_adadelta(learning_rate = 0.1)
+  optimizer <- tf$keras$optimizers$Adadelta(learning_rate = 0.1)
 
   # Models ------------------------------------------------------------------
-
-  # fml <- vote_count ~ s(budget) + s(popularity) + s(runtime) + s(revenue) + genreAction
-  train$vote_count <- as.integer(train$vote_count)
   fml_deep <- vote_count ~ s(budget) + s(popularity) + s(runtime) + s(revenue) +
     deep(texts) + genreAction
 
@@ -235,6 +238,13 @@ res_list <- mclapply(1:length(data_list), function(repl) {
   plot(mod, which = "s(budget)")
   plot(mod, which = "s(popularity)")
   plot(mod, which = "s(runtime)")
+  plot(mod, which = "s(revenue)")
   - logLik(mod) / length(train$genreAction)
+  
+  # prediction
+  testy <- test$vote_count
+  test$vote_count <- NULL
+  # takes forever:
+  pr <- predict(mod, newdata = test, K = 10)
 
 })

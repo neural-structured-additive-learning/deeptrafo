@@ -21,9 +21,9 @@
 \method{predict}{deeptrafo}(
   object,
   newdata = NULL,
-  y = newdata[[object$init_params$response_varname]],
-  type = c("trafo", "pdf", "cdf", "interaction", "shift", "output"),
+  type = c("trafo", "pdf", "cdf", "interaction", "shift", "terms"),
   batch_size = NULL,
+  K = 100,
   ...
 )
 
