@@ -101,7 +101,7 @@ coef.deeptrafo <- function(
 #' determining the returned value
 #'
 #' @method predict deeptrafo
-#' @importFrom variables numeric_var ordered_var
+#' @importFrom variables numeric_var ordered_var mkgrid
 #' @export
 #'
 #' @rdname methodTrafo
