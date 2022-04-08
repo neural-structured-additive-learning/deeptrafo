@@ -166,41 +166,42 @@ predict.deeptrafo <- function(
     return(as.matrix(w_eta))
 
   ytransf <- aTtheta + w_eta
+
   if (type == "trafo")
     return(ytransf %>% as.matrix)
-  
-  if (type == "cdf"){
-    
-    if (discrete){
-      
+
+  if (type == "cdf") {
+
+    if (discrete) {
+
       cdf <- (cleft + cint) * as.matrix(tfd_cdf(bd, ytransf)) +
         cright * as.matrix(tfd_cdf(bd, rep(1e8, nrow(cright))))
-      
-    }else{
-      
+
+    } else {
+
       cdf <- bd %>% tfd_cdf(ytransf)
-      
+
     }
-    
+
     return(cdf %>% as.matrix)
-    
-  }else if (type == "pdf") {
-    
+
+  } else if (type == "pdf") {
+
     yprimeTrans <- apTtheta + discrete * w_eta
-    
-    if (discrete){
-      
+
+    if (discrete) {
+
       pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)) +
         cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransf)
-      
-    }else{
-      
+
+    } else {
+
       pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
-      
+
     }
-    
+
     return(pdf %>% as.matrix)
-    
+
   }
 
 }
