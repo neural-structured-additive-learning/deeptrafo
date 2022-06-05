@@ -233,3 +233,22 @@ test_that("deep conditional model", {
   check_methods(m, dat[1:10, ], FALSE, FALSE)
 
 })
+
+# Shared -----------------------------------------------------------------
+
+# test_that("shared model", {
+#   
+#   dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+#   
+#   deep_model <- function(x) x %>%
+#     layer_dense(units = 32, activation = "relu", use_bias = FALSE) %>%
+#     layer_dropout(rate = 0.2) %>%
+#     layer_dense(units = 8, activation = "relu")
+#   
+#   fml <- y | x ~ z + s(z) | d(x)
+#   m <- deeptrafo(fml, dat, list_of_deep_models = list(d = deep_model),
+#                  shared_partition = 7)
+#   
+#   check_methods(m, dat[1:10, ], FALSE, FALSE)
+#   
+# })

@@ -95,23 +95,29 @@ eval_bsp_prime <- function(y, order = 3, supp = range(y)) {
   return(res)
 }
 
-eval_bsp_tf <- function(order, supp) {
+# eval_bsp_tf <- function(order, supp) {
+# 
+#   return(
+#     function(y){
+#       y <- tf$math$divide(tf$math$subtract(y, supp[1L]), tf$math$subtract(supp[2L],supp[1L]))
+#       return(
+#         layer_concatenate(
+#           lapply(0:order, function(m)
+#             tf$reshape(
+#               tf$divide(tfd_beta(m + 1, order + 1 - m)$prob(y), (order + 1)),
+#               c(-1L,1L)
+#             )
+#           ), axis = 1L)
+#       )
+#     }
+#   )
+# 
+# }
 
-  return(
-    function(y){
-      y <- tf$math$divide(tf$math$subtract(y, supp[1L]), tf$math$subtract(supp[2L],supp[1L]))
-      return(
-        layer_concatenate(
-          lapply(0:order, function(m)
-            tf$reshape(
-              tf$divide(tfd_beta(m + 1, order + 1 - m)$prob(y), (order + 1)),
-              c(-1L,1L)
-            )
-          ), axis = 1L)
-      )
-    }
-  )
-
+eval_bsp_tf <- function(order, supp, ...){
+  python_path <- system.file("python", package = "deeptrafo")
+  layer <- reticulate::import_from_path("layers", path = python_path)
+  return(layer$EvalBspTF(order = as.integer(order), supp = supp, ...))
 }
 
 ar_lags_layer <- function(order, supp)
@@ -126,38 +132,44 @@ ar_lags_layer <- function(order, supp)
 
 }
 
-tf_nan_to_zero <- function(x){
+# tf_nan_to_zero <- function(x){
+# 
+#   mult <- tf$where(tf$math$logical_not(tf$math$logical_or(tf$math$is_inf(x),
+#                                                           tf$math$is_nan(x))),
+#                    1.0, 0.0)
+#   tf$math$multiply_no_nan(x, mult)
+# }
 
-  mult <- tf$where(tf$math$logical_not(tf$math$logical_or(tf$math$is_inf(x),
-                                                          tf$math$is_nan(x))),
-                   1.0, 0.0)
-  tf$math$multiply_no_nan(x, mult)
-}
+# eval_bsp_prime_tf <- function(order, supp) {
+# 
+#   return(
+#     function(y){
+#       y <- tf$math$divide(tf$math$subtract(y, supp[1L]), tf$math$subtract(supp[2L],supp[1L]))
+#       return(
+#         layer_concatenate(
+#           lapply(0:order, function(m)
+#           {
+# 
+#             first_t <- tf$divide(tfd_beta(m, order - m + 1)$prob(y), order)
+#             sec_t <- tf$divide(tfd_beta(m + 1, order - m)$prob(y), order)
+# 
+#             return(
+#               tf$reshape(tf$multiply(tf$subtract(tf_nan_to_zero(first_t),
+#                                                  tf_nan_to_zero(sec_t)),
+#                                      order), c(-1L,1L))
+#             )
+#           }
+#           ), axis = 1L)
+#       )
+#     }
+#   )
+# 
+# }
 
-eval_bsp_prime_tf <- function(order, supp) {
-
-  return(
-    function(y){
-      y <- tf$math$divide(tf$math$subtract(y, supp[1L]), tf$math$subtract(supp[2L],supp[1L]))
-      return(
-        layer_concatenate(
-          lapply(0:order, function(m)
-          {
-
-            first_t <- tf$divide(tfd_beta(m, order - m + 1)$prob(y), order)
-            sec_t <- tf$divide(tfd_beta(m + 1, order - m)$prob(y), order)
-
-            return(
-              tf$reshape(tf$multiply(tf$subtract(tf_nan_to_zero(first_t),
-                                                 tf_nan_to_zero(sec_t)),
-                                     order), c(-1L,1L))
-            )
-          }
-          ), axis = 1L)
-      )
-    }
-  )
-
+eval_bsp_tf <- function(order, supp, ...){
+  python_path <- system.file("python", package = "deeptrafo")
+  layer <- reticulate::import_from_path("layers", path = python_path)
+  return(layer$EvalBspPrimeTF(order = as.integer(order), supp = supp, ...))
 }
 
 apply_atm_lags <- function(form)

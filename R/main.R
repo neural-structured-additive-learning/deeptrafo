@@ -22,6 +22,8 @@
 #'     or \code{"gumbel"}.
 #' @param trafo_options options for transformation models such as the basis
 #'     function used
+#' @param shared_partition integer defining the number of columns that are combined
+#'     with the interacting part if a shared term is used
 #' @param ... Arguments passed to \code{deepregression}
 #'
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
@@ -50,6 +52,7 @@ deeptrafo <- function(
   monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order,
                                 response_type = response_type),
+  shared_partition = NULL,
   ...
 )
 {
@@ -139,19 +142,20 @@ deeptrafo <- function(
             h1pred = which(names(list_of_formulas) == "h1pred"),
             add_const_positiv = addconst_interaction)
   snwb[[which(names(list_of_formulas) == "yterms")]] <- function(...) return(NULL)
+  
+  args <- c(list(y = y,
+                 family = family,
+                 data = data,
+                 list_of_formulas = list_of_formulas,
+                 subnetwork_builder = snwb,
+                 from_preds_to_output = from_pred_to_trafo_fun,
+                 loss = tloss,
+                 monitor_metrics = monitor_metrics,
+                 additional_processor = additional_processor),
+            dots)
 
-  ret <- do.call("deepregression",
-                 c(list(y = y,
-                        family = family,
-                        data = data,
-                        list_of_formulas = list_of_formulas,
-                        subnetwork_builder = snwb,
-                        from_preds_to_output = from_pred_to_trafo_fun,
-                        loss = tloss,
-                        monitor_metrics = monitor_metrics,
-                        additional_processor = additional_processor),
-                   dots)
-  )
+  ret <- do.call("deepregression", args)
+  
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
   ret$init_params$response_type <- response_type
