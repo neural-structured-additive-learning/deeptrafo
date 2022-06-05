@@ -10,6 +10,18 @@ Description:
     Allows for the specification of deep conditional transformation models
 Depends: R (>= 4.0.0), Formula, tensorflow, keras, tfprobability
 Imports: deepregression
+Suggests:
+    testthat,
+    knitr,
+    covr
+Imports:
+    tensorflow (>= 2.2.0),
+    tfprobability,
+    keras (>= 2.2.0),
+    mgcv,
+    dplyr,
+    ordinal,
+    mlt
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
