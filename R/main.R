@@ -22,8 +22,6 @@
 #'     or \code{"gumbel"}.
 #' @param trafo_options options for transformation models such as the basis
 #'     function used
-#' @param shared_partition integer defining the number of columns that are combined
-#'     with the interacting part if a shared term is used
 #' @param ... Arguments passed to \code{deepregression}
 #'
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
@@ -52,7 +50,6 @@ deeptrafo <- function(
   monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order,
                                 response_type = response_type),
-  shared_partition = NULL,
   ...
 )
 {

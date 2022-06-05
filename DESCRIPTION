@@ -9,12 +9,12 @@ Authors@R: c(
 Description:
     Allows for the specification of deep conditional transformation models
 Depends: R (>= 4.0.0), Formula, tensorflow, keras, tfprobability
-Imports: deepregression
 Suggests:
     testthat,
     knitr,
     covr
 Imports:
+    deepregression
     tensorflow (>= 2.2.0),
     tfprobability,
     keras (>= 2.2.0),
