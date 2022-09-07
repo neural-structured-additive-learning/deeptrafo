@@ -52,6 +52,7 @@ test_that("simple additive model", {
   check_methods(m, newdata = dat, test_plots = FALSE)
   m <- ColrNN(y | f ~ z + s(z), data = dat)
   check_methods(m, newdata = dat, test_plots = FALSE)
+  expect_error(PolrNN(y | f ~ z + s(z), data = dat))
 
 })
 
