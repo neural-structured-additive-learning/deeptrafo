@@ -5,4 +5,4 @@ tests/testthat/*.pdf
 .Rproj.user/
 *.RDS
 *.csv
-
+*.pyc
