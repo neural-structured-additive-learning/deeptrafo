@@ -31,12 +31,12 @@ plot.deeptrafo <- function(
   get_weight_fun <- switch(
     which_param,
     "interacting" = get_weight_by_name_ia,
-    "shifting" = get_weight_by_name
+    "shifting" = deepregression:::get_weight_by_name
   )
 
   which_param <- map_param_string_to_index(which_param)
 
-  return(plot.deepregression(x, which = which, which_param = which_param,
+  return(deepregression:::plot.deepregression(x, which = which, which_param = which_param,
                              only_data = only_data, grid_length = grid_length,
                              get_weight_fun = get_weight_fun, ...))
 
@@ -45,7 +45,7 @@ plot.deeptrafo <- function(
 get_weight_by_name_ia <- function(x, name, param_nr)
 {
 
-  matrix(get_weight_by_name(x, name, param_nr),
+  matrix(deepregression:::get_weight_by_name(x, name, param_nr),
          ncol = x$init_params$trafo_options$order_bsp + 1L)
 
 }
@@ -76,7 +76,8 @@ coef.deeptrafo <- function(
   which_param <- map_param_string_to_index(which_param)
 
   # else, return lags
-  ret <- coef.deepregression(object, which_param = which_param, type = type)
+  ret <- deepregression:::coef.deepregression(object, which_param = which_param,
+                                              type = type)
 
   if (is_interaction) {
     ret <- lapply(ret, function(r)
@@ -239,12 +240,12 @@ fitted.deeptrafo <- function(
 
     if (is.null(newdata)) {
 
-      newdata <- prepare_data(object$init_params$parsed_formulas_contents,
-                              gamdata = object$init_params$gamdata$data_trafos)
+      newdata <- deepregression:::prepare_data(object$init_params$parsed_formulas_contents,
+                                               gamdata = object$init_params$gamdata$data_trafos)
 
     } else {
 
-      newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata,
+      newdata <- deepregression:::prepare_newdata(object$init_params$parsed_formulas_contents, newdata,
                                  gamdata = object$init_params$gamdata$data_trafos)
 
     }
