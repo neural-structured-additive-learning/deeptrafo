@@ -88,7 +88,8 @@ deeptrafo <- function(
 
   # List of formulas
   list_of_formulas <- list(
-    yterms = as.formula(paste0("~ -1 + bsfun(", rvar, ") + bspfun(", rvar, ")")),
+    yterms = as.formula(paste0("~ -1 + bsfun(", rvar, ") + bsfunl(", rvar,
+                               ") + bspfun(", rvar, ")")),
     h1pred = as.formula(h1_form),
     h2 = if (nterms >= 1L) formula(fml, lhs = 0, rhs = 1L) else NULL,
     shared = if (nterms == 2L) formula(fml, lhs = 0, rhs = 2L) else NULL
@@ -119,6 +120,7 @@ deeptrafo <- function(
   atm_lag_processor <- atm_lag_processor_factory(rvar)
 
   trafo_processor <- list(bsfun = basis_processor,
+                          bsfunl = basis_processor_lower,
                           bspfun = basisprime_processor,
                           ia = ia_processor,
                           atmlag = atm_lag_processor)
@@ -139,7 +141,8 @@ deeptrafo <- function(
   attr(additional_processor, "controls") <- trafo_options
 
   # Loss function
-  tloss <- get_loss(response_type, family)
+  # tloss <- get_loss(response_type, family)
+  tloss <- nll(family)
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
@@ -366,9 +369,9 @@ from_preds_to_trafo <- function(
     h1pred_ncol <- list_pred_param$h1pred$shape[[2]]
     shift_pred <- list_pred_param$h2
 
-    if (h1pred_ncol > 2) {
+    if (h1pred_ncol > 3) {
 
-      lag_pred <- tf_stride_cols(list_pred_param$h1pred, 3, h1pred_ncol) %>%
+      lag_pred <- tf_stride_cols(list_pred_param$h1pred, 4, h1pred_ncol) %>%
         atm_toplayer()
 
       # overwrite the shift_pred by adding lags
@@ -379,7 +382,7 @@ from_preds_to_trafo <- function(
     # return transformation
     trafo <- layer_concatenate(list(
       shift_pred,
-      tf_stride_cols(list_pred_param$h1pred, 1L, 2L)
+      tf_stride_cols(list_pred_param$h1pred, 1L, 3L)
     ))
 
     return(trafo)
@@ -572,27 +575,24 @@ nll <- function(base_distribution) {
   }
 
   return(
-    function(y_true, y_pred){
+    function(y_true, y_pred) {
 
       cleft <- tf_stride_cols(y_true, 1L)
       exact <- tf_stride_cols(y_true, 2L)
       cright <- tf_stride_cols(y_true, 3L)
       cint <- tf_stride_cols(y_true, 4L)
 
-      # <FIXME>
-      #   Generic NLL needs another basis eval for y_lower.
-      #</FIXME>
-      trafo <- layer_add(list(tf_stride_cols(y_pred, 1L),
-                              tf_stride_cols(y_pred, 2L)))
+      trafo <- layer_add(list(tf_stride_cols(y_pred, 1L), # Shift in 1
+                              tf_stride_cols(y_pred, 2L))) # Upper in 2
       trafo_lwr <- layer_add(list(tf_stride_cols(y_pred, 1L),
-                                  tf_stride_cols(y_pred, 3L)))
-      trafo_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 3L),
-                                                  1e-8, Inf))
+                                  tf_stride_cols(y_pred, 3L))) # Lower in 3
+      trafo_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 4L),
+                                                  1e-8, Inf)) # Prime in 4
 
       ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
-      ll_right <- tf$math$log(tfd_cdf(bd, trafo))
+      ll_right <- tf$math$log(tfd_cdf(bd, trafo_lwr))
       ll_left <- tf$math$log(1 - tfd_cdf(bd, trafo))
-      ll_int <- tf$math$log(tfd_cdf(bd, trafo) - tfd_cdf(bd, trafo_lwr))
+      ll_int <- tf$math$log(tf$clip_by_value(tfd_cdf(bd, trafo) - tfd_cdf(bd, trafo_lwr), 1e-16, 1))
 
       neglogLik <- - (cleft * ll_left + exact * ll_exact + cright * ll_right +
                         cint * ll_int)

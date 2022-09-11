@@ -8,6 +8,7 @@ trafo_control(
   order_bsp = 10L,
   support = function(y) range(y),
   y_basis_fun = NULL,
+  y_basis_fun_lower = NULL,
   y_basis_fun_prime = NULL,
   penalize_bsp = 0,
   order_bsp_penalty = 2,

@@ -16,8 +16,7 @@ response <- function(y) {
   interval <- abs(interval - left - right)
   exact <- as.numeric(mlt:::.exact(resp))
   structure(cbind(cleft = left, exact = exact, cright = right,
-                  cinterval = interval),
-            type = get_response_type(y))
+                  cinterval = interval), type = get_response_type(y))
 }
 
 make_grid <- function(y, n = 1e2) {

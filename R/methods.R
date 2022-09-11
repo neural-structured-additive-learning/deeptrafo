@@ -162,7 +162,8 @@ predict.deeptrafo <- function(
 
   w_eta <- mod_output[, 1, drop = FALSE]
   aTtheta <- mod_output[, 2, drop = FALSE]
-  apTtheta <- mod_output[, 3, drop = FALSE]
+  alTtheta <- mod_output[, 3, drop = FALSE]
+  apTtheta <- mod_output[, 4, drop = FALSE]
 
   if (type == "interaction")
     return(as.matrix(aTtheta))

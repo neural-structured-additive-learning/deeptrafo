@@ -102,8 +102,7 @@ test_models <- function(fml, which = c("ordinal", "count", "survival"), ...) {
   m <- deeptrafo(fml, dat, ...)
 
   if (which == "ordinal")
-    expect_false(any(is.nan(m$model$loss(t(sapply(dat$y, eval_ord)),
-                                         fitted(m))$numpy())))
+    expect_false(any(is.nan(m$model$loss(m$init_params$y, fitted(m))$numpy())))
   hist <- fit(m, epochs = 2L)
 
   if (which == "ordinal")

@@ -83,17 +83,25 @@ ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
   )
 }
 
-basis_processor <- function(term, data, output_dim = NULL, param_nr, controls){
+basis_processor_lower <- function(term, data, output_dim = NULL, param_nr,
+                                  controls) {
+  basis_processor(term = term, data = data, output_dim = output_dim,
+                  param_nr = param_nr, controls = controls, lower = TRUE)
+}
+
+basis_processor <- function(term, data, output_dim = NULL, param_nr, controls,
+                            lower = FALSE){
+
+  ybfun <- if (lower) controls$y_basis_fun_lower else controls$y_basis_fun
 
   name <- makelayername(term, param_nr)
-  bfy <- controls$y_basis_fun(data[[extractvar(term)]])
+  bfy <- ybfun(data[[extractvar(term)]])
   suppy <- controls$supp(data[[extractvar(term)]])
 
   dim_basis <- ncol(bfy)
   penalty_basis <- controls$basis_penalty
   predict_trafo_bs <-  function(newdata)
-      controls$y_basis_fun(newdata[[extractvar(term)]],
-                           suppy = suppy)
+    ybfun(newdata[[extractvar(term)]], suppy = suppy)
 
   layer = tf$identity
 

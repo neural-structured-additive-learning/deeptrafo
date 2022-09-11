@@ -96,7 +96,7 @@ eval_bsp_prime <- function(y, order = 3, supp = range(y)) {
 }
 
 # eval_bsp_tf <- function(order, supp) {
-# 
+#
 #   return(
 #     function(y){
 #       y <- tf$math$divide(tf$math$subtract(y, supp[1L]), tf$math$subtract(supp[2L],supp[1L]))
@@ -111,7 +111,7 @@ eval_bsp_prime <- function(y, order = 3, supp = range(y)) {
 #       )
 #     }
 #   )
-# 
+#
 # }
 
 eval_bsp_tf <- function(order, supp, ...){
@@ -133,7 +133,7 @@ ar_lags_layer <- function(order, supp)
 }
 
 # tf_nan_to_zero <- function(x){
-# 
+#
 #   mult <- tf$where(tf$math$logical_not(tf$math$logical_or(tf$math$is_inf(x),
 #                                                           tf$math$is_nan(x))),
 #                    1.0, 0.0)
@@ -141,7 +141,7 @@ ar_lags_layer <- function(order, supp)
 # }
 
 # eval_bsp_prime_tf <- function(order, supp) {
-# 
+#
 #   return(
 #     function(y){
 #       y <- tf$math$divide(tf$math$subtract(y, supp[1L]), tf$math$subtract(supp[2L],supp[1L]))
@@ -149,10 +149,10 @@ ar_lags_layer <- function(order, supp)
 #         layer_concatenate(
 #           lapply(0:order, function(m)
 #           {
-# 
+#
 #             first_t <- tf$divide(tfd_beta(m, order - m + 1)$prob(y), order)
 #             sec_t <- tf$divide(tfd_beta(m + 1, order - m)$prob(y), order)
-# 
+#
 #             return(
 #               tf$reshape(tf$multiply(tf$subtract(tf_nan_to_zero(first_t),
 #                                                  tf_nan_to_zero(sec_t)),
@@ -163,7 +163,7 @@ ar_lags_layer <- function(order, supp)
 #       )
 #     }
 #   )
-# 
+#
 # }
 
 eval_bsp_tf <- function(order, supp, ...){
