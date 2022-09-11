@@ -12,7 +12,7 @@ ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
     if (term == "1") {
       iat <- do.call(int_processor, args)
     } else {
-      iat <- do.call(deepregression:::lin_processor, args)
+      iat <- do.call(lin_processor, args)
     }
   } else iat <- do.call(controls$procs[[spec]], args)
 

@@ -40,7 +40,7 @@ ensemble.deeptrafo <- function(x, n_ensemble = 5, reinitialize = TRUE,
                                save_weights = TRUE, callbacks = list(),
                                save_fun = NULL, ...) {
 
-  ret <- deepregression:::ensemble.deepregression(
+  ret <- ensemble.deepregression(
     x = x, n_ensemble = n_ensemble,
     reinitialize = reinitialize, mylapply = mylapply,
     verbose = verbose, patience = patience,
@@ -68,7 +68,7 @@ coef.dtEnsemble <- function(object, which_param = c("shifting", "interacting"),
   which_param <- match.arg(which_param)
   tparam <- map_param_string_to_index(which_param)
 
-  ret <- .call_for_all_members(object, deepregression:::coef.deepregression,
+  ret <- .call_for_all_members(object, coef.deepregression,
                                which_param = tparam, type = type, ... = ...)
 
   lapply(purrr::transpose(ret), function(x) do.call("cbind", x))
