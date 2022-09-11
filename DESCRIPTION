@@ -23,7 +23,8 @@ Suggests:
 Imports:
     mgcv,
     dplyr,
-    mlt
+    mlt,
+    variables
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
