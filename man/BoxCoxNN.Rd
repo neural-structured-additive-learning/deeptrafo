@@ -18,37 +18,40 @@ BoxCoxNN(
 )
 }
 \arguments{
-\item{formula}{Formula specifying the response, shift, interaction and shared
-terms as \code{response | interacting ~ shifting | shared}}
+\item{formula}{Formula specifying the response, interaction, shift terms
+as \code{response | interacting ~ shifting}.}
 
-\item{data}{\code{list} or \code{data.frame} containing both structured and
-unstructured data}
+\item{data}{Named \code{list} or \code{data.frame} which may contain both
+structured and unstructured data.}
 
-\item{lag_formula}{formula representing the optional predictor for lags of the
-response as defined for auto-regressive transformation models (ATMs)}
+\item{lag_formula}{Optional formula for lags of the response in
+auto-regressive transformation models (ATMs).}
 
-\item{response_type}{character; type of response. One of \code{"continuous"},
-\code{"survival"}, \code{"count"}, \code{"ordered"}}
+\item{response_type}{Character; type of response. One of \code{"continuous"},
+\code{"survival"}, \code{"count"}, or \code{"ordered"}. If not supplied
+manually it is determined by the first entry in \code{data[[response]]}.}
 
-\item{order}{integer; order of Bernstein polynomials or number of levels for
-ordinal responses}
+\item{order}{Integer; order of the response basis. Default 10 for Bernstein
+basis or number of levels minus one for ordinal responses.}
 
-\item{addconst_interaction}{positive constant;
+\item{addconst_interaction}{Positive constant;
 a constant added to the additive predictor of the interaction term.
 If \code{NULL}, terms are left unchanged. If 0 and predictors have
 negative values in their design matrix, the minimum value of all predictors
 is added to ensure positivity. If > 0, the minimum value plus the
 \code{addconst_interaction} is added to each predictor in the interaction
+term. This ensures a monotone non-decreasing transformation function in
+the response when using (tensor product) spline bases in the interacting
 term.}
 
-\item{family}{\code{tfd_distribution} or character; the base distribution for
+\item{family}{A \code{tfd_distribution} or character; the base distribution for
 transformation models. If character, can be \code{"normal"}, \code{"logistic"}
 or \code{"gumbel"}.}
 
-\item{trafo_options}{options for transformation models such as the basis
-function used}
+\item{trafo_options}{Options for transformation models such as the basis
+function used, see \code{\link[deeptrafo]{trafo_control}} for more details.}
 
-\item{...}{Arguments passed to \code{deepregression}}
+\item{...}{Additional arguments passed to \code{deepregression}}
 }
 \value{
 See return statement of \code{\link[deeptrafo]{deeptrafo}}

@@ -1,11 +1,11 @@
 
 #' Deep conditional transformation models with alternative formula interface
 #'
-#' @param response formula for the response; e.g., \code{~ y}
-#' @param intercept formula for the intercept function; e.g., \code{~ x},
+#' @param response Formula for the response; e.g. \code{~ y}
+#' @param intercept Formula for the intercept function; e.g., \code{~ x},
 #'     for which interacting bases with the response will be set up
-#' @param shift formula for the shift part of the model; e.g., \code{~ s(x)}
-#' @param shared formula for sharing weights between predictors in the intercept
+#' @param shift Formula for the shift part of the model; e.g., \code{~ s(x)}
+#' @param shared Formula for sharing weights between predictors in the intercept
 #'     and shift part of the model
 #' @inheritParams deeptrafo
 #'
@@ -44,11 +44,11 @@ dctm <- function(
 
 #' Ordinal neural network transformation models
 #'
-#' @param response formula for the response; e.g., \code{~ y}
-#' @param intercept formula for the intercept function; e.g., \code{~ x},
+#' @param response Formula for the response; e.g., \code{~ y}
+#' @param intercept Formula for the intercept function; e.g., \code{~ x},
 #'     for which interacting bases with the response will be set up
-#' @param shift formula for the shift part of the model; e.g., \code{~ s(x)}
-#' @param shared formula for sharing weights between predictors in the intercept
+#' @param shift Formula for the shift part of the model; e.g., \code{~ s(x)}
+#' @param shared Formula for sharing weights between predictors in the intercept
 #'     and shift part of the model
 #' @inheritParams deeptrafo
 #'

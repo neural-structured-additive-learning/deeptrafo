@@ -2,7 +2,7 @@
 % Please edit documentation in R/ensembles.R
 \name{ensemble.deeptrafo}
 \alias{ensemble.deeptrafo}
-\title{Deep ensembling for deeptrafo models}
+\title{Deep ensembling for neural network transformation models}
 \usage{
 \method{ensemble}{deeptrafo}(
   x,
@@ -21,43 +21,44 @@
 )
 }
 \arguments{
-\item{x}{object of class \code{"deeptrafo"}}
+\item{x}{Object of class \code{"deeptrafo"}.}
 
-\item{n_ensemble}{numeric; number of ensemble members to fit}
+\item{n_ensemble}{Numeric; number of ensemble members to fit.}
 
-\item{reinitialize}{logical; if \code{TRUE} (default), model weights are
+\item{reinitialize}{Logical; if \code{TRUE} (default), model weights are
 initialized randomly prior to fitting each member. Fixed weights are
-not affected}
+not affected.}
 
-\item{mylapply}{lapply function to be used; defaults to \code{lapply}}
+\item{mylapply}{Function; \code{lapply} function to be used; defaults to
+\code{lapply}}
 
-\item{verbose}{whether to print training in each fold}
+\item{verbose}{Logical; whether to print training in each fold.}
 
-\item{patience}{number of patience for early stopping}
+\item{patience}{Integer; number of patience for early stopping.}
 
-\item{plot}{whether to plot the resulting losses in each fold}
+\item{plot}{Logical; whether to plot the resulting losses in each fold.}
 
-\item{print_members}{logical; print results for each member}
+\item{print_members}{Logical; print results for each member.}
 
-\item{stop_if_nan}{logical; whether to stop CV if NaN values occur}
+\item{stop_if_nan}{Logical; whether to stop ensembling if \code{NaN} values
+occur}
 
-\item{save_weights}{logical, whether to save weights of the ensemble.}
+\item{save_weights}{Logical; whether to save the ensemble weights.}
 
-\item{callbacks}{a list of callbacks used for fitting}
+\item{callbacks}{List; callbacks used for fitting.}
 
-\item{save_fun}{function applied to the model in each fold to be stored in
-the final result}
+\item{save_fun}{Function; function to be applied to each member to be stored
+in the final result.}
 
-\item{...}{further arguments passed to \code{object$fit_fun}}
-
-\item{cv_folds}{an integer if list with train and test data sets}
+\item{...}{Further arguments passed to \code{object$fit_fun}.}
 }
 \value{
-ensemble of \code{"deeptrafo"} models with list of training histories
-    and fitted weights included in \code{ensemble_results}
+Ensemble of \code{"deeptrafo"} models with list of training histories
+    and fitted weights included in \code{ensemble_results}. For details see
+    the return statment in \code{\link[deepregression]{ensemble}}.
 }
 \description{
-Deep ensembling for deeptrafo models
+Deep ensembling for neural network transformation models
 }
 \examples{
 dat <- data.frame(y = rnorm(100), x = rnorm(100))

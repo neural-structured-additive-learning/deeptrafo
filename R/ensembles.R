@@ -1,27 +1,29 @@
 # Deep ensembles with deeptrafo
 
-#' Deep ensembling for deeptrafo models
+#' Deep ensembling for neural network transformation models
 #'
-#' @param x object of class \code{"deeptrafo"}
-#' @param n_ensemble numeric; number of ensemble members to fit
-#' @param reinitialize logical; if \code{TRUE} (default), model weights are
+#' @param x Object of class \code{"deeptrafo"}.
+#' @param n_ensemble Numeric; number of ensemble members to fit.
+#' @param reinitialize Logical; if \code{TRUE} (default), model weights are
 #'     initialized randomly prior to fitting each member. Fixed weights are
-#'     not affected
-#' @param print_members logical; print results for each member
-#' @param verbose whether to print training in each fold
-#' @param patience number of patience for early stopping
-#' @param plot whether to plot the resulting losses in each fold
-#' @param mylapply lapply function to be used; defaults to \code{lapply}
-#' @param save_weights logical, whether to save weights of the ensemble.
-#' @param cv_folds an integer if list with train and test data sets
-#' @param stop_if_nan logical; whether to stop CV if NaN values occur
-#' @param callbacks a list of callbacks used for fitting
-#' @param save_fun function applied to the model in each fold to be stored in
-#' the final result
-#' @param ... further arguments passed to \code{object$fit_fun}
+#'     not affected.
+#' @param print_members Logical; print results for each member.
+#' @param verbose Logical; whether to print training in each fold.
+#' @param patience Integer; number of patience for early stopping.
+#' @param plot Logical; whether to plot the resulting losses in each fold.
+#' @param mylapply Function; \code{lapply} function to be used; defaults to
+#'     \code{lapply}
+#' @param save_weights Logical; whether to save the ensemble weights.
+#' @param stop_if_nan Logical; whether to stop ensembling if \code{NaN} values
+#'     occur
+#' @param callbacks List; callbacks used for fitting.
+#' @param save_fun Function; function to be applied to each member to be stored
+#'     in the final result.
+#' @param ... Further arguments passed to \code{object$fit_fun}.
 #'
-#' @return ensemble of \code{"deeptrafo"} models with list of training histories
-#'     and fitted weights included in \code{ensemble_results}
+#' @return Ensemble of \code{"deeptrafo"} models with list of training histories
+#'     and fitted weights included in \code{ensemble_results}. For details see
+#'     the return statment in \code{\link[deepregression]{ensemble}}.
 #'
 #' @method ensemble deeptrafo
 #'
@@ -55,9 +57,10 @@ ensemble.deeptrafo <- function(x, n_ensemble = 5, reinitialize = TRUE,
 }
 
 #' @method coef dtEnsemble
+#'
 #' @inheritParams coef.deeptrafo
 #'
-#' @export
+#' @exportS3Method
 #'
 coef.dtEnsemble <- function(object, which_param = c("shifting", "interacting"),
                             type = NULL, ...) {
@@ -73,9 +76,10 @@ coef.dtEnsemble <- function(object, which_param = c("shifting", "interacting"),
 }
 
 #' @method fitted dtEnsemble
+#'
 #' @inheritParams fitted.deeptrafo
 #'
-#' @export
+#' @exportS3Method
 #'
 fitted.dtEnsemble <- function(object, newdata = NULL, batch_size = NULL,
                               convert_fun = as.matrix, ...) {
@@ -98,9 +102,10 @@ predict.dtEnsemble <- function(
 }
 
 #' @method logLik dtEnsemble
+#'
 #' @inheritParams logLik.deeptrafo
 #'
-#' @export
+#' @exportS3Method
 #'
 logLik.dtEnsemble <- function(
   object, y = NULL,

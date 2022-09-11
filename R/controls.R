@@ -1,19 +1,27 @@
 #' Options for transformation models
 #'
-#' @param order_bsp the order of Bernstein polynomials in case \code{y_basis_fun}
-#'     is a Bernstein polynomial defined by \code{eval_bsp}
-#' @param support a function yielding a vector with two elements, namely
-#'     the support for the basis of y;
-#' @param y_basis_fun,y_basis_fun_prime basis functions for y transformation
-#' @param penalize_bsp scalar value > 0; amount of penalization of Bernstein polynomials
-#' @param order_bsp_penalty integer; order of Bernstein polynomial penalty. 0 results in a
-#'     penalty based on integrated squared second order derivatives, values >= 1 in difference
-#'     penalties
-#' @param tf_bsps logical; whether to use a TensorFlow implementation of the Bernstein polynomial
-#'     functions
-#' @param response_type character; type of response can be continuous, ordered,
-#'     survival, or count
-#' @param atm_toplayer function; a function specifying the layer on top of ATM lags
+#' @param order_bsp The order of Bernstein polynomials in case \code{y_basis_fun}
+#'     is a Bernstein polynomial defined by \code{eval_bsp} or (one less than)
+#'     the number of classes of an ordinal outcome.
+#' @param support A function returning a vector with two elements, namely
+#'     the support for the basis of y.
+#' @param y_basis_fun,y_basis_fun_prime Basis functions (and derivatives) for
+#'     the response transformation.
+#' @param penalize_bsp Scalar value > 0; controls amount of penalization of
+#'     Bernstein polynomials.
+#' @param order_bsp_penalty Integer; order of Bernstein polynomial penalty. 0
+#'     results in a penalty based on integrated squared second order derivatives,
+#'     values >= 1 in difference penalties.
+#' @param tf_bsps Logical; whether to use a TensorFlow implementation of the
+#'     Bernstein polynomial functions.
+#' @param response_type Character; type of response can be continuous, ordered,
+#'     survival, or count.
+#' @param atm_toplayer Function; a function specifying the layer on top of ATM
+#'     lags.
+#'
+#' @return Returns a named \code{list} with all options, basis functions,
+#'     support, and penalties.
+#'
 #' @export
 #'
 trafo_control <- function(order_bsp = 10L,

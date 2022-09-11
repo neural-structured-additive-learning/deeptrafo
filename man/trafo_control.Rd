@@ -17,27 +17,35 @@ trafo_control(
 )
 }
 \arguments{
-\item{order_bsp}{the order of Bernstein polynomials in case \code{y_basis_fun}
-is a Bernstein polynomial defined by \code{eval_bsp}}
+\item{order_bsp}{The order of Bernstein polynomials in case \code{y_basis_fun}
+is a Bernstein polynomial defined by \code{eval_bsp} or (one less than)
+the number of classes of an ordinal outcome.}
 
-\item{support}{a function yielding a vector with two elements, namely
-the support for the basis of y;}
+\item{support}{A function returning a vector with two elements, namely
+the support for the basis of y.}
 
-\item{y_basis_fun, y_basis_fun_prime}{basis functions for y transformation}
+\item{y_basis_fun, y_basis_fun_prime}{Basis functions (and derivatives) for
+the response transformation.}
 
-\item{penalize_bsp}{scalar value > 0; amount of penalization of Bernstein polynomials}
+\item{penalize_bsp}{Scalar value > 0; controls amount of penalization of
+Bernstein polynomials.}
 
-\item{order_bsp_penalty}{integer; order of Bernstein polynomial penalty. 0 results in a
-penalty based on integrated squared second order derivatives, values >= 1 in difference
-penalties}
+\item{order_bsp_penalty}{Integer; order of Bernstein polynomial penalty. 0
+results in a penalty based on integrated squared second order derivatives,
+values >= 1 in difference penalties.}
 
-\item{tf_bsps}{logical; whether to use a TensorFlow implementation of the Bernstein polynomial
-functions}
+\item{tf_bsps}{Logical; whether to use a TensorFlow implementation of the
+Bernstein polynomial functions.}
 
-\item{response_type}{character; type of response can be continuous, ordered,
-survival, or count}
+\item{response_type}{Character; type of response can be continuous, ordered,
+survival, or count.}
 
-\item{atm_toplayer}{function; a function specifying the layer on top of ATM lags}
+\item{atm_toplayer}{Function; a function specifying the layer on top of ATM
+lags.}
+}
+\value{
+Returns a named \code{list} with all options, basis functions,
+    support, and penalties.
 }
 \description{
 Options for transformation models

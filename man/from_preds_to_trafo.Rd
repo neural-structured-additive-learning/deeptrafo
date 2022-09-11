@@ -10,15 +10,18 @@ from_preds_to_trafo(
 )
 }
 \arguments{
-\item{atm_toplayer}{function to be applied on top of the transformed lags}
+\item{atm_toplayer}{Function to be applied on top of the transformed lags.}
 
-\item{const_ia}{see \code{addconst_interaction} from \code{?deeptrafo}
-\code{deepregression}}
+\item{const_ia}{See \code{addconst_interaction} in \code{\link[deeptrafo]{deeptrafo}}
+or \code{\link[deepregression]{deepregression}}.}
 }
 \value{
-a function of list_pred_param returning a list of output tensors
+A function of \code{list_pred_param} returning a list of output tensors
 that is passed to \code{model_fun} of \code{deepregression}
 }
 \description{
 Define Predictor of Transformation Model
+}
+\details{
+Not intended to be used directly by the end user.
 }
