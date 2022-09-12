@@ -27,6 +27,7 @@
 trafo_control <- function(order_bsp = 10L,
                           support = function(y) range(y),
                           y_basis_fun = NULL,
+                          y_basis_fun_lower = NULL,
                           y_basis_fun_prime = NULL,
                           penalize_bsp = 0,
                           order_bsp_penalty = 2,
@@ -84,6 +85,30 @@ trafo_control <- function(order_bsp = 10L,
 
   }
 
+  if (is.null(y_basis_fun_lower)) {
+
+    y_basis_fun_lower <- switch(
+      response_type,
+      "continuous" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
+        ret <- eval_bsp(y, order = orderbsp, supp = suppy)
+        ret[] <- 1e-8
+        ret
+      },
+      "survival" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
+        ret <- eval_bsp(y[, 1], order = orderbsp, supp = suppy)
+        ret[] <- 1e-8
+        ret
+      },
+      "count" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
+        eval_bsp(y - 1L, order = orderbsp, supp = suppy)
+      },
+      "ordered" = function(y, orderbsp = order_bsp, suppy = suppy) {
+        eval_ord_lwr(y)
+      }
+    )
+
+  }
+
   if (is.null(y_basis_fun_prime)) {
 
     y_basis_fun_prime <- switch(
@@ -97,10 +122,14 @@ trafo_control <- function(order_bsp = 10L,
         eval_bsp_prime(y[, 1], order = orderbsp, supp = suppy)
       },
       "count" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
-        eval_bsp(y - 1L, order = orderbsp, supp = suppy)
+        ret <- eval_bsp(y - 1L, order = orderbsp, supp = suppy)
+        ret[] <- 1e-8
+        ret
       },
       "ordered" = function(y, orderbsp = order_bsp, suppy = suppy) {
-        eval_ord_lwr(y)
+        ret <- eval_ord_lwr(y)
+        ret[] <- 1e-8
+        ret
       }
     )
 
@@ -117,6 +146,7 @@ trafo_control <- function(order_bsp = 10L,
   return(
     list(
       y_basis_fun = y_basis_fun,
+      y_basis_fun_lower = y_basis_fun_lower,
       y_basis_fun_prime = y_basis_fun_prime,
       penalize_bsp = penalize_bsp,
       order_bsp_penalty = order_bsp_penalty,

@@ -7,10 +7,9 @@
 nll(base_distribution)
 }
 \arguments{
-\item{base_distribution}{Base/error/target distribution. A parameter-free
-distribution which defines the interpretational scale of the transformation
-function in neural network transformation models. Can be character or
-a \code{tfd_distribution}.}
+\item{base_distribution}{Target distribution, character or
+\code{tfd_distribution}. If character, can be either "logistic",
+"normal", or "gumbel".}
 }
 \value{
 A function for computing the negative log-likelihood of a

@@ -76,7 +76,7 @@ test_that("ordinal NLL works", {
   df <- data.frame(y = ordered(rep(1:5, each = 5)))
   m <- deeptrafo(y ~ 1, data = df)
   fit(m, validation_split = NULL, epochs = 10, batch_size = nrow(df))
-  coef(m); coef(m, "shifting")
+  # coef(m); coef(m, "interacting")
 
   cf0 <- qlogis((1:4)/5)
   ll0 <- - nrow(df) * log(1/5)
@@ -90,8 +90,8 @@ test_that("ordinal NLL works", {
 
   cf <- coef(m, which = "interacting")
 
-  tloss <- nll_ordinal()
-  ll <- tloss(response(df$y), fitted(m))$numpy()
+  tloss <- nll("logistic")
+  ll <- tloss(m$init_params$y, fitted(m))$numpy()
 
   expect_equal(ll0, sum(ll), tolerance = 1e-5)
   expect_equal(cf0, unname(unlist(cf))[1:4], tol = 1e-4)
