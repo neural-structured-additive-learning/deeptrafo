@@ -39,6 +39,9 @@
 #' coef(m, which_param = "shifting")
 #'
 #' @importFrom mlt R
+#' @importFrom Formula as.Formula
+#' @importFrom stats model.matrix model.response model.frame dbeta as.formula
+#' @importFrom keras layer_dense layer_add layer_concatenate
 #' @export
 #'
 #' @details \code{deeptrafo} is the main function for setting up neural network

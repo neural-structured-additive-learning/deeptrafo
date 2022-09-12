@@ -51,16 +51,6 @@ get_order <- function(response_type, y) {
   ret
 }
 
-get_loss <- function(response_type, family) {
-  switch(
-    response_type,
-    "continuous" = neg_ll_trafo(family),
-    "ordered" = nll_ordinal(family),
-    "count" = nll_count(family),
-    "survival" = nll_surv(family)
-  )
-}
-
 eval_response <- function(y, response_type) {
   switch(
     response_type,

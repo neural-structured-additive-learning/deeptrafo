@@ -313,6 +313,7 @@ logLik.deeptrafo <- function(
 #' @param ... Further arguments to \link[predict.deeptrafo]{predict.deeptrafo}
 #'
 #' @exportS3Method
+#' @importFrom stats simulate
 #' @rdname methodTrafo
 #'
 simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,

@@ -133,6 +133,7 @@ logLik.dtEnsemble <- function(
 
 # Helpers
 
+#' @importFrom keras set_weights
 .call_for_all_members <- function (object, FUN, ...) {
   ens_weights <- lapply(object$ensemble_results, function(x) {
     x$weighthistory
