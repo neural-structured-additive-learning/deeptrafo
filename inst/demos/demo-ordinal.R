@@ -7,7 +7,6 @@ set.seed(1234)
 # Deps --------------------------------------------------------------------
 
 library(tram)
-devtools::load_all("../deepregression/")
 devtools::load_all(".")
 
 # Data --------------------------------------------------------------------
@@ -22,9 +21,8 @@ m <- deeptrafo(rating ~ 0 + temp + contact, data = wine,
                optimizer = optimizer_adam(learning_rate = 0.1, decay = 1e-4))
 fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
 
-coef(tm)
-unlist(coef(m, which = "interacting"))
-unlist(coef(m, which = "shifting"))
+coef(tm, with_baseline = TRUE)
+c(unlist(coef(m, which = "interacting")), unlist(coef(m, which = "shifting")))
 
 # ontram alias ------------------------------------------------------------
 

@@ -7,15 +7,14 @@ set.seed(1234)
 # Deps --------------------------------------------------------------------
 
 library(tram)
-devtools::load_all("../deepregression/")
 devtools::load_all(".")
 
 # Data --------------------------------------------------------------------
 
 data("BostonHousing2", package = "mlbench")
 BostonHousing2 <- BostonHousing2 %>%
-  mutate(ocmedv = ordered(cmedv),
-         nox = c(scale(nox)))
+  dplyr::mutate(ocmedv = ordered(cmedv),
+                nox = c(scale(nox)))
 
 # Model -------------------------------------------------------------------
 

@@ -590,8 +590,8 @@ nll <- function(base_distribution) {
                                                   1e-8, Inf)) # Prime in 4
 
       ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
-      ll_right <- tf$math$log(tfd_cdf(bd, trafo_lwr))
-      ll_left <- tf$math$log(1 - tfd_cdf(bd, trafo))
+      ll_left <- tf$math$log(tf$clip_by_value(tfd_cdf(bd, trafo), 1e-16, 1))
+      ll_right <- tf$math$log(tf$clip_by_value(1 - tfd_cdf(bd, trafo_lwr), 1e-16, 1))
       ll_int <- tf$math$log(tf$clip_by_value(tfd_cdf(bd, trafo) - tfd_cdf(bd, trafo_lwr), 1e-16, 1))
 
       neglogLik <- - (cleft * ll_left + exact * ll_exact + cright * ll_right +
