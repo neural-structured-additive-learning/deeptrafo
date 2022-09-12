@@ -2,22 +2,20 @@
 % Please edit documentation in R/main.R
 \name{nll_count}
 \alias{nll_count}
-\title{negative log-likelihood for count transformation models}
+\title{Negative log-likelihood for count transformation models}
 \usage{
 nll_count(base_distribution = "logistic")
 }
 \arguments{
-\item{base_distribution}{base or error distribution}
+\item{base_distribution}{Base/error/target distribution. A parameter-free
+distribution which defines the interpretational scale of the transformation
+function in neural network transformation models. Can be character or
+a \code{tfd_distribution}.}
 }
 \value{
-a function for the negative log-likelihood with outcome \code{y_true}
-and transformation model \code{y_pred}. The transformation model is represented
-by a list of two, with first element a list of model outputs
-that are summed up and evaluated with the log-probability of the
-\code{base_dist}, and second element a single-column tensor
-representing the determinant of the Jacobian and transformed
-using the log
+A function for computing the negative log-likelihood of a
+    neural network transformation model with count response.
 }
 \description{
-negative log-likelihood for count transformation models
+Negative log-likelihood for count transformation models
 }

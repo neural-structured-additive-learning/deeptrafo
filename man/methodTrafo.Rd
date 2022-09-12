@@ -5,7 +5,11 @@
 \alias{coef.deeptrafo}
 \alias{predict.deeptrafo}
 \alias{fitted.deeptrafo}
-\title{Generic methods for deeptrafo objects}
+\alias{logLik.deeptrafo}
+\alias{simulate.deeptrafo}
+\alias{print.deeptrafo}
+\alias{summary.deeptrafo}
+\title{Generic methods for neural network transformation models}
 \usage{
 \method{plot}{deeptrafo}(
   x,
@@ -28,45 +32,75 @@
 )
 
 \method{fitted}{deeptrafo}(object, newdata = NULL, batch_size = NULL, convert_fun = as.matrix, ...)
+
+\method{logLik}{deeptrafo}(
+  object,
+  y = NULL,
+  newdata = NULL,
+  convert_fun = function(x, ...) -sum(x, ...),
+  ...
+)
+
+\method{simulate}{deeptrafo}(object, newdata = NULL, nsim = 1, seed = NULL, ...)
+
+\method{print}{deeptrafo}(x, print_model = FALSE, print_coefs = TRUE, with_baseline = FALSE, ...)
+
+\method{print}{deeptrafo}(object, ...)
 }
 \arguments{
-\item{x}{deeptrafo object}
+\item{x}{Object of class \code{"deeptrafo"}.}
 
-\item{which}{which effect to plot, default selects all.}
+\item{which}{Which effect to plot, default selects all smooth effects in the
+shift term.}
 
-\item{which_param}{integer, indicating for which distribution parameter
-coefficients should be returned (default is first parameter)}
+\item{which_param}{Character; either \code{"shifting"} or \code{"interacting"}.}
 
-\item{only_data}{logical, if TRUE, only the data for plotting is returned}
+\item{only_data}{Logical, if \code{TRUE}, only the data for plotting is returned.}
 
-\item{grid_length}{the length of an equidistant grid at which a two-dimensional function
-is evaluated for plotting.}
+\item{grid_length}{Integer; the length of an equidistant grid at which a
+two-dimensional function is evaluated for plotting.}
 
-\item{...}{not used atm}
+\item{...}{Further arguments supplied to \code{print.deeptrafo}}
 
-\item{object}{a deeptrafo model}
+\item{object}{Object of class \code{"deeptrafo"}.}
 
-\item{type}{either NULL (all types of coefficients are returned),
+\item{type}{Either NULL (all types of coefficients are returned),
 "linear" for linear coefficients or "smooth" for coefficients of;
-Note that \code{type} is currently not used for \code{"interacting"}}
+Note that \code{type} is currently not used for \code{"interacting"}.}
 
-\item{newdata}{optional new data, either data.frame or list}
+\item{newdata}{Named \code{list} or \code{data.frame}; optional new data.}
 
-\item{batch_size}{integer; optional, useful if data is too large}
+\item{batch_size}{Integer; optional, useful if data is too large.}
 
-\item{convert_fun}{function; to convert the TF tensor}
+\item{K}{Integer; grid length for the response to evaluate predictions at,
+if \code{newdata} does not contain the response.}
 
-\item{eval_grid}{logical; should plot be evaluated on a grid}
+\item{convert_fun}{Function; applied to the log-likelihood values of all
+observations.}
+
+\item{y}{Vector; optional vector of responses.}
+
+\item{nsim}{Integer; number of simulations; defaults to 1.}
+
+\item{seed}{Seed for generating samples; defaults to \code{NULL}.}
+
+\item{print_model}{Logical; print keras model.}
+
+\item{print_coefs}{Logical; print coefficients.}
+
+\item{eval_grid}{Logical; should plot be evaluated on a grid.}
 }
 \value{
-returns a function with two parameters: the actual response
-and \code{type} in \code{c('trafo', 'pdf', 'cdf', 'interaction')}
-determining the returned value
+Returns vector or matrix of predictions, depending on the supplied
+    \code{type}.
 
-returns a function with two parameters: the actual response
-and \code{type} in \code{c('trafo', 'pdf', 'cdf', 'interaction')}
-determining the returned value
+Returns matrix of fitted values.
 }
 \description{
-Generic methods for deeptrafo objects
+Generic methods for neural network transformation models
+}
+\details{
+If no new data is supplied, predictions are computed on the training
+    data (i.e. in-sample). If new data is supplied without a response,
+    predcitions are evaluated on a grid of length \code{K}.
 }

@@ -8,6 +8,8 @@ nr_words <- 10000
 embedding_size <- 100
 maxlen <- 100
 order_bsp <- 25
+repetitions <- 2
+
 
 if (!file.exists(file.path(bpath, "data_splitted.RDS"))) {
 
@@ -130,7 +132,7 @@ if (!file.exists(file.path(bpath, "data_splitted.RDS"))) {
 
   # create input list
   data <- append(movies, text_embd)
-  
+
   # transformations
   data$vote_count <- as.integer(data$vote_count)
   data$budget <- log(data$budget + 1)
@@ -139,8 +141,6 @@ if (!file.exists(file.path(bpath, "data_splitted.RDS"))) {
 
   rm(movies, text_embd)
   gc()
-
-  repetitions <- 10
 
   data_list <- list()
 
@@ -183,7 +183,6 @@ res_list <- mclapply(1:length(data_list), function(repl) {
   library(lubridate)
 
   # load software
-  load_all("../deepregression")
   load_all(".")
 
   # reinitialize tokenizer
@@ -240,11 +239,33 @@ res_list <- mclapply(1:length(data_list), function(repl) {
   plot(mod, which = "s(runtime)")
   plot(mod, which = "s(revenue)")
   - logLik(mod) / length(train$genreAction)
-  
+
   # prediction
   testy <- test$vote_count
   test$vote_count <- NULL
-  # takes forever:
-  pr <- predict(mod, newdata = test, K = 10)
+
+  .batch_subset <- function(obj, idx, dim) {
+    ndim <- length(dim)
+    if (is.null(dim)) {
+      ret <- obj[idx, drop = FALSE]
+    }
+    else if (ndim == 2L) {
+      ret <- obj[idx, , drop = FALSE]
+    }
+    else if (ndim == 3L) {
+      ret <- obj[idx, , , drop = FALSE]
+    }
+    else if (ndim == 4L) {
+      ret <- obj[idx, , , , drop = FALSE]
+    }
+    else if (ndim == 5L) {
+      ret <- obj[idx, , , , , drop = FALSE]
+    }
+    return(ret)
+  }
+
+  pr <- predict(mod, newdata = lapply(test, \(x) .batch_subset(x, 1:2, dim(x))))
+  pr2 <- stack(unlist(lapply(pr, \(x) x[1,1])))
+  plot(as.numeric(as.character(pr2$ind)), pr2$values)
 
 })

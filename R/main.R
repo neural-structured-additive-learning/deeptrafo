@@ -1,28 +1,31 @@
 #' Deep Conditional Transformation Models
 #'
-#' @param formula Formula specifying the response, shift, interaction and shared
-#'     terms as \code{response | interacting ~ shifting | shared}
-#' @param lag_formula formula representing the optional predictor for lags of the
-#'     response as defined for auto-regressive transformation models (ATMs)
-#' @param data \code{list} or \code{data.frame} containing both structured and
-#'     unstructured data
-#' @param response_type character; type of response. One of \code{"continuous"},
-#'     \code{"survival"}, \code{"count"}, \code{"ordered"}
-#' @param order integer; order of Bernstein polynomials or number of levels for
-#'     ordinal responses
-#' @param addconst_interaction positive constant;
+#' @param formula Formula specifying the response, interaction, shift terms
+#'     as \code{response | interacting ~ shifting}.
+#' @param lag_formula Optional formula for lags of the response in
+#'     auto-regressive transformation models (ATMs).
+#' @param data Named \code{list} or \code{data.frame} which may contain both
+#'     structured and unstructured data.
+#' @param response_type Character; type of response. One of \code{"continuous"},
+#'     \code{"survival"}, \code{"count"}, or \code{"ordered"}. If not supplied
+#'     manually it is determined by the first entry in \code{data[[response]]}.
+#' @param order Integer; order of the response basis. Default 10 for Bernstein
+#'     basis or number of levels minus one for ordinal responses.
+#' @param addconst_interaction Positive constant;
 #'     a constant added to the additive predictor of the interaction term.
 #'     If \code{NULL}, terms are left unchanged. If 0 and predictors have
 #'     negative values in their design matrix, the minimum value of all predictors
 #'     is added to ensure positivity. If > 0, the minimum value plus the
 #'     \code{addconst_interaction} is added to each predictor in the interaction
+#'     term. This ensures a monotone non-decreasing transformation function in
+#'     the response when using (tensor product) spline bases in the interacting
 #'     term.
-#' @param family \code{tfd_distribution} or character; the base distribution for
+#' @param family A \code{tfd_distribution} or character; the base distribution for
 #'     transformation models. If character, can be \code{"normal"}, \code{"logistic"}
 #'     or \code{"gumbel"}.
-#' @param trafo_options options for transformation models such as the basis
-#'     function used
-#' @param ... Arguments passed to \code{deepregression}
+#' @param trafo_options Options for transformation models such as the basis
+#'     function used, see \code{\link[deeptrafo]{trafo_control}} for more details.
+#' @param ... Additional arguments passed to \code{deepregression}
 #'
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
 #'
@@ -37,7 +40,12 @@
 #'
 #' @importFrom mlt R
 #' @export
-#' @details
+#'
+#' @details \code{deeptrafo} is the main function for setting up neural network
+#'     transformation models and is called by all aliases for the more special
+#'     cases (see e.g. \code{\link[deeptrafo]{ColrNN}}). The naming convention
+#'     of the aliases follow the 'tram' package (see e.g. \code{\link[tram]{Colr}})
+#'     and add the suffix "NN" to the function name.
 #'
 deeptrafo <- function(
   formula,
@@ -139,7 +147,7 @@ deeptrafo <- function(
             h1pred = which(names(list_of_formulas) == "h1pred"),
             add_const_positiv = addconst_interaction)
   snwb[[which(names(list_of_formulas) == "yterms")]] <- function(...) return(NULL)
-  
+
   args <- c(list(y = y,
                  family = family,
                  data = data,
@@ -152,7 +160,7 @@ deeptrafo <- function(
             dots)
 
   ret <- do.call("deepregression", args)
-  
+
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
   ret$init_params$response_type <- response_type
@@ -335,12 +343,13 @@ atm_init <- function(atmnr, h1nr)
 
 #' @title Define Predictor of Transformation Model
 #'
-#'
-#' @param atm_toplayer function to be applied on top of the transformed lags
-#' @param const_ia see \code{addconst_interaction} from \code{?deeptrafo}
-#' \code{deepregression}
-#' @return a function of list_pred_param returning a list of output tensors
+#' @param atm_toplayer Function to be applied on top of the transformed lags.
+#' @param const_ia See \code{addconst_interaction} in \code{\link[deeptrafo]{deeptrafo}}
+#'     or \code{\link[deepregression]{deepregression}}.
+#' @return A function of \code{list_pred_param} returning a list of output tensors
 #' that is passed to \code{model_fun} of \code{deepregression}
+#'
+#' @details Not intended to be used directly by the end user.
 #'
 #' @export
 from_preds_to_trafo <- function(
@@ -379,21 +388,23 @@ from_preds_to_trafo <- function(
 
 }
 
-#' Generic negative log-likelihood of a transformation model
+#' Negative log-likelihood of a transformation model for exact continuous responses
 #'
-#' @param base_distribution base or error distribution
+#' @param base_distribution Base/error/target distribution. A parameter-free
+#'     distribution which defines the interpretational scale of the transformation
+#'     function in neural network transformation models. Can be character or
+#'     a \code{tfd_distribution}.
 #'
-#' @return a function for the negative log-likelihood with outcome \code{y}
-#' and transformation model \code{model}. The transformation model is represented
-#' by a list of two, with first element a list of model outputs
-#' that are summed up and evaluated with the log-probability of the
-#' \code{basis_dist}, and second element a single-column tensor
-#' representing the determinant of the Jacobian and transformed
-#' using the log
+#' @return A function for the negative log-likelihood with outcome \code{y}
+#'     and transformation model \code{model}. The transformation model is
+#'     represented by a list of two, with first element a list of model outputs
+#'     that are summed up and evaluated with the log-probability of the
+#'     \code{base_distribution}, and second element a single-column tensor
+#'     representing the determinant of the Jacobian and transformed
+#'     using the log
 #'
 #' @import deepregression
 #' @export
-#'
 #'
 neg_ll_trafo <- function(base_distribution) {
 
@@ -421,21 +432,15 @@ neg_ll_trafo <- function(base_distribution) {
 
 }
 
-#' negative log-likelihood of an ordinal transformation model
+#' Negative log-likelihood of an ordinal transformation model
 #'
-#' @param base_distribution base or error distribution
+#' @inheritParams neg_ll_trafo
 #'
-#' @return a function for the negative log-likelihood with outcome \code{y_true}
-#' and transformation model \code{y_pred}. The transformation model is represented
-#' by a list of two, with first element a list of model outputs
-#' that are summed up and evaluated with the log-probability of the
-#' \code{base_dist}, and second element a single-column tensor
-#' representing the determinant of the Jacobian and transformed
-#' using the log
+#' @return A function for computing the negative log-likelihood of a
+#'     neural network transformation model with ordinal response.
 #'
 #' @import deepregression
 #' @export
-#'
 #'
 nll_ordinal <- function(base_distribution = "logistic") {
 
@@ -466,21 +471,15 @@ nll_ordinal <- function(base_distribution = "logistic") {
 
 }
 
-#' negative log-likelihood for count transformation models
+#' Negative log-likelihood for count transformation models
 #'
-#' @param base_distribution base or error distribution
+#' @inheritParams neg_ll_trafo
 #'
-#' @return a function for the negative log-likelihood with outcome \code{y_true}
-#' and transformation model \code{y_pred}. The transformation model is represented
-#' by a list of two, with first element a list of model outputs
-#' that are summed up and evaluated with the log-probability of the
-#' \code{base_dist}, and second element a single-column tensor
-#' representing the determinant of the Jacobian and transformed
-#' using the log
+#' @return A function for computing the negative log-likelihood of a
+#'     neural network transformation model with count response.
 #'
 #' @import deepregression
 #' @export
-#'
 #'
 nll_count <- function(base_distribution = "logistic") {
 
@@ -511,17 +510,12 @@ nll_count <- function(base_distribution = "logistic") {
 
 }
 
-#' negative log-likelihood for potentially right-censored survival responses
+#' Negative log-likelihood for potentially right-censored survival responses
 #'
-#' @param base_distribution base or error distribution
+#' @inheritParams neg_ll_trafo
 #'
-#' @return a function for the negative log-likelihood with outcome \code{y}
-#' and transformation model \code{model}. The transformation model is represented
-#' by a list of two, with first element a list of model outputs
-#' that are summed up and evaluated with the log-probability of the
-#' \code{basis_dist}, and second element a single-column tensor
-#' representing the determinant of the Jacobian and transformed
-#' using the log
+#' @return A function for computing the negative log-likelihood of a
+#'     neural network transformation model with survival response.
 #'
 #' @import deepregression
 #' @export
@@ -559,17 +553,12 @@ nll_surv <- function(base_distribution) {
 
 }
 
-#' generic negative log-likelihood for transformation models
+#' Generic negative log-likelihood for transformation models
 #'
-#' @param base_distribution base distribution / error distribution / inverse link
+#' @inheritParams neg_ll_trafo
 #'
-#' @return a function for the negative log-likelihood with outcome \code{y}
-#' and transformation model \code{model}. The transformation model is represented
-#' by a list of two, with first element a list of model outputs
-#' that are summed up and evaluated with the log-probability of the
-#' \code{basis_dist}, and second element a single-column tensor
-#' representing the determinant of the Jacobian and transformed
-#' using the log
+#' @return A function for computing the negative log-likelihood of a
+#'     neural network transformation model with generic response.
 #'
 #' @import deepregression
 #' @export

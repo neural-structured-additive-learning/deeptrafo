@@ -56,7 +56,7 @@ rps <- function(mod, y_true, newdata) {
   K <- ncol(y_true)
   ycum <- t(apply(y_true, 1, cumsum))
   cfb <- t(coef(mod, "interacting")[[1]][, rep(1, nrow(y_true))])
-  shift <- as.matrix(predict(mod, newdata = newdata, type = "shift")[, "shift", drop = FALSE])
+  shift <- predict(mod, newdata = newdata, type = "shift")
   shift <- shift[, rep(1, K - 1)]
   cdf <- plogis(cfb + shift)
   briers <- (cdf - ycum[, 1:(K - 1), drop = FALSE])^2

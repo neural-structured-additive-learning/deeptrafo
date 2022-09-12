@@ -1,0 +1,72 @@
+
+# Params ------------------------------------------------------------------
+
+bpath <- "./inst/illustrations"
+nr_words <- 10000
+embedding_size <- 100
+maxlen <- 100
+order_bsp <- 25
+repetitions <- 2
+
+# Loading the data --------------------------------------------------------
+
+data_list <- readRDS(file.path(bpath, "data_splitted.RDS"))[[1]]
+train <- data_list[[1]]
+test <- data_list[[2]]
+
+# Formula interface -------------------------------------------------------
+
+fm <- vote_count | genreAction ~ s(budget) + popularity
+
+# Setting up DCTMs --------------------------------------------------------
+
+mod <- deeptrafo(formula = fm, data = train, family = "logistic")
+
+# Fitting DCTMs -----------------------------------------------------------
+
+fit(mod, epochs = 10, validation_split = 0.1, batch_size = 8)
+
+# Working with neural networks --------------------------------------------
+
+embd_mod <- function(x) x %>%
+  layer_embedding(input_dim = tokenizer$num_words,
+                  output_dim = embedding_size) %>%
+  layer_lstm(units = 10, return_sequences = TRUE) %>%
+  layer_dropout(rate = 0.3) %>% layer_flatten() %>%
+  layer_dense(25) %>% layer_dropout(rate = 0.1) %>%
+  layer_dense(5) %>% layer_dropout(rate = 0.1) %>%
+  layer_dense(1)
+
+fm_deep <- update(fm, . ~ . + deep(texts))
+deep_mod <- deeptrafo(fm_deep, data = train,
+                      list_of_deep_models = list(deep = embd_mod))
+
+fit(deep_mod, epochs = 10, validation_split = 0.1, batch_size = 8)
+# TODO: Show embedding
+
+# Ensembling DCTMs --------------------------------------------------------
+
+dctm_ens <- ensemble(mod, n_ensemble = 5, epochs = 5)
+
+# Cross-validating DCTMs --------------------------------------------------
+
+dctm_cv <- cv(mod, epochs = 5, cv_folds = 5)
+
+# Methods overview --------------------------------------------------------
+
+### "deeptrafo"
+
+coef(mod, which = "interacting")
+coef(mod, which = "shifting")
+
+# In-sample
+predict(mod, type = "pdf")
+fitted(mod)
+logLik(mod)
+
+# <FIXME> Out-of-sample </FIXME>
+logLik(mod, newdata = test)
+
+### "dtEnsemble"
+coef(dctm_ens, which = "interacting")
+coef(dctm_ens, which = "shifting")

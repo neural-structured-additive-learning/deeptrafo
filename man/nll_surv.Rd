@@ -2,22 +2,20 @@
 % Please edit documentation in R/main.R
 \name{nll_surv}
 \alias{nll_surv}
-\title{negative log-likelihood for potentially right-censored survival responses}
+\title{Negative log-likelihood for potentially right-censored survival responses}
 \usage{
 nll_surv(base_distribution)
 }
 \arguments{
-\item{base_distribution}{base or error distribution}
+\item{base_distribution}{Base/error/target distribution. A parameter-free
+distribution which defines the interpretational scale of the transformation
+function in neural network transformation models. Can be character or
+a \code{tfd_distribution}.}
 }
 \value{
-a function for the negative log-likelihood with outcome \code{y}
-and transformation model \code{model}. The transformation model is represented
-by a list of two, with first element a list of model outputs
-that are summed up and evaluated with the log-probability of the
-\code{basis_dist}, and second element a single-column tensor
-representing the determinant of the Jacobian and transformed
-using the log
+A function for computing the negative log-likelihood of a
+    neural network transformation model with survival response.
 }
 \description{
-negative log-likelihood for potentially right-censored survival responses
+Negative log-likelihood for potentially right-censored survival responses
 }

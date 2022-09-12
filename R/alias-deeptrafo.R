@@ -1,11 +1,11 @@
 
 #' Deep conditional transformation models with alternative formula interface
 #'
-#' @param response formula for the response; e.g., \code{~ y}
-#' @param intercept formula for the intercept function; e.g., \code{~ x},
+#' @param response Formula for the response; e.g. \code{~ y}
+#' @param intercept Formula for the intercept function; e.g., \code{~ x},
 #'     for which interacting bases with the response will be set up
-#' @param shift formula for the shift part of the model; e.g., \code{~ s(x)}
-#' @param shared formula for sharing weights between predictors in the intercept
+#' @param shift Formula for the shift part of the model; e.g., \code{~ s(x)}
+#' @param shared Formula for sharing weights between predictors in the intercept
 #'     and shift part of the model
 #' @inheritParams deeptrafo
 #'
@@ -44,11 +44,11 @@ dctm <- function(
 
 #' Ordinal neural network transformation models
 #'
-#' @param response formula for the response; e.g., \code{~ y}
-#' @param intercept formula for the intercept function; e.g., \code{~ x},
+#' @param response Formula for the response; e.g., \code{~ y}
+#' @param intercept Formula for the intercept function; e.g., \code{~ x},
 #'     for which interacting bases with the response will be set up
-#' @param shift formula for the shift part of the model; e.g., \code{~ s(x)}
-#' @param shared formula for sharing weights between predictors in the intercept
+#' @param shift Formula for the shift part of the model; e.g., \code{~ s(x)}
+#' @param shared Formula for sharing weights between predictors in the intercept
 #'     and shift part of the model
 #' @inheritParams deeptrafo
 #'
@@ -105,8 +105,8 @@ ontram <- function(
 #'
 ColrNN <- function(
   formula, data, lag_formula = NULL,
-  response_type = get_response_type(data[[all.vars(response)[1]]]),
-  order = get_order(response_type, data[[all.vars(response)[1]]]),
+  response_type = get_response_type(data[[all.vars(formula)[1]]]),
+  order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   ...
@@ -141,8 +141,8 @@ ColrNN <- function(
 #'
 LehmanNN <- function(
   formula, data, lag_formula = NULL,
-  response_type = get_response_type(data[[all.vars(response)[1]]]),
-  order = get_order(response_type, data[[all.vars(response)[1]]]),
+  response_type = get_response_type(data[[all.vars(formula)[1]]]),
+  order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "gumbel", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   ...
@@ -177,8 +177,8 @@ LehmanNN <- function(
 #'
 BoxCoxNN <- function(
   formula, data, lag_formula = NULL,
-  response_type = get_response_type(data[[all.vars(response)[1]]]),
-  order = get_order(response_type, data[[all.vars(response)[1]]]),
+  response_type = get_response_type(data[[all.vars(formula)[1]]]),
+  order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "normal", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   ...
@@ -198,6 +198,42 @@ BoxCoxNN <- function(
 
 }
 
+#' Deep (proportional odds) logistic regression
+#'
+#' @inheritParams deeptrafo
+#'
+#' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
+#'
+#' @examples
+#' df <- data.frame(y = ordered(sample.int(5, 50, replace = TRUE)),
+#'      x = rnorm(50))
+#' m <- PolrNN(y ~ x, data = df)
+#' fit(m, epochs = 2L)
+#'
+#' @export
+#'
+PolrNN <- function(
+  formula, data, lag_formula = NULL,
+  response_type = get_response_type(data[[all.vars(formula)[1]]]),
+  order = get_order(response_type, data[[all.vars(formula)[1]]]),
+  addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
+  trafo_options = trafo_control(order_bsp = order, response_type = response_type),
+  ...
+) {
+
+  stopifnot(response_type == "ordered")
+
+  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+                   response_type = response_type, order = order,
+                   addconst_interaction = addconst_interaction, family = family,
+                   monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+                   ... = ...)
+
+  class(ret) <- c("PolrNN", class(ret))
+
+  ret
+
+}
 
 # Helpers -----------------------------------------------------------------
 

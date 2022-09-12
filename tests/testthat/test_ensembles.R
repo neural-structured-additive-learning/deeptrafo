@@ -1,8 +1,4 @@
 
-# devtools::load_all("../deepregression/")
-# devtools::load_all(".")
-devtools::load_all("../../../deepregression/")
-
 context("Test deep ensembles")
 
 # FUNs --------------------------------------------------------------------

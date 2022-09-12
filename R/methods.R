@@ -1,18 +1,18 @@
-#' Generic methods for deeptrafo objects
+#' Generic methods for neural network transformation models
 #'
-#' @param x deeptrafo object
-#' @param which which effect to plot, default selects all.
-#' @param which_param character; either \code{"interacting"} or \code{"shifting"}
-#' 1 corresponds to the shift term, 2 to the interaction term.
-#' @param only_data logical, if TRUE, only the data for plotting is returned
-#' @param grid_length the length of an equidistant grid at which a two-dimensional function
-#' is evaluated for plotting.
-#' @param eval_grid logical; should plot be evaluated on a grid
-#' @param ... further arguments, passed to fit, plot or predict function
-#'
+#' @param x Object of class \code{"deeptrafo"}.
+#' @param which Which effect to plot, default selects all smooth effects in the
+#'     shift term.
+#' @param which_param Character; either \code{"interacting"} or \code{"shifting"}.
+#' @param only_data Logical, if \code{TRUE}, only the data for plotting is returned.
+#' @param grid_length Integer; the length of an equidistant grid at which a
+#'     two-dimensional function is evaluated for plotting.
+#' @param eval_grid Logical; should plot be evaluated on a grid.
+#' @param ... Further arguments, passed to fit, plot or predict function
 #'
 #' @method plot deeptrafo
-#' @export
+#' @exportS3Method
+#'
 #' @rdname methodTrafo
 #'
 plot.deeptrafo <- function(
@@ -50,15 +50,15 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 
 }
 
-#' @param x deeptrafo object
-#' @param which_param integer, indicating for which distribution parameter
-#' coefficients should be returned (default is first parameter)
-#' @param type either NULL (all types of coefficients are returned),
-#' "linear" for linear coefficients or "smooth" for coefficients of;
-#' Note that \code{type} is currently not used for \code{"interacting"}
-#' @param ... further arguments, passed to fit, plot or predict function
+#' @param x Object of class \code{"deeptrafo"}.
+#' @param which_param Character; either \code{"shifting"} or \code{"interacting"}.
+#' @param type Either NULL (all types of coefficients are returned),
+#'     "linear" for linear coefficients or "smooth" for coefficients of;
+#'     Note that \code{type} is currently not used for \code{"interacting"}.
+#' @param ... Further arguments, passed to fit, plot or predict function
 #'
 #' @method coef deeptrafo
+#'
 #' @export
 #' @rdname methodTrafo
 #'
@@ -92,13 +92,18 @@ coef.deeptrafo <- function(
 }
 
 
+#' @param object Object of class \code{"deeptrafo"}.
+#' @param newdata Optional new data, either \code{data.frame} or named \code{list}.
+#' @param K Integer; grid length for the response to evaluate predictions at,
+#'     if \code{newdata} does not contain the response.
+#' @param ... Currently ignored.
 #'
-#' @param object a deeptrafo model
-#' @param newdata optional new data, either data.frame or list
-#' @param ... not used atm
-#' @return returns a function with two parameters: the actual response
-#' and \code{type} in \code{c('trafo', 'pdf', 'cdf', 'interaction')}
-#' determining the returned value
+#' @return Returns vector or matrix of predictions, depending on the supplied
+#'     \code{type}.
+#'
+#' @details If no new data is supplied, predictions are computed on the training
+#'     data (i.e. in-sample). If new data is supplied without a response,
+#'     predcitions are evaluated on a grid of length \code{K}.
 #'
 #' @method predict deeptrafo
 #' @importFrom variables numeric_var ordered_var mkgrid
@@ -206,15 +211,13 @@ predict.deeptrafo <- function(
 
 }
 
+#' @param object Object of class \code{"deeptrafo"}
+#' @param newdata Optional new data, either \code{data.frame} or named \code{list}
+#' @param batch_size Integer; optional, useful if data is too large.
+#' @param convert_fun Function; to convert the TF tensor.
+#' @param ... Currently ignored.
 #'
-#' @param object a deeptrafo model
-#' @param newdata optional new data, either data.frame or list
-#' @param batch_size integer; optional, useful if data is too large
-#' @param convert_fun function; to convert the TF tensor
-#' @param ... not used atm
-#' @return returns a function with two parameters: the actual response
-#' and \code{type} in \code{c('trafo', 'pdf', 'cdf', 'interaction')}
-#' determining the returned value
+#' @return Returns matrix of fitted values.
 #'
 #' @method fitted deeptrafo
 #' @export
@@ -268,16 +271,18 @@ map_param_string_to_index <- function(which_param)
 
 }
 
-#' Log-likelihood method for deeptrafo objects
-#'
 #' @method logLik deeptrafo
-#' @param object deeptrafo object;
-#' @param y vector; optional response
-#' @param newdata list or data.frame; optional new data
-#' @param convert_fun function; applied to the log-likelihood values of all observations
-#' @param ... currently not used
 #'
-#' @export
+#' @param object Object of class \code{"deeptrafo"}.
+#' @param y Vector; optional vector of responses.
+#' @param newdata Named \code{list} or \code{data.frame}; optional new data.
+#' @param convert_fun Function; applied to the log-likelihood values of all
+#'     observations.
+#' @param ... Currently ignored.
+#'
+#' @exportS3Method
+#'
+#' @rdname methodTrafo
 #'
 logLik.deeptrafo <- function(
   object,
@@ -298,16 +303,16 @@ logLik.deeptrafo <- function(
 
 }
 
-#' Simulate method for deeptrafo objects
-#'
 #' @method simulate deeptrafo
-#' @param object \code{"deeptrafo"} object
-#' @param nsim number of simulations; defaults to 1
-#' @param seed seed for generating samples; defaults to \code{NULL}
-#' @param newdata list or data.frame; optional new data
-#' @param ... further arguments to \link[predict.deeptrafo]{predict.deeptrafo}
 #'
-#' @export
+#' @param object Object of class \code{"deeptrafo"}.
+#' @param nsim Integer; number of simulations; defaults to 1.
+#' @param seed Seed for generating samples; defaults to \code{NULL}.
+#' @param newdata Named \code{list} or \code{data.frame}; optional new data.
+#' @param ... Further arguments to \link[predict.deeptrafo]{predict.deeptrafo}
+#'
+#' @exportS3Method
+#' @rdname methodTrafo
 #'
 simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
                                seed = NULL, ...) {
@@ -348,15 +353,16 @@ simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
 
 }
 
-#' Print method for deeptrafo objects
-#'
 #' @method print deeptrafo
-#' @param x deeptrafo object
-#' @param print_model logical; print keras model
-#' @param print_coefs logical; print coefficients
-#' @param ... currently not used
 #'
-#' @export
+#' @param x Object of class \code{"deeptrafo"}.
+#' @param print_model Logical; print keras model.
+#' @param print_coefs Logical; print coefficients.
+#' @param ... Currently ignored.
+#'
+#' @exportS3Method
+#'
+#' @rdname methodTrafo
 #'
 print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
                             with_baseline = FALSE, ...) {
@@ -402,13 +408,13 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
 
 }
 
-#' Summary method for deeptrafo objects
-#'
 #' @method print deeptrafo
-#' @param object deeptrafo object
-#' @param ... further arguments supplied to \code{print.deeptrafo}
 #'
-#' @export
+#' @param object Object of class \code{"deeptrafo"}.
+#' @param ... Further arguments supplied to \code{print.deeptrafo}
+#'
+#' @exportS3Method
+#' @rdname methodTrafo
 #'
 summary.deeptrafo <- function(object, ...) {
 
