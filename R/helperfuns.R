@@ -1,4 +1,18 @@
 
+# Cotram basis ------------------------------------------------------------
+
+.get_eval_cotram <- function(order_bsp, support) {
+  function(y, orderbsp = order_bsp, suppy = support) {
+    eval_bsp(log(1 + y), order = orderbsp, supp = suppy)
+  }
+}
+
+.get_eval_cotram_lower <- function(order_bsp, support) {
+  function(y, orderbsp = order_bsp, suppy = support) {
+    eval_bsp(log(1e-16 + y), order = orderbsp, supp = suppy)
+  }
+}
+
 # Linear and log-linear bases ---------------------------------------------
 
 eval_lin <- function(y) {

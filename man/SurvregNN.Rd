@@ -66,7 +66,7 @@ Deep parametric survival regression
 \examples{
 set.seed(1)
 library(tram)
-df <- data.frame(y = abs(1 + rnorm(50)),x = rnorm(50))
+df <- data.frame(y = abs(1 + rnorm(50)), x = rnorm(50))
 optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
 m <- SurvregNN(y ~ 0 + x, data = df, optimizer = optimizer)
 fit(m, epochs = 500L, validation_split = 0)
