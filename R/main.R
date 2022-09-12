@@ -393,7 +393,9 @@ from_preds_to_trafo <- function(
 
 #' Generic negative log-likelihood for transformation models
 #'
-#' @inheritParams neg_ll_trafo
+#' @param base_distribution Target distribution, character or
+#'     \code{tfd_distribution}. If character, can be either "logistic",
+#'     "normal", or "gumbel".
 #'
 #' @return A function for computing the negative log-likelihood of a
 #'     neural network transformation model with generic response.
