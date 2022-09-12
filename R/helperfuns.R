@@ -1,4 +1,36 @@
 
+# Linear and log-linear bases ---------------------------------------------
+
+eval_lin <- function(y) {
+  ret <- cbind(1, y)
+  if (NROW(ret) == 1)
+    return(as.vector(ret))
+  ret
+}
+
+eval_lin_prime <- function(y) {
+  ret <- cbind(0, rep(1, length(y)))
+  if (NROW(ret) == 1)
+    return(as.vector(ret))
+  ret
+}
+
+eval_loglin <- function(y) {
+  stopifnot(y > 0)
+  ret <- cbind(1, log(y))
+  if (NROW(ret) == 1)
+    return(as.vector(ret))
+  ret
+}
+
+eval_loglin_prime <- function(y) {
+  stopifnot(y > 0)
+  ret <- cbind(0, 1/y)
+  if (NROW(ret) == 1)
+    return(as.vector(ret))
+  ret
+}
+
 # Ordinal bases -----------------------------------------------------------
 
 eval_ord <- function(y) {
