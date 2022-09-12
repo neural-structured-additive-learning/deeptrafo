@@ -131,12 +131,13 @@ predict.deeptrafo <- function(
   discrete <- as.numeric(rtype %in% c("count", "ordered"))
   bd <- get_bd(fam)
 
+  # Predict over grid of responses, if response not contained in newdata
   if (!is.null(newdata)) {
     if (is.null(newdata[[rname]])) {
       ygrd <- make_grid(object$init_params$response, n = K)[[1]]
-      if (type == "shift")
+      if (type == "shift") # shift independent of response, skip
         ygrd <- ygrd[1]
-      ret <- lapply(ygrd, function(ty) {
+      ret <- lapply(ygrd, function(ty) { # overwrite response, then predict
         newdata[[rname]] <- rep(ty, NROW(newdata[[1]]))
         predict.deeptrafo(object, newdata = newdata, type = type,
                           batch_size = batch_size, K = K, ... = ...)
@@ -146,19 +147,20 @@ predict.deeptrafo <- function(
     }
   }
 
+  # Compute predictions from fitted values
   mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
 
+  if (type == "terms")
+    return(mod_output)
+
   if (is.null(newdata))
-    ry <- response(object$init_params$response)
+    ry <- object$init_params$y
   else
     ry <- response(newdata[[rname]])
 
   cleft <- ry[, "cleft", drop = FALSE]
   cint <- ry[, "cinterval", drop = FALSE]
   cright <- ry[, "cright", drop = FALSE]
-
-  if (type == "terms")
-    return(mod_output)
 
   w_eta <- mod_output[, 1, drop = FALSE]
   aTtheta <- mod_output[, 2, drop = FALSE]
@@ -275,7 +277,6 @@ map_param_string_to_index <- function(which_param)
 #' @method logLik deeptrafo
 #'
 #' @param object Object of class \code{"deeptrafo"}.
-#' @param y Vector; optional vector of responses.
 #' @param newdata Named \code{list} or \code{data.frame}; optional new data.
 #' @param convert_fun Function; applied to the log-likelihood values of all
 #'     observations.
@@ -287,17 +288,18 @@ map_param_string_to_index <- function(which_param)
 #'
 logLik.deeptrafo <- function(
   object,
-  y = NULL,
   newdata = NULL,
   convert_fun = function(x, ...) - sum(x, ...),
   ...
 )
 {
 
-  # TODO: logLik with newdata
   if (is.null(newdata)) {
     y <- object$init_params$y
-    y_pred <- fitted.deeptrafo(object)
+    y_pred <- fitted.deeptrafo(object, ... = ...)
+  } else {
+    y <- response(newdata[[object$init_params$response_varname]])
+    y_pred <- fitted.deeptrafo(object, newdata = newdata, ... = ...)
   }
 
  convert_fun(object$model$loss(y, y_pred)$numpy())
@@ -313,32 +315,27 @@ logLik.deeptrafo <- function(
 #' @param ... Further arguments to \link[predict.deeptrafo]{predict.deeptrafo}
 #'
 #' @exportS3Method
+#' @importFrom stats simulate
 #' @rdname methodTrafo
 #'
 simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
                                seed = NULL, ...) {
 
   rtype <- object$init_params$response_type
-  rvar <- object$init_params$response_varname
-
-  if (!is.null(newdata))
-    ry <- newdata[[rvar]]
-  else
-    ry <- object$init_params$response
-
 
   if (rtype != "ordered")
     stop("Simulate not yet implemented for response types other than ordered.")
 
-  lvls <- sort(unique(ry))
+  rvar <- object$init_params$response_varname
 
+  if (is.null(newdata)) {
+    newdata <- m$init_params$data
+    newdata <- newdata[-which(names(newdata) == rvar)]
+  } else {
+    ry <- object$init_params$response
+  }
 
-  cdf <- do.call("cbind", lapply(lvls, function(x) {
-    newy <- ry
-    newy[] <- x
-    predict(object, newdata = newdata, y = newy, type = "cdf") # , ... = ...)
-  }))
-
+  cdf <- do.call("cbind", predict(m, newdata = newdata, type = "cdf"))
   pmf <- apply(cbind(0, cdf), 1, diff)
 
   ret <- lapply(1:nsim, function(x) {
@@ -426,6 +423,8 @@ summary.deeptrafo <- function(object, ...) {
 # Helpers -----------------------------------------------------------------
 
 get_bd <- function(family) {
+  if (inherits(family, "python.builtin.object"))
+    return(family)
   switch(family,
          "normal" = tfd_normal(loc = 0, scale = 1),
          "logistic" = tfd_logistic(loc = 0, scale = 1),
