@@ -35,7 +35,6 @@
 
 \method{logLik}{deeptrafo}(
   object,
-  y = NULL,
   newdata = NULL,
   convert_fun = function(x, ...) -sum(x, ...),
   ...
@@ -77,8 +76,6 @@ if \code{newdata} does not contain the response.}
 
 \item{convert_fun}{Function; applied to the log-likelihood values of all
 observations.}
-
-\item{y}{Vector; optional vector of responses.}
 
 \item{nsim}{Integer; number of simulations; defaults to 1.}
 

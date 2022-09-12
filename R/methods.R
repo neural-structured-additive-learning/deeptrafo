@@ -275,7 +275,6 @@ map_param_string_to_index <- function(which_param)
 #' @method logLik deeptrafo
 #'
 #' @param object Object of class \code{"deeptrafo"}.
-#' @param y Vector; optional vector of responses.
 #' @param newdata Named \code{list} or \code{data.frame}; optional new data.
 #' @param convert_fun Function; applied to the log-likelihood values of all
 #'     observations.
@@ -287,17 +286,18 @@ map_param_string_to_index <- function(which_param)
 #'
 logLik.deeptrafo <- function(
   object,
-  y = NULL,
   newdata = NULL,
   convert_fun = function(x, ...) - sum(x, ...),
   ...
 )
 {
 
-  # TODO: logLik with newdata
   if (is.null(newdata)) {
     y <- object$init_params$y
-    y_pred <- fitted.deeptrafo(object)
+    y_pred <- fitted.deeptrafo(object, ... = ...)
+  } else {
+    y <- response(newdata[[object$init_params$response_varname]])
+    y_pred <- fitted.deeptrafo(object, newdata = newdata, ... = ...)
   }
 
  convert_fun(object$model$loss(y, y_pred)$numpy())
