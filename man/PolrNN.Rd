@@ -48,6 +48,8 @@ term.}
 transformation models. If character, can be \code{"normal"}, \code{"logistic"}
 or \code{"gumbel"}.}
 
+\item{monitor_metrics}{See \code{\link[deepregression]{deepregression}}}
+
 \item{trafo_options}{Options for transformation models such as the basis
 function used, see \code{\link[deeptrafo]{trafo_control}} for more details.}
 

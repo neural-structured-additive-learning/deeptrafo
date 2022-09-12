@@ -26,6 +26,10 @@
 #' @param trafo_options Options for transformation models such as the basis
 #'     function used, see \code{\link[deeptrafo]{trafo_control}} for more details.
 #' @param ... Additional arguments passed to \code{deepregression}
+#' @param monitor_metrics See \code{\link[deepregression]{deepregression}}
+#' @param return_data Include full data in the returned object. Defaults to
+#'     \code{FALSE}. Set to \code{TRUE} if inteded to use
+#'     \code{\link[stats]{simulate}} afterwards.
 #'
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
 #'
@@ -33,7 +37,7 @@
 #' data("wine", package = "ordinal")
 #' wine$noise <- rnorm(nrow(wine))
 #' fml <- rating ~ 0 + temp
-#' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL)
+#' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL, return_data = TRUE)
 #' m %>% fit(epochs = 20, batch_size = nrow(wine))
 #' coef(m, which_param = "interacting")
 #' coef(m, which_param = "shifting")
@@ -61,6 +65,7 @@ deeptrafo <- function(
   monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order,
                                 response_type = response_type),
+  return_data = FALSE,
   ...
 )
 {
@@ -171,6 +176,7 @@ deeptrafo <- function(
   ret$init_params$response_varname <- rvar
   ret$init_params$response_type <- response_type
   ret$init_params$response <- resp
+  ret$init_params$data <- if (return_data) data else NULL
 
   class(ret) <- c("deeptrafo", "deepregression")
   return(ret)
