@@ -96,8 +96,6 @@ trafo_control <- function(order_bsp = 10L,
       },
       "survival" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
         ret <- eval_bsp(y[, 1], order = orderbsp, supp = suppy)
-        ret[] <- 1e-8
-        ret
       },
       "count" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
         eval_bsp(y - 1L, order = orderbsp, supp = suppy)

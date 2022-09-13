@@ -126,6 +126,42 @@ ColrNN <- function(
 
 }
 
+#' Cox proportional hazards type neural network transformation models
+#'
+#' @inheritParams deeptrafo
+#'
+#' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
+#'
+#' @examples
+#' df <- data.frame(y = rnorm(50), x = rnorm(50))
+#' m <- CoxphNN(y ~ x, data = df)
+#' fit(m, epochs = 2L)
+#'
+#' @export
+#'
+CoxphNN <- function(
+  formula, data, lag_formula = NULL,
+  response_type = get_response_type(data[[all.vars(formula)[1]]]),
+  order = get_order(response_type, data[[all.vars(formula)[1]]]),
+  addconst_interaction = 0, family = "gompertz", monitor_metrics = NULL,
+  trafo_options = trafo_control(order_bsp = order, response_type = response_type),
+  ...
+) {
+
+  stopifnot(response_type %in% c("continuous", "survival"))
+
+  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+                   response_type = response_type, order = order,
+                   addconst_interaction = addconst_interaction, family = family,
+                   monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+                   ... = ...)
+
+  class(ret) <- c("CoxphNN", class(ret))
+
+  ret
+
+}
+
 #' Lehmann-type neural network transformation models
 #'
 #' @inheritParams deeptrafo

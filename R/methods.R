@@ -428,7 +428,8 @@ get_bd <- function(family) {
   switch(family,
          "normal" = tfd_normal(loc = 0, scale = 1),
          "logistic" = tfd_logistic(loc = 0, scale = 1),
-         "gumbel" = tfd_gumbel(loc = 0, scale = 1)
+         "gumbel" = tfd_gumbel(loc = 0, scale = 1),
+         "gompertz" = tfd_gompertz(loc = 0, scale = 1)
   )
 }
 

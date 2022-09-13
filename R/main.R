@@ -21,8 +21,8 @@
 #'     the response when using (tensor product) spline bases in the interacting
 #'     term.
 #' @param family A \code{tfd_distribution} or character; the base distribution for
-#'     transformation models. If character, can be \code{"normal"}, \code{"logistic"}
-#'     or \code{"gumbel"}.
+#'     transformation models. If character, can be \code{"normal"}, \code{"logistic"},
+#'     \code{"gumbel"} or \code{"gompertz"}.
 #' @param trafo_options Options for transformation models such as the basis
 #'     function used, see \code{\link[deeptrafo]{trafo_control}} for more details.
 #' @param ... Additional arguments passed to \code{deepregression}
@@ -404,7 +404,7 @@ from_preds_to_trafo <- function(
 #'
 #' @param base_distribution Target distribution, character or
 #'     \code{tfd_distribution}. If character, can be either "logistic",
-#'     "normal", or "gumbel".
+#'     "normal", "gumbel", "gompertz".
 #'
 #' @return A function for computing the negative log-likelihood of a
 #'     neural network transformation model with generic response.
