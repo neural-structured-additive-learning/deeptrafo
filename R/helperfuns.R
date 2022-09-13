@@ -609,3 +609,25 @@ get_theta <- function(object)
 
 }
 
+# Additional distributions ------------------------------------------------
+
+tfd_gompertz <- function(loc, scale,
+                         validate_args = FALSE,
+                         allow_nan_stats = TRUE,
+                         name = "Gompertz")
+{
+
+  args <- list(
+    loc = loc,
+    scale = scale,
+    validate_args = validate_args,
+    allow_nan_stats = allow_nan_stats,
+    name = name
+  )
+
+  python_path <- system.file("python", package = "deeptrafo")
+  distributions <- reticulate::import_from_path("distributions", path = python_path)
+
+  return(do.call(distributions$gompertz$Gompertz, args))
+
+}
