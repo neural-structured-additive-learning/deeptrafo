@@ -15,7 +15,7 @@ LmNN(
   monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = 1L, response_type = response_type,
     y_basis_fun = eval_lin, y_basis_fun_lower = .empty_fun(eval_lin), y_basis_fun_prime =
-    eval_lin_prime),
+    eval_lin_prime, basis = "shiftscale"),
   ...
 )
 }
@@ -47,8 +47,8 @@ the response when using (tensor product) spline bases in the interacting
 term.}
 
 \item{family}{A \code{tfd_distribution} or character; the base distribution for
-transformation models. If character, can be \code{"normal"}, \code{"logistic"}
-or \code{"gumbel"}.}
+transformation models. If character, can be \code{"normal"}, \code{"logistic"},
+\code{"gumbel"} or \code{"gompertz"}.}
 
 \item{monitor_metrics}{See \code{\link[deepregression]{deepregression}}}
 
@@ -69,7 +69,7 @@ library(tram)
 df <- data.frame(y = 10 + rnorm(50), x = rnorm(50))
 optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
 m <- LmNN(y ~ 0 + x, data = df, optimizer = optimizer)
-fit(m, epochs = 300L, validation_split = 0)
+fit(m, epochs = 900L, validation_split = 0)
 logLik(mm <- Lm(y ~ x, data = df)); logLik(m)
 coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
                                          coef(m, which = "shifting")))

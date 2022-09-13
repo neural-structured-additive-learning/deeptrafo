@@ -11,11 +11,9 @@ SurvregNN(
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0,
-  family = "logistic",
+  family = "gompertz",
   monitor_metrics = NULL,
-  trafo_options = trafo_control(order_bsp = 1L, response_type = response_type,
-    y_basis_fun = eval_loglin, y_basis_fun_lower = .empty_fun(eval_loglin),
-    y_basis_fun_prime = eval_loglin_prime),
+  trafo_options = NULL,
   ...
 )
 }
@@ -47,8 +45,8 @@ the response when using (tensor product) spline bases in the interacting
 term.}
 
 \item{family}{A \code{tfd_distribution} or character; the base distribution for
-transformation models. If character, can be \code{"normal"}, \code{"logistic"}
-or \code{"gumbel"}.}
+transformation models. If character, can be \code{"normal"}, \code{"logistic"},
+\code{"gumbel"} or \code{"gompertz"}.}
 
 \item{monitor_metrics}{See \code{\link[deepregression]{deepregression}}}
 

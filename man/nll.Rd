@@ -9,7 +9,7 @@ nll(base_distribution)
 \arguments{
 \item{base_distribution}{Target distribution, character or
 \code{tfd_distribution}. If character, can be either "logistic",
-"normal", or "gumbel".}
+"normal", "gumbel", "gompertz".}
 }
 \value{
 A function for computing the negative log-likelihood of a
