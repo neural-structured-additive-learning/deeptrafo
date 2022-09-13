@@ -1,0 +1,1 @@
+from .gompertz import *
