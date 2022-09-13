@@ -283,7 +283,7 @@ PolrNN <- function(
 #' df <- data.frame(y = 10 + rnorm(50), x = rnorm(50))
 #' optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
 #' m <- LmNN(y ~ 0 + x, data = df, optimizer = optimizer)
-#' fit(m, epochs = 300L, validation_split = 0)
+#' fit(m, epochs = 900L, validation_split = 0)
 #' logLik(mm <- Lm(y ~ x, data = df)); logLik(m)
 #' coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
 #'                                          coef(m, which = "shifting")))
@@ -299,7 +299,8 @@ LmNN <- function(
                                 response_type = response_type,
                                 y_basis_fun = eval_lin,
                                 y_basis_fun_lower = .empty_fun(eval_lin),
-                                y_basis_fun_prime = eval_lin_prime),
+                                y_basis_fun_prime = eval_lin_prime,
+                                basis = "shiftscale"),
   ...
 ) {
 
@@ -340,16 +341,31 @@ SurvregNN <- function(
   formula, data, lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
-  addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
-  trafo_options = trafo_control(order_bsp = 1L,
-                                response_type = response_type,
-                                y_basis_fun = eval_loglin,
-                                y_basis_fun_lower = .empty_fun(eval_loglin),
-                                y_basis_fun_prime = eval_loglin_prime),
+  addconst_interaction = 0, family = "gompertz", monitor_metrics = NULL,
+  trafo_options = NULL,
   ...
 ) {
 
   stopifnot(response_type %in% c("continuous", "survival"))
+
+  if (response_type == "survival") {
+    ybf <- function(y) eval_loglin(y[, 1])
+    ybfl <- function(y) eval_loglin(y[, 1])
+    ybfp <- function(y) eval_loglin_prime(y[, 1])
+  } else {
+    ybf <- eval_loglin
+    ybfl <- .empty_fun(ybf)
+    ybfp <- eval_loglin_prime
+  }
+
+  trafo_options <- trafo_control(
+    order_bsp = 1L,
+    response_type = response_type,
+    y_basis_fun = ybf,
+    y_basis_fun_lower = ybfl,
+    y_basis_fun_prime = ybfp,
+    basis = "shiftscale"
+  )
 
   ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
                    response_type = response_type, order = order,

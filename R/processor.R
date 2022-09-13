@@ -29,7 +29,8 @@ ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
     units = output_dim,
     dim_bsp = dim_basis,
     kernel_regularizer = combined_penalty,
-    name = name
+    name = name,
+    trafo = controls$trafo
   )
 
   if (!is.null(spec) && "dnn" %in% names(environment(controls$procs[[spec]]))) # deep network in ia

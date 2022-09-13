@@ -91,6 +91,54 @@ coef.deeptrafo <- function(
 
 }
 
+#' @exportS3Method coef LmNN
+coef.LmNN <- function(object, which_param = c("shifting", "interacting"),
+                      type = NULL, ...) {
+
+  which_param <- match.arg(which_param)
+
+  is_interaction <- which_param == "interacting"
+  which_param <- map_param_string_to_index(which_param)
+
+  # else, return lags
+  ret <- coef.deepregression(object, which_param = which_param, type = type)
+
+  if (is_interaction) {
+    ret <- lapply(ret, function(r) {
+      x <- matrix(r, nrow = 2, byrow = TRUE)
+      x[2, ] <- softplus(x[2, ])
+      x
+    })
+  }
+
+  return(ret)
+
+}
+
+#' @exportS3Method coef SurvregNN
+coef.SurvregNN <- function(object, which_param = c("shifting", "interacting"),
+                           type = NULL, ...) {
+
+  which_param <- match.arg(which_param)
+
+  is_interaction <- which_param == "interacting"
+  which_param <- map_param_string_to_index(which_param)
+
+  # else, return lags
+  ret <- coef.deepregression(object, which_param = which_param, type = type)
+
+  if (is_interaction) {
+    ret <- lapply(ret, function(r) {
+      x <- matrix(r, nrow = 2, byrow = TRUE)
+      x[2, ] <- softplus(x[2, ])
+      x
+    })
+  }
+
+  return(ret)
+
+}
+
 
 #' @param object Object of class \code{"deeptrafo"}.
 #' @param newdata Optional new data, either \code{data.frame} or named \code{list}.
