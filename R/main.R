@@ -172,6 +172,7 @@ deeptrafo <- function(
 
   ret <- do.call("deepregression", args)
 
+  ret$init_params$formula <- formula
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
   ret$init_params$response_type <- response_type

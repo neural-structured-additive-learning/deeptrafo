@@ -430,7 +430,8 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
   no_shift <- (fmls[[3]] == ~ 1)
   uncond <- no_int & no_shift
 
-  int <- ifelse(no_int, "~1", fml2txt(fmls[[2]]))
+  int <- ifelse(no_int, paste0(x$init_params$response_varname, " | 1"),
+                fml2txt(formula(x$init_params$formula, lhs = 2L, rhs = 0L)[[2]]))
   shift <- ifelse(no_shift, "~1", fml2txt(fmls[[3]]))
 
   cat("\t", mtype, "outcome neural network transformation model\n\n")
