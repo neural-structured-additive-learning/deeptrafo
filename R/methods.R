@@ -91,6 +91,54 @@ coef.deeptrafo <- function(
 
 }
 
+#' @exportS3Method coef LmNN
+coef.LmNN <- function(object, which_param = c("shifting", "interacting"),
+                      type = NULL, ...) {
+
+  which_param <- match.arg(which_param)
+
+  is_interaction <- which_param == "interacting"
+  which_param <- map_param_string_to_index(which_param)
+
+  # else, return lags
+  ret <- coef.deepregression(object, which_param = which_param, type = type)
+
+  if (is_interaction) {
+    ret <- lapply(ret, function(r) {
+      x <- matrix(r, nrow = 2, byrow = TRUE)
+      x[2, ] <- softplus(x[2, ])
+      x
+    })
+  }
+
+  return(ret)
+
+}
+
+#' @exportS3Method coef SurvregNN
+coef.SurvregNN <- function(object, which_param = c("shifting", "interacting"),
+                           type = NULL, ...) {
+
+  which_param <- match.arg(which_param)
+
+  is_interaction <- which_param == "interacting"
+  which_param <- map_param_string_to_index(which_param)
+
+  # else, return lags
+  ret <- coef.deepregression(object, which_param = which_param, type = type)
+
+  if (is_interaction) {
+    ret <- lapply(ret, function(r) {
+      x <- matrix(r, nrow = 2, byrow = TRUE)
+      x[2, ] <- softplus(x[2, ])
+      x
+    })
+  }
+
+  return(ret)
+
+}
+
 
 #' @param object Object of class \code{"deeptrafo"}.
 #' @param newdata Optional new data, either \code{data.frame} or named \code{list}.
@@ -382,7 +430,8 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
   no_shift <- (fmls[[3]] == ~ 1)
   uncond <- no_int & no_shift
 
-  int <- ifelse(no_int, "~1", fml2txt(fmls[[2]]))
+  int <- ifelse(no_int, paste0(x$init_params$response_varname, " | 1"),
+                fml2txt(formula(x$init_params$formula, lhs = 2L, rhs = 0L)[[2]]))
   shift <- ifelse(no_shift, "~1", fml2txt(fmls[[3]]))
 
   cat("\t", mtype, "outcome neural network transformation model\n\n")
@@ -428,7 +477,8 @@ get_bd <- function(family) {
   switch(family,
          "normal" = tfd_normal(loc = 0, scale = 1),
          "logistic" = tfd_logistic(loc = 0, scale = 1),
-         "gumbel" = tfd_gumbel(loc = 0, scale = 1)
+         "gumbel" = tfd_gumbel(loc = 0, scale = 1),
+         "gompertz" = tfd_gompertz(loc = 0, scale = 1)
   )
 }
 

@@ -126,6 +126,42 @@ ColrNN <- function(
 
 }
 
+#' Cox proportional hazards type neural network transformation models
+#'
+#' @inheritParams deeptrafo
+#'
+#' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
+#'
+#' @examples
+#' df <- data.frame(y = rnorm(50), x = rnorm(50))
+#' m <- CoxphNN(y ~ x, data = df)
+#' fit(m, epochs = 2L)
+#'
+#' @export
+#'
+CoxphNN <- function(
+  formula, data, lag_formula = NULL,
+  response_type = get_response_type(data[[all.vars(formula)[1]]]),
+  order = get_order(response_type, data[[all.vars(formula)[1]]]),
+  addconst_interaction = 0, family = "gompertz", monitor_metrics = NULL,
+  trafo_options = trafo_control(order_bsp = order, response_type = response_type),
+  ...
+) {
+
+  stopifnot(response_type %in% c("continuous", "survival"))
+
+  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+                   response_type = response_type, order = order,
+                   addconst_interaction = addconst_interaction, family = family,
+                   monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+                   ... = ...)
+
+  class(ret) <- c("CoxphNN", class(ret))
+
+  ret
+
+}
+
 #' Lehmann-type neural network transformation models
 #'
 #' @inheritParams deeptrafo
@@ -235,7 +271,173 @@ PolrNN <- function(
 
 }
 
+#' Deep normal linear regression
+#'
+#' @inheritParams deeptrafo
+#'
+#' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
+#'
+#' @examples
+#' set.seed(1)
+#' library(tram)
+#' df <- data.frame(y = 10 + rnorm(50), x = rnorm(50))
+#' optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
+#' m <- LmNN(y ~ 0 + x, data = df, optimizer = optimizer)
+#' fit(m, epochs = 900L, validation_split = 0)
+#' logLik(mm <- Lm(y ~ x, data = df)); logLik(m)
+#' coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
+#'                                          coef(m, which = "shifting")))
+#'
+#' @export
+#'
+LmNN <- function(
+  formula, data, lag_formula = NULL,
+  response_type = get_response_type(data[[all.vars(formula)[1]]]),
+  order = get_order(response_type, data[[all.vars(formula)[1]]]),
+  addconst_interaction = 0, family = "normal", monitor_metrics = NULL,
+  trafo_options = trafo_control(order_bsp = 1L,
+                                response_type = response_type,
+                                y_basis_fun = eval_lin,
+                                y_basis_fun_lower = .empty_fun(eval_lin),
+                                y_basis_fun_prime = eval_lin_prime,
+                                basis = "shiftscale"),
+  ...
+) {
+
+  stopifnot(response_type == "continuous")
+
+  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+                   response_type = response_type, order = order,
+                   addconst_interaction = addconst_interaction, family = family,
+                   monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+                   ... = ...)
+
+  class(ret) <- c("LmNN", class(ret))
+
+  ret
+
+}
+
+#' Deep parametric survival regression
+#'
+#' @inheritParams deeptrafo
+#'
+#' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
+#'
+#' @examples
+#' set.seed(1)
+#' library(tram)
+#' df <- data.frame(y = abs(1 + rnorm(50)), x = rnorm(50))
+#' optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
+#' m <- SurvregNN(y ~ 0 + x, data = df, optimizer = optimizer)
+#' fit(m, epochs = 500L, validation_split = 0)
+#' logLik(mm <- Survreg(y ~ x, data = df, dist = "loglogistic")); logLik(m)
+#' coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
+#'                                          coef(m, which = "shifting")))
+#'
+#' @export
+#'
+SurvregNN <- function(
+  formula, data, lag_formula = NULL,
+  response_type = get_response_type(data[[all.vars(formula)[1]]]),
+  order = get_order(response_type, data[[all.vars(formula)[1]]]),
+  addconst_interaction = 0, family = "gompertz", monitor_metrics = NULL,
+  trafo_options = NULL,
+  ...
+) {
+
+  stopifnot(response_type %in% c("continuous", "survival"))
+
+  if (response_type == "survival") {
+    ybf <- function(y) eval_loglin(y[, 1])
+    ybfl <- function(y) eval_loglin(y[, 1])
+    ybfp <- function(y) eval_loglin_prime(y[, 1])
+  } else {
+    ybf <- eval_loglin
+    ybfl <- .empty_fun(ybf)
+    ybfp <- eval_loglin_prime
+  }
+
+  trafo_options <- trafo_control(
+    order_bsp = 1L,
+    response_type = response_type,
+    y_basis_fun = ybf,
+    y_basis_fun_lower = ybfl,
+    y_basis_fun_prime = ybfp,
+    basis = "shiftscale"
+  )
+
+  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+                   response_type = response_type, order = order,
+                   addconst_interaction = addconst_interaction, family = family,
+                   monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+                   ... = ...)
+
+  class(ret) <- c("SurvregNN", class(ret))
+
+  ret
+
+}
+
+#' Deep distribution-free count regression
+#'
+#' @inheritParams deeptrafo
+#'
+#' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
+#'
+#' @examples
+#' set.seed(1)
+#' library(cotram)
+#' df <- data.frame(y = as.integer(abs(1 + rnorm(50, sd = 10))), x = rnorm(50))
+#' optimizer <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
+#' m <- cotramNN(y ~ 0 + x, data = df, optimizer = optimizer, order = 6)
+#' fit(m, epochs = 800L, validation_split = 0)
+#' logLik(mm <- cotram(y ~ x, data = df, method = "logit")); logLik(m)
+#' coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
+#'                                          coef(m, which = "shifting")))
+#'
+#' @export
+#'
+cotramNN <- function(
+  formula, data, lag_formula = NULL,
+  response_type = get_response_type(data[[all.vars(formula)[1]]]),
+  order = get_order(response_type, data[[all.vars(formula)[1]]]),
+  addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
+  ...
+) {
+
+  stopifnot(response_type == "count")
+
+  tsupp <- range(data[[all.vars(formula)[1]]])
+  trafo_options <- trafo_control(
+    order_bsp = order,
+    response_type = response_type,
+    y_basis_fun = .get_eval_cotram(order, tsupp),
+    y_basis_fun_lower = .get_eval_cotram_lower(order, tsupp),
+    y_basis_fun_prime = .empty_fun(.get_eval_cotram(order, tsupp))
+  )
+
+  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+                   response_type = response_type, order = order,
+                   addconst_interaction = addconst_interaction, family = family,
+                   monitor_metrics = monitor_metrics, trafo_options = trafo_options,
+                   ... = ...)
+
+  class(ret) <- c("cotramNN", class(ret))
+
+  ret
+
+}
+
 # Helpers -----------------------------------------------------------------
+
+.empty_fun <- function(FUN) {
+  function(...) {
+    ret <- FUN(...)
+    ret[] <- 1e-8
+    ret
+  }
+}
 
 formula_parts <- function(x) {
   if (!is.null(x))

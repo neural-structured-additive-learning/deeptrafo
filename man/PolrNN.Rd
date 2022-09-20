@@ -45,8 +45,8 @@ the response when using (tensor product) spline bases in the interacting
 term.}
 
 \item{family}{A \code{tfd_distribution} or character; the base distribution for
-transformation models. If character, can be \code{"normal"}, \code{"logistic"}
-or \code{"gumbel"}.}
+transformation models. If character, can be \code{"normal"}, \code{"logistic"},
+\code{"gumbel"} or \code{"gompertz"}.}
 
 \item{monitor_metrics}{See \code{\link[deepregression]{deepregression}}}
 

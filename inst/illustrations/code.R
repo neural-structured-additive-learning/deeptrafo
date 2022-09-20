@@ -1,3 +1,6 @@
+library(deeptrafo)
+set.seed(-1)
+options(width = 60)
 
 # Params ------------------------------------------------------------------
 
@@ -14,17 +17,23 @@ data_list <- readRDS(file.path(bpath, "data_splitted.RDS"))[[1]]
 train <- data_list[[1]]
 test <- data_list[[2]]
 
+tokenizer <- text_tokenizer(num_words = nr_words)
+tokenizer %>% fit_text_tokenizer(readRDS(file.path(bpath, "mov_ov.RDS")))
+
 # Formula interface -------------------------------------------------------
 
 fm <- vote_count | genreAction ~ s(budget) + popularity
 
 # Setting up DCTMs --------------------------------------------------------
 
-mod <- deeptrafo(formula = fm, data = train, family = "logistic")
+opt <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
+m_fm <- cotramNN(formula = fm, data = train, optimizer = opt)
+m_fm
 
 # Fitting DCTMs -----------------------------------------------------------
 
-fit(mod, epochs = 10, validation_split = 0.1, batch_size = 8)
+hist <- fit(m_fm, epochs = 200, validation_split = 0.1, batch_size = 64)
+unlist(coef(m_fm, which = "shifting"))
 
 # Working with neural networks --------------------------------------------
 
@@ -38,19 +47,19 @@ embd_mod <- function(x) x %>%
   layer_dense(1)
 
 fm_deep <- update(fm, . ~ . + deep(texts))
-deep_mod <- deeptrafo(fm_deep, data = train,
-                      list_of_deep_models = list(deep = embd_mod))
+m_deep <- deeptrafo(fm_deep, data = train,
+                    list_of_deep_models = list(deep = embd_mod))
 
-fit(deep_mod, epochs = 10, validation_split = 0.1, batch_size = 8)
+dhist <- fit(m_deep, epochs = 5, validation_split = 0.1, batch_size = 32)
 # TODO: Show embedding
 
 # Ensembling DCTMs --------------------------------------------------------
 
-dctm_ens <- ensemble(mod, n_ensemble = 5, epochs = 5)
+ens_deep <- ensemble(m_deep, n_ensemble = 5, epochs = 10, batch_size = 64)
 
 # Cross-validating DCTMs --------------------------------------------------
 
-dctm_cv <- cv(mod, epochs = 5, cv_folds = 5)
+cv_deep <- cv(m_deep, epochs = 10, cv_folds = 5, batch_size = 64)
 
 # Methods overview --------------------------------------------------------
 

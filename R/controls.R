@@ -33,9 +33,18 @@ trafo_control <- function(order_bsp = 10L,
                           order_bsp_penalty = 2,
                           tf_bsps = FALSE,
                           response_type = c("continuous", "ordered", "survival", "count"),
-                          atm_toplayer = function(x) layer_dense(x, units = 1L)) {
+                          atm_toplayer = function(x) layer_dense(x, units = 1L),
+                          basis = c("bernstein", "ordered", "shiftscale")) {
 
   response_type <- match.arg(response_type)
+  basis <- match.arg(basis)
+
+  trafo <- switch(
+    basis,
+    "bernstein" = mono_trafo_multi,
+    "ordered" = mono_trafo_multi,
+    "shiftscale" = shift_scale_trafo_multi
+  )
 
   # define support (either function or dummy function outputting the supplied range)
   if (!is.function(support)) {
@@ -96,8 +105,6 @@ trafo_control <- function(order_bsp = 10L,
       },
       "survival" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
         ret <- eval_bsp(y[, 1], order = orderbsp, supp = suppy)
-        ret[] <- 1e-8
-        ret
       },
       "count" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
         eval_bsp(y - 1L, order = orderbsp, supp = suppy)
@@ -153,7 +160,8 @@ trafo_control <- function(order_bsp = 10L,
       response_type = response_type,
       order_bsp = order_bsp,
       atm_toplayer = atm_toplayer,
-      supp = supp
+      supp = supp,
+      trafo = trafo
     )
   )
 

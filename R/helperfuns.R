@@ -1,4 +1,50 @@
 
+# Cotram basis ------------------------------------------------------------
+
+.get_eval_cotram <- function(order_bsp, support) {
+  function(y, orderbsp = order_bsp, suppy = support) {
+    eval_bsp(log(1 + y), order = orderbsp, supp = suppy)
+  }
+}
+
+.get_eval_cotram_lower <- function(order_bsp, support) {
+  function(y, orderbsp = order_bsp, suppy = support) {
+    eval_bsp(log(1e-16 + y), order = orderbsp, supp = suppy)
+  }
+}
+
+# Linear and log-linear bases ---------------------------------------------
+
+eval_lin <- function(y) {
+  ret <- cbind(1, y)
+  if (NROW(ret) == 1)
+    return(as.vector(ret))
+  ret
+}
+
+eval_lin_prime <- function(y) {
+  ret <- cbind(0, rep(1, length(y)))
+  if (NROW(ret) == 1)
+    return(as.vector(ret))
+  ret
+}
+
+eval_loglin <- function(y) {
+  stopifnot(y > 0)
+  ret <- cbind(1, log(y))
+  if (NROW(ret) == 1)
+    return(as.vector(ret))
+  ret
+}
+
+eval_loglin_prime <- function(y) {
+  stopifnot(y > 0)
+  ret <- cbind(0, 1/y)
+  if (NROW(ret) == 1)
+    return(as.vector(ret))
+  ret
+}
+
 # Ordinal bases -----------------------------------------------------------
 
 eval_ord <- function(y) {
@@ -199,6 +245,17 @@ mono_trafo_multi <- function(w, bsp_dim)
 
 }
 
+shift_scale_trafo_multi <- function(w, bsp_dim)
+{
+
+  w_res <- tf$reshape(w, shape = list(bsp_dim, as.integer(nrow(w)/bsp_dim)))
+  w1 <- tf$slice(w_res, c(0L,0L), size=c(1L,ncol(w_res)))
+  wrest <- tf$math$softplus(tf$slice(w_res, c(1L,0L), size=c(as.integer(nrow(w_res)-1),ncol(w_res))))
+  w_w_cons <- k_concatenate(list(w1,wrest), axis = 1L)
+  return(tf$reshape(w_w_cons, shape = list(nrow(w),1L)))
+
+}
+
 MonoMultiLayer <- R6::R6Class("MonoMultiLayer",
 
                               inherit = KerasLayer,
@@ -213,6 +270,8 @@ MonoMultiLayer <- R6::R6Class("MonoMultiLayer",
 
                                 kernel_regularizer = NULL,
 
+                                trafo = NULL,
+
                                 # input_dim = NULL,
 
                                 initializer = NULL,
@@ -220,13 +279,15 @@ MonoMultiLayer <- R6::R6Class("MonoMultiLayer",
                                 initialize = function(output_dim, dim_bsp,
                                                       # input_dim,
                                                       kernel_regularizer,
-                                                      initializer = initializer_random_normal())
+                                                      initializer = initializer_random_normal(),
+                                                      trafo = trafo)
                                 {
                                   self$output_dim <- output_dim
                                   self$dim_bsp <- dim_bsp
                                   # self$input_dim <- input_dim
                                   self$kernel_regularizer <- kernel_regularizer
                                   self$initializer <- initializer
+                                  self$trafo <- trafo
                                 },
 
                                 build = function(input_shape) {
@@ -240,7 +301,7 @@ MonoMultiLayer <- R6::R6Class("MonoMultiLayer",
                                 },
 
                                 call = function(x, mask = NULL) {
-                                  tf$matmul(x, mono_trafo_multi(self$kernel, self$dim_bsp))
+                                  tf$matmul(x, self$trafo(self$kernel, self$dim_bsp))
                                 },
 
                                 compute_output_shape = function(input_shape) {
@@ -255,14 +316,16 @@ layer_mono_multi <- function(object,
                              dim_bsp = NULL,
                              name = "constraint_mono_layer_multi",
                              trainable = TRUE,
-                             kernel_regularizer = NULL
+                             kernel_regularizer = NULL,
+                             trafo = mono_trafo_multi
 ) {
   create_layer(MonoMultiLayer, object, list(
     name = name,
     trainable = trainable,
     output_dim = as.integer(units),
     dim_bsp = as.integer(dim_bsp),
-    kernel_regularizer = kernel_regularizer
+    kernel_regularizer = kernel_regularizer,
+    trafo = trafo
   ))
 }
 
@@ -271,7 +334,8 @@ layer_combined_mono <- function(object,
                                 dim_bsp = NULL,
                                 name = "constraint_mono_layer_multi",
                                 trainable = TRUE,
-                                kernel_regularizer = NULL
+                                kernel_regularizer = NULL,
+                                trafo = mono_trafo_multi
                                 )
 {
 
@@ -284,7 +348,8 @@ layer_combined_mono <- function(object,
         dim_bsp = dim_bsp,
         name = paste0(name, "_", i),
         trainable = trainable,
-        kernel_regularizer = kernel_regularizer
+        kernel_regularizer = kernel_regularizer,
+        trafo = trafo
       )
     ))
   }
@@ -563,3 +628,25 @@ get_theta <- function(object)
 
 }
 
+# Additional distributions ------------------------------------------------
+
+tfd_gompertz <- function(loc, scale,
+                         validate_args = FALSE,
+                         allow_nan_stats = TRUE,
+                         name = "Gompertz")
+{
+
+  args <- list(
+    loc = loc,
+    scale = scale,
+    validate_args = validate_args,
+    allow_nan_stats = allow_nan_stats,
+    name = name
+  )
+
+  python_path <- system.file("python", package = "deeptrafo")
+  distributions <- reticulate::import_from_path("distributions", path = python_path)
+
+  return(do.call(distributions$gompertz$Gompertz, args))
+
+}

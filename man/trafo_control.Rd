@@ -14,7 +14,8 @@ trafo_control(
   order_bsp_penalty = 2,
   tf_bsps = FALSE,
   response_type = c("continuous", "ordered", "survival", "count"),
-  atm_toplayer = function(x) layer_dense(x, units = 1L)
+  atm_toplayer = function(x) layer_dense(x, units = 1L),
+  basis = c("bernstein", "ordered", "shiftscale")
 )
 }
 \arguments{
