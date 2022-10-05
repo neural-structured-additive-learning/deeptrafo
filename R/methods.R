@@ -165,6 +165,7 @@ predict.deeptrafo <- function(
   type = c("trafo", "pdf", "cdf", "interaction", "shift", "terms"),
   batch_size = NULL,
   K = 1e2,
+  q = NULL,
   ...
 )
 {
@@ -182,7 +183,10 @@ predict.deeptrafo <- function(
   # Predict over grid of responses, if response not contained in newdata
   if (!is.null(newdata)) {
     if (is.null(newdata[[rname]])) {
-      ygrd <- make_grid(object$init_params$response, n = K)[[1]]
+      ygrd <- if (is.null(q)) {
+        make_grid(object$init_params$response, n = K)[[1]]
+      } else q
+
       if (type == "shift") # shift independent of response, skip
         ygrd <- ygrd[1]
       ret <- lapply(ygrd, function(ty) { # overwrite response, then predict

@@ -194,6 +194,9 @@ test_that("autoregressive transformation model", {
   fml <- y | s(x) ~ z + s(z)
   m <- deeptrafo(fml, dat, lag_formula = ~ ylag + ylag2)
 
+  expect_is(predict(m, newdata = dat[1:5, -1], K = 2, type = "pdf"), "list")
+  expect_is(predict(m, newdata = dat[1:5, -1], q = c(-1, 1), type = "pdf"), "list")
+
   check_methods(m, newdata = dat)
 
 })

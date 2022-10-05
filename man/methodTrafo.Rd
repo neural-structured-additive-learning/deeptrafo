@@ -28,6 +28,7 @@
   type = c("trafo", "pdf", "cdf", "interaction", "shift", "terms"),
   batch_size = NULL,
   K = 100,
+  q = NULL,
   ...
 )
 
