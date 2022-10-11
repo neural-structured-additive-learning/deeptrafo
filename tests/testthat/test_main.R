@@ -20,9 +20,10 @@ test_that("simple additive model", {
 test_that("unconditional additive model", {
 
   dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+  valdat <- data.frame(y = rcauchy(100), x = rcauchy(100), z = rcauchy(100))
   fml <- y ~ 1
   m <- deeptrafo(fml, dat)
-  hist <- fit(m, epochs = 2L)
+  hist <- fit(m, epochs = 10, validation_data = list(x = valdat, y = valdat$y))
   expect_false(any(is.nan(hist$metrics$loss)))
 
   check_methods(m, newdata = dat, test_plots = FALSE)
