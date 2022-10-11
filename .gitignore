@@ -6,3 +6,12 @@ tests/testthat/*.pdf
 *.RDS
 *.csv
 *.pyc
+inst/illustrations/code-concordance.tex
+inst/illustrations/code.Rnw
+inst/illustrations/code.log
+inst/illustrations/code.pdf
+inst/illustrations/code.synctex.gz
+inst/illustrations/code.tex
+Figures
+Cache
+cache

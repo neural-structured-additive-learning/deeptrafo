@@ -115,9 +115,9 @@ deeptrafo <- function(
 
     # extract from lag formula the variables as simple sum and
     # layers for additional transformation
-    lag_formula <- apply_atm_lags(lag_formula)
+    tlag_formula <- apply_atm_lags(lag_formula)
     list_of_formulas$yterms <- as.formula(paste0(form2text(list_of_formulas$yterms),
-                                                 " + ", lag_formula))
+                                                 " + ", tlag_formula))
 
   }
 
@@ -173,10 +173,12 @@ deeptrafo <- function(
   ret <- do.call("deepregression", args)
 
   ret$init_params$formula <- formula
+  ret$init_params$lag_formula <- lag_formula
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
   ret$init_params$response_type <- response_type
   ret$init_params$response <- resp
+  ret$init_params$prepare_y_valdata <- response
   ret$init_params$data <- if (return_data) data else NULL
 
   class(ret) <- c("deeptrafo", "deepregression")

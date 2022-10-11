@@ -144,6 +144,9 @@ coef.SurvregNN <- function(object, which_param = c("shifting", "interacting"),
 #' @param newdata Optional new data, either \code{data.frame} or named \code{list}.
 #' @param K Integer; grid length for the response to evaluate predictions at,
 #'     if \code{newdata} does not contain the response.
+#' @param q Numeric or factor; user-supplied grid of response values to evaluate
+#'     the predictions. Defaults to \code{NULL}. If overwritten, \code{K} is
+#'     ignored.
 #' @param ... Currently ignored.
 #'
 #' @return Returns vector or matrix of predictions, depending on the supplied
@@ -165,6 +168,7 @@ predict.deeptrafo <- function(
   type = c("trafo", "pdf", "cdf", "interaction", "shift", "terms"),
   batch_size = NULL,
   K = 1e2,
+  q = NULL,
   ...
 )
 {
@@ -182,7 +186,10 @@ predict.deeptrafo <- function(
   # Predict over grid of responses, if response not contained in newdata
   if (!is.null(newdata)) {
     if (is.null(newdata[[rname]])) {
-      ygrd <- make_grid(object$init_params$response, n = K)[[1]]
+      ygrd <- if (is.null(q)) {
+        make_grid(object$init_params$response, n = K)[[1]]
+      } else q
+
       if (type == "shift") # shift independent of response, skip
         ygrd <- ygrd[1]
       ret <- lapply(ygrd, function(ty) { # overwrite response, then predict
@@ -413,6 +420,9 @@ simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
 print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
                             with_baseline = FALSE, ...) {
 
+  atm <- !is.null(x$init_params$lag_formula)
+  atm_text <- if (atm) "autoregressive" else ""
+
   if (print_model)
     print(x$model)
 
@@ -434,9 +444,14 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
                 fml2txt(formula(x$init_params$formula, lhs = 2L, rhs = 0L)[[2]]))
   shift <- ifelse(no_shift, "~1", fml2txt(fmls[[3]]))
 
-  cat("\t", mtype, "outcome neural network transformation model\n\n")
+  cat("\t", mtype, "outcome", atm_text, "deep conditional transformation model\n\n")
   cat("\nInteracting: ", int, "\n")
   cat("\nShifting: ", shift, "\n")
+
+  if (atm) {
+    lags <- fml2txt(x$init_params$lag_formula)
+    cat("\nLags: ", lags, "\n")
+  }
 
   if (print_coefs) {
     cfb <- coef(x, which_param = "interacting")

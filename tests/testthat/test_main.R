@@ -20,9 +20,10 @@ test_that("simple additive model", {
 test_that("unconditional additive model", {
 
   dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+  valdat <- data.frame(y = rcauchy(100), x = rcauchy(100), z = rcauchy(100))
   fml <- y ~ 1
   m <- deeptrafo(fml, dat)
-  hist <- fit(m, epochs = 2L)
+  hist <- fit(m, epochs = 10, validation_data = list(x = valdat, y = valdat$y))
   expect_false(any(is.nan(hist$metrics$loss)))
 
   check_methods(m, newdata = dat, test_plots = FALSE)
@@ -193,6 +194,9 @@ test_that("autoregressive transformation model", {
   dat <- na.omit(dat)
   fml <- y | s(x) ~ z + s(z)
   m <- deeptrafo(fml, dat, lag_formula = ~ ylag + ylag2)
+
+  expect_is(predict(m, newdata = dat[1:5, -1], K = 2, type = "pdf"), "list")
+  expect_is(predict(m, newdata = dat[1:5, -1], q = c(-1, 1), type = "pdf"), "list")
 
   check_methods(m, newdata = dat)
 

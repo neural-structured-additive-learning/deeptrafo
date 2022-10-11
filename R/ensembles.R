@@ -127,8 +127,31 @@ logLik.dtEnsemble <- function(
 
   ensemble_loss <- convert_fun(object$model$loss(y, y_pred)$numpy())
 
-  list(members = unlist(indiv), ensemble = ensemble_loss)
+  list(members = unlist(indiv),
+       mean = mean(unlist(indiv)),
+       ensemble = ensemble_loss)
 
+}
+
+#' @method plot dtEnsemble
+#'
+#' @inheritParams plot.deeptrafo
+#'
+#' @exportS3Method
+#'
+plot.dtEnsemble <- function(
+  x,
+  which = NULL,
+  which_param = c("shifting", "interacting"),
+  only_data = FALSE,
+  grid_length = 40,
+  ...
+) {
+
+  .call_for_all_members(
+    x, plot.deeptrafo, which = which, which_param = which_param,
+    only_data = only_data, grid_length = grid_length, ... = ...
+    )
 }
 
 # Helpers
