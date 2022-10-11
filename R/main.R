@@ -178,6 +178,7 @@ deeptrafo <- function(
   ret$init_params$response_varname <- rvar
   ret$init_params$response_type <- response_type
   ret$init_params$response <- resp
+  ret$init_params$prepare_y_valdata <- response
   ret$init_params$data <- if (return_data) data else NULL
 
   class(ret) <- c("deeptrafo", "deepregression")
