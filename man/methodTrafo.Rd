@@ -75,6 +75,10 @@ Note that \code{type} is currently not used for \code{"interacting"}.}
 \item{K}{Integer; grid length for the response to evaluate predictions at,
 if \code{newdata} does not contain the response.}
 
+\item{q}{Numeric or factor; user-supplied grid of response values to evaluate
+the predictions. Defaults to \code{NULL}. If overwritten, \code{K} is
+ignored.}
+
 \item{convert_fun}{Function; applied to the log-likelihood values of all
 observations.}
 

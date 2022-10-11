@@ -144,6 +144,9 @@ coef.SurvregNN <- function(object, which_param = c("shifting", "interacting"),
 #' @param newdata Optional new data, either \code{data.frame} or named \code{list}.
 #' @param K Integer; grid length for the response to evaluate predictions at,
 #'     if \code{newdata} does not contain the response.
+#' @param q Numeric or factor; user-supplied grid of response values to evaluate
+#'     the predictions. Defaults to \code{NULL}. If overwritten, \code{K} is
+#'     ignored.
 #' @param ... Currently ignored.
 #'
 #' @return Returns vector or matrix of predictions, depending on the supplied
