@@ -195,7 +195,8 @@ predict.deeptrafo <- function(
       ret <- lapply(ygrd, function(ty) { # overwrite response, then predict
         newdata[[rname]] <- rep(ty, NROW(newdata[[1]]))
         predict.deeptrafo(object, newdata = newdata, type = type,
-                          batch_size = batch_size, K = K, ... = ...)
+                          batch_size = batch_size, K = NULL, q = NULL,
+                          ... = ...)
       })
       names(ret) <- as.character(ygrd)
       return(ret)
