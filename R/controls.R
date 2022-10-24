@@ -39,13 +39,13 @@ trafo_control <- function(
 ) {
 
   response_type <- match.arg(response_type)
-  basis <- match.arg(basis)
 
   trafo <- if (is.function(basis)) {
 
     basis
 
   } else {
+    basis <- match.arg(basis)
 
     switch (
       basis,
