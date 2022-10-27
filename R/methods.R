@@ -5,7 +5,7 @@
 #'     shift term.
 #' @param which_param Character; either \code{"interacting"} or \code{"shifting"}.
 #' @param only_data Logical, if \code{TRUE}, only the data for plotting is returned.
-#' @param grid_length Integer; the length of an equidistant grid at which a
+#' @param K Integer; the length of an equidistant grid at which a
 #'     two-dimensional function is evaluated for plotting.
 #' @param eval_grid Logical; should plot be evaluated on a grid.
 #' @param ... Further arguments, passed to fit, plot or predict function
@@ -18,27 +18,48 @@
 plot.deeptrafo <- function(
   x,
   which = NULL,
-  # which of the nonlinear structured effects
+  type = c("smooth", "trafo", "pdf", "cdf"),
+  newdata = NULL,
   which_param = c("shifting", "interacting"), # for which parameter
   only_data = FALSE,
-  grid_length = 40,
+  K = 40,
   ... # passed to plot function
 )
 {
 
-  which_param <- match.arg(which_param)
+  type <- match.arg(type)
 
-  get_weight_fun <- switch(
-    which_param,
-    "interacting" = get_weight_by_name_ia,
-    "shifting" = get_weight_by_name
-  )
+  if (type == "smooth") {
+    which_param <- match.arg(which_param)
 
-  which_param <- map_param_string_to_index(which_param)
+    get_weight_fun <- switch(
+      which_param,
+      "interacting" = get_weight_by_name_ia,
+      "shifting" = get_weight_by_name
+    )
 
-  return(plot.deepregression(x, which = which, which_param = which_param,
-                             only_data = only_data, grid_length = grid_length,
-                             get_weight_fun = get_weight_fun, ...))
+    which_param <- map_param_string_to_index(which_param)
+
+    return(plot.deepregression(x, which = which, which_param = which_param,
+                               only_data = only_data, grid_length = K,
+                               get_weight_fun = get_weight_fun, ...))
+  } else {
+    rname <- x$init_params$response_varname
+    ry <- x$init_params$response
+    preds <- predict(x, type = type, newdata = newdata, K = K, ...)
+    if (is.null(newdata)) {
+      y <- x$init_params$response
+      plot(y, preds, xlab = "response", ylab = type)
+    } else if (is.null(newdata[[rname]])) {
+      y <- as.numeric(names(preds))
+      if (is.ordered(ry) | is.integer(ry)) {
+        ttype <- "s"
+      } else ttype <- "l"
+      preds <- do.call("cbind", preds)
+      matplot(y, t(preds), type = ttype, col = rgb(.1, .1, .1, .5), lty = 1,
+              xlab = "response", ylab = type)
+    }
+  }
 
 }
 
