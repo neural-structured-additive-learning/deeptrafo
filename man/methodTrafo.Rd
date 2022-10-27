@@ -14,9 +14,12 @@
 \method{plot}{deeptrafo}(
   x,
   which = NULL,
+  type = c("smooth", "trafo", "pdf", "cdf"),
+  newdata = NULL,
   which_param = c("shifting", "interacting"),
   only_data = FALSE,
-  grid_length = 40,
+  K = 40,
+  q = NULL,
   ...
 )
 
@@ -53,24 +56,15 @@
 \item{which}{Which effect to plot, default selects all smooth effects in the
 shift term.}
 
-\item{which_param}{Character; either \code{"shifting"} or \code{"interacting"}.}
-
-\item{only_data}{Logical, if \code{TRUE}, only the data for plotting is returned.}
-
-\item{grid_length}{Integer; the length of an equidistant grid at which a
-two-dimensional function is evaluated for plotting.}
-
-\item{...}{Further arguments supplied to \code{print.deeptrafo}}
-
-\item{object}{Object of class \code{"deeptrafo"}.}
-
 \item{type}{Either NULL (all types of coefficients are returned),
 "linear" for linear coefficients or "smooth" for coefficients of;
 Note that \code{type} is currently not used for \code{"interacting"}.}
 
 \item{newdata}{Named \code{list} or \code{data.frame}; optional new data.}
 
-\item{batch_size}{Integer; optional, useful if data is too large.}
+\item{which_param}{Character; either \code{"shifting"} or \code{"interacting"}.}
+
+\item{only_data}{Logical, if \code{TRUE}, only the data for plotting is returned.}
 
 \item{K}{Integer; grid length for the response to evaluate predictions at,
 if \code{newdata} does not contain the response.}
@@ -78,6 +72,12 @@ if \code{newdata} does not contain the response.}
 \item{q}{Numeric or factor; user-supplied grid of response values to evaluate
 the predictions. Defaults to \code{NULL}. If overwritten, \code{K} is
 ignored.}
+
+\item{...}{Further arguments supplied to \code{print.deeptrafo}}
+
+\item{object}{Object of class \code{"deeptrafo"}.}
+
+\item{batch_size}{Integer; optional, useful if data is too large.}
 
 \item{convert_fun}{Function; applied to the log-likelihood values of all
 observations.}
@@ -89,8 +89,6 @@ observations.}
 \item{print_model}{Logical; print keras model.}
 
 \item{print_coefs}{Logical; print coefficients.}
-
-\item{eval_grid}{Logical; should plot be evaluated on a grid.}
 }
 \value{
 Returns vector or matrix of predictions, depending on the supplied

@@ -5,10 +5,16 @@
 #'     shift term.
 #' @param which_param Character; either \code{"interacting"} or \code{"shifting"}.
 #' @param only_data Logical, if \code{TRUE}, only the data for plotting is returned.
-#' @param K Integer; the length of an equidistant grid at which a
-#'     two-dimensional function is evaluated for plotting.
-#' @param eval_grid Logical; should plot be evaluated on a grid.
+#' @param K Integer; If \code{type == "smooth"} the length of an equidistant
+#'     grid at which a two-dimensional function is evaluated for plotting.
+#'     Otherwise, length of the grid to evaluate predictions at,
+#'     see \code{newdata}.
+#' @param q Vector of response values to compute predictions at, see \code{newdata}
 #' @param ... Further arguments, passed to fit, plot or predict function
+#' @param type Character; One of "smooth", "trafo", "pdf", or "cdf".
+#' @param newdata Optional new data (\code{list} or \code{data.frame}) to
+#'     evaluate predictions at. If the response is missing, plots are generated
+#'     on a grid of length \code{K}
 #'
 #' @method plot deeptrafo
 #' @exportS3Method
@@ -23,6 +29,7 @@ plot.deeptrafo <- function(
   which_param = c("shifting", "interacting"), # for which parameter
   only_data = FALSE,
   K = 40,
+  q = NULL,
   ... # passed to plot function
 )
 {
@@ -45,6 +52,7 @@ plot.deeptrafo <- function(
                                get_weight_fun = get_weight_fun, ...))
   } else {
     rname <- x$init_params$response_varname
+    rtype <- x$init_params$response_type
     ry <- x$init_params$response
     preds <- predict(x, type = type, newdata = newdata, K = K, ...)
     if (is.null(newdata)) {
@@ -52,7 +60,7 @@ plot.deeptrafo <- function(
       plot(y, preds, xlab = "response", ylab = type)
     } else if (is.null(newdata[[rname]])) {
       y <- as.numeric(names(preds))
-      if (is.ordered(ry) | is.integer(ry)) {
+      if (rtype %in% c("ordered", "count")) {
         ttype <- "s"
       } else ttype <- "l"
       preds <- do.call("cbind", preds)
