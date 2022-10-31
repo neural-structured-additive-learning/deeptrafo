@@ -280,12 +280,14 @@ predict.deeptrafo <- function(
 
   } else if (type == "pdf") {
 
-    yprimeTrans <- apTtheta + discrete * w_eta
+    yprimeTrans <- apTtheta
 
     if (discrete) {
 
-      pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)) +
-        cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransf)
+      ytransflower <- alTtheta + w_eta
+
+      pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, ytransflower)) +
+        cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransflower)
 
     } else {
 
