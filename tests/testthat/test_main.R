@@ -199,6 +199,9 @@ test_that("autoregressive transformation model", {
   expect_is(predict(m, newdata = dat[1:5, -1], q = c(-1, 1), type = "pdf"), "list")
 
   check_methods(m, newdata = dat)
+  
+  cf <- coef(m, which_param = "autoregressive")
+  expect_equal(dim(cf), c(2,1))
 
 })
 

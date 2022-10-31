@@ -23,7 +23,12 @@
   ...
 )
 
-\method{coef}{deeptrafo}(object, which_param = c("shifting", "interacting"), type = NULL, ...)
+\method{coef}{deeptrafo}(
+  object,
+  which_param = c("shifting", "interacting", "autoregressive"),
+  type = NULL,
+  ...
+)
 
 \method{predict}{deeptrafo}(
   object,
@@ -55,6 +60,18 @@
 
 \item{which}{Which effect to plot, default selects all smooth effects in the
 shift term.}
+
+\item{which_param}{Character; either \code{"shifting"}, \code{"interacting"}, 
+or \code{"autoregressive"} (only for autoregressive transformation models).}
+
+\item{only_data}{Logical, if \code{TRUE}, only the data for plotting is returned.}
+
+\item{grid_length}{Integer; the length of an equidistant grid at which a
+two-dimensional function is evaluated for plotting.}
+
+\item{...}{Further arguments supplied to \code{print.deeptrafo}}
+
+\item{object}{Object of class \code{"deeptrafo"}.}
 
 \item{type}{Either NULL (all types of coefficients are returned),
 "linear" for linear coefficients or "smooth" for coefficients of;
@@ -102,5 +119,5 @@ Generic methods for neural network transformation models
 \details{
 If no new data is supplied, predictions are computed on the training
     data (i.e. in-sample). If new data is supplied without a response,
-    predcitions are evaluated on a grid of length \code{K}.
+    predictions are evaluated on a grid of length \code{K}.
 }

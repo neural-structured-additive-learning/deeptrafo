@@ -24,19 +24,19 @@
 #'
 #' @export
 #'
-trafo_control <- function(
-    order_bsp = 10L,
-    support = function(y) range(y),
-    y_basis_fun = NULL,
-    y_basis_fun_lower = NULL,
-    y_basis_fun_prime = NULL,
-    penalize_bsp = 0,
-    order_bsp_penalty = 2,
-    tf_bsps = FALSE,
-    response_type = c("continuous", "ordered", "survival", "count"),
-    atm_toplayer = function(x) layer_dense(x, units = 1L),
-    basis = c("bernstein", "ordered", "shiftscale")
-) {
+trafo_control <- function(order_bsp = 10L,
+                          support = function(y) range(y),
+                          y_basis_fun = NULL,
+                          y_basis_fun_lower = NULL,
+                          y_basis_fun_prime = NULL,
+                          penalize_bsp = 0,
+                          order_bsp_penalty = 2,
+                          tf_bsps = FALSE,
+                          response_type = c("continuous", "ordered", "survival", "count"),
+                          atm_toplayer = function(x) layer_dense(x, units = 1L, 
+                                                                 name = "atm_toplayer", 
+                                                                 use_bias = FALSE),
+                          basis = c("bernstein", "ordered", "shiftscale")) {
 
   response_type <- match.arg(response_type)
 

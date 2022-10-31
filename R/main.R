@@ -368,7 +368,7 @@ atm_init <- function(atmnr, h1nr)
 #'
 #' @export
 from_preds_to_trafo <- function(
-  atm_toplayer = function(x) layer_dense(x, units = 1L),
+  atm_toplayer = function(x) layer_dense(x, units = 1L, name = "atm_toplayer"),
   const_ia = NULL
 )
 {

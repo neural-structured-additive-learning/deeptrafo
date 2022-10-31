@@ -80,7 +80,8 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 }
 
 #' @param x Object of class \code{"deeptrafo"}.
-#' @param which_param Character; either \code{"shifting"} or \code{"interacting"}.
+#' @param which_param Character; either \code{"shifting"}, \code{"interacting"}, 
+#' or \code{"autoregressive"} (only for autoregressive transformation models).
 #' @param type Either NULL (all types of coefficients are returned),
 #'     "linear" for linear coefficients or "smooth" for coefficients of;
 #'     Note that \code{type} is currently not used for \code{"interacting"}.
@@ -93,13 +94,19 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 #'
 coef.deeptrafo <- function(
   object,
-  which_param = c("shifting", "interacting"),
+  which_param = c("shifting", "interacting", "autoregressive"),
   type = NULL,
   ...
 )
 {
 
   which_param <- match.arg(which_param)
+  
+  if(which_param == "autoregressive") {
+    ret <- try(get_weight_by_opname(object, name = "atm_toplayer", partial_match = TRUE))
+    if(inherits(ret, "try-error")) stop("No layer with name atm_toplayer")
+    return(ret)
+  }
 
   is_interaction <- which_param == "interacting"
   which_param <- map_param_string_to_index(which_param)
@@ -183,7 +190,7 @@ coef.SurvregNN <- function(object, which_param = c("shifting", "interacting"),
 #'
 #' @details If no new data is supplied, predictions are computed on the training
 #'     data (i.e. in-sample). If new data is supplied without a response,
-#'     predcitions are evaluated on a grid of length \code{K}.
+#'     predictions are evaluated on a grid of length \code{K}.
 #'
 #' @method predict deeptrafo
 #' @importFrom variables numeric_var ordered_var mkgrid
