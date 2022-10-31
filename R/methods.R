@@ -5,10 +5,16 @@
 #'     shift term.
 #' @param which_param Character; either \code{"interacting"} or \code{"shifting"}.
 #' @param only_data Logical, if \code{TRUE}, only the data for plotting is returned.
-#' @param grid_length Integer; the length of an equidistant grid at which a
-#'     two-dimensional function is evaluated for plotting.
-#' @param eval_grid Logical; should plot be evaluated on a grid.
+#' @param K Integer; If \code{type == "smooth"} the length of an equidistant
+#'     grid at which a two-dimensional function is evaluated for plotting.
+#'     Otherwise, length of the grid to evaluate predictions at,
+#'     see \code{newdata}.
+#' @param q Vector of response values to compute predictions at, see \code{newdata}
 #' @param ... Further arguments, passed to fit, plot or predict function
+#' @param type Character; One of "smooth", "trafo", "pdf", or "cdf".
+#' @param newdata Optional new data (\code{list} or \code{data.frame}) to
+#'     evaluate predictions at. If the response is missing, plots are generated
+#'     on a grid of length \code{K}
 #'
 #' @method plot deeptrafo
 #' @exportS3Method
@@ -18,27 +24,50 @@
 plot.deeptrafo <- function(
   x,
   which = NULL,
-  # which of the nonlinear structured effects
+  type = c("smooth", "trafo", "pdf", "cdf"),
+  newdata = NULL,
   which_param = c("shifting", "interacting"), # for which parameter
   only_data = FALSE,
-  grid_length = 40,
+  K = 40,
+  q = NULL,
   ... # passed to plot function
 )
 {
 
-  which_param <- match.arg(which_param)
+  type <- match.arg(type)
 
-  get_weight_fun <- switch(
-    which_param,
-    "interacting" = get_weight_by_name_ia,
-    "shifting" = get_weight_by_name
-  )
+  if (type == "smooth") {
+    which_param <- match.arg(which_param)
 
-  which_param <- map_param_string_to_index(which_param)
+    get_weight_fun <- switch(
+      which_param,
+      "interacting" = get_weight_by_name_ia,
+      "shifting" = get_weight_by_name
+    )
 
-  return(plot.deepregression(x, which = which, which_param = which_param,
-                             only_data = only_data, grid_length = grid_length,
-                             get_weight_fun = get_weight_fun, ...))
+    which_param <- map_param_string_to_index(which_param)
+
+    return(plot.deepregression(x, which = which, which_param = which_param,
+                               only_data = only_data, grid_length = K,
+                               get_weight_fun = get_weight_fun, ...))
+  } else {
+    rname <- x$init_params$response_varname
+    rtype <- x$init_params$response_type
+    ry <- x$init_params$response
+    preds <- predict(x, type = type, newdata = newdata, K = K, ...)
+    if (is.null(newdata)) {
+      y <- x$init_params$response
+      plot(y, preds, xlab = "response", ylab = type)
+    } else if (is.null(newdata[[rname]])) {
+      y <- as.numeric(names(preds))
+      if (rtype %in% c("ordered", "count")) {
+        ttype <- "s"
+      } else ttype <- "l"
+      preds <- do.call("cbind", preds)
+      matplot(y, t(preds), type = ttype, col = rgb(.1, .1, .1, .5), lty = 1,
+              xlab = "response", ylab = type)
+    }
+  }
 
 }
 
@@ -202,7 +231,8 @@ predict.deeptrafo <- function(
       ret <- lapply(ygrd, function(ty) { # overwrite response, then predict
         newdata[[rname]] <- rep(ty, NROW(newdata[[1]]))
         predict.deeptrafo(object, newdata = newdata, type = type,
-                          batch_size = batch_size, K = K, ... = ...)
+                          batch_size = batch_size, K = NULL, q = NULL,
+                          ... = ...)
       })
       names(ret) <- as.character(ygrd)
       return(ret)
@@ -257,12 +287,14 @@ predict.deeptrafo <- function(
 
   } else if (type == "pdf") {
 
-    yprimeTrans <- apTtheta + discrete * w_eta
+    yprimeTrans <- apTtheta
 
     if (discrete) {
 
-      pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, yprimeTrans)) +
-        cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransf)
+      ytransflower <- alTtheta + w_eta
+
+      pdf <- cint * as.matrix(tfd_cdf(bd, ytransf) - tfd_cdf(bd, ytransflower)) +
+        cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransflower)
 
     } else {
 

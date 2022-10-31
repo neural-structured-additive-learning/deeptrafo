@@ -39,14 +39,23 @@ trafo_control <- function(order_bsp = 10L,
                           basis = c("bernstein", "ordered", "shiftscale")) {
 
   response_type <- match.arg(response_type)
-  basis <- match.arg(basis)
 
-  trafo <- switch(
-    basis,
-    "bernstein" = mono_trafo_multi,
-    "ordered" = mono_trafo_multi,
-    "shiftscale" = shift_scale_trafo_multi
-  )
+  trafo <- if (is.function(basis)) {
+
+    basis
+
+  } else {
+    basis <- match.arg(basis)
+
+    switch (
+      basis,
+      "bernstein" = mono_trafo_multi,
+      "ordered" = mono_trafo_multi,
+      "shiftscale" = shift_scale_trafo_multi
+    )
+
+  }
+
 
   # define support (either function or dummy function outputting the supplied range)
   if (!is.function(support)) {

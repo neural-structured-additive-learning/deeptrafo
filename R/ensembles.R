@@ -108,7 +108,7 @@ predict.dtEnsemble <- function(
 #' @exportS3Method
 #'
 logLik.dtEnsemble <- function(
-  object, y = NULL,
+  object,
   newdata = NULL,
   convert_fun = function(x, ...) - sum(x, ...),
   batch_size = NULL,
@@ -121,8 +121,10 @@ logLik.dtEnsemble <- function(
   fitt <- fitted(object, newdata = newdata, batch_size = NULL)
   y_pred <- apply(simplify2array(fitt), 1:2, mean)
 
-  if (is.null(y)) {
+  if (is.null(newdata)) {
     y <- object$init_params$y
+  } else {
+    y <- response(newdata[[object$init_params$response_varname]])
   }
 
   ensemble_loss <- convert_fun(object$model$loss(y, y_pred)$numpy())

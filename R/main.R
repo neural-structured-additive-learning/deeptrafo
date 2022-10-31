@@ -107,7 +107,7 @@ deeptrafo <- function(
   list_of_formulas[sapply(list_of_formulas, is.null)] <- NULL
 
   # Extract response variable
-  resp <- model.response(model.frame(formula(fml, lhs = 1, rhs = 0), data = data))
+  resp <- data[[rvar]]
   y <- response(resp)
 
   # check for ATMs
