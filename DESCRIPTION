@@ -24,13 +24,15 @@ Suggests:
     testthat,
     knitr,
     ordinal,
-    covr
+    covr,
+    tram
 Imports:
     mgcv,
     dplyr,
     mlt,
     variables,
-    stats
+    stats,
+    purrr
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
