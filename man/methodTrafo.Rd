@@ -49,7 +49,7 @@
   ...
 )
 
-\method{simulate}{deeptrafo}(object, newdata = NULL, nsim = 1, seed = NULL, ...)
+\method{simulate}{deeptrafo}(object, nsim = 1, seed = NULL, newdata = NULL, ...)
 
 \method{print}{deeptrafo}(x, print_model = FALSE, print_coefs = TRUE, with_baseline = FALSE, ...)
 
@@ -67,7 +67,7 @@ Note that \code{type} is currently not used for \code{"interacting"}.}
 
 \item{newdata}{Named \code{list} or \code{data.frame}; optional new data.}
 
-\item{which_param}{Character; either \code{"shifting"}, \code{"interacting"}, 
+\item{which_param}{Character; either \code{"shifting"}, \code{"interacting"},
 or \code{"autoregressive"} (only for autoregressive transformation models).}
 
 \item{only_data}{Logical, if \code{TRUE}, only the data for plotting is returned.}

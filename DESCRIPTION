@@ -18,7 +18,7 @@ Depends:
     Formula, 
     tensorflow (>= 2.2.0), 
     keras (>= 2.2.0), 
-    tfprobability, 
+    tfprobability (>= 0.15),
     deepregression
 Suggests:
     testthat,
@@ -32,7 +32,13 @@ Imports:
     mlt,
     variables,
     stats,
-    purrr
+    purrr,
+    survival,
+    Matrix,
+    methods,
+    R6,
+    reticulate,
+    cotram
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

@@ -88,6 +88,7 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 #' @param ... Further arguments, passed to fit, plot or predict function
 #'
 #' @method coef deeptrafo
+#' @importFrom stats coef
 #'
 #' @export
 #' @rdname methodTrafo
@@ -412,8 +413,8 @@ logLik.deeptrafo <- function(
 #' @importFrom stats simulate
 #' @rdname methodTrafo
 #'
-simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
-                               seed = NULL, ...) {
+simulate.deeptrafo <- function(
+    object, nsim = 1, seed = NULL, newdata = NULL, ...) {
 
   rtype <- object$init_params$response_type
 
@@ -423,19 +424,19 @@ simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
   rvar <- object$init_params$response_varname
 
   if (is.null(newdata)) {
-    newdata <- m$init_params$data
+    newdata <- object$init_params$data
     newdata <- newdata[-which(names(newdata) == rvar)]
   } else {
     ry <- object$init_params$response
   }
 
-  cdf <- do.call("cbind", predict(m, newdata = newdata, type = "cdf"))
+  cdf <- do.call("cbind", predict(object, newdata = newdata, type = "cdf"))
   pmf <- apply(cbind(0, cdf), 1, diff)
 
   ret <- lapply(1:nsim, function(x) {
     ordered(apply(pmf, 2, function(probs) {
       which(rmultinom(n = 1, size = 1, prob = probs) == 1)
-    }), levels = levels(lvls))
+    }), levels = levels(object$init_params$response))
   })
 
   if (nsim == 1)

@@ -408,6 +408,9 @@ from_preds_to_trafo <- function(
 #'     neural network transformation model with generic response.
 #'
 #' @import deepregression
+#' @import tfprobability
+#' @import keras
+#' @import tensorflow
 #' @export
 #'
 nll <- function(base_distribution) {

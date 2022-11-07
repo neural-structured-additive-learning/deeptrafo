@@ -59,6 +59,7 @@ ensemble.deeptrafo <- function(x, n_ensemble = 5, reinitialize = TRUE,
 #' @method coef dtEnsemble
 #'
 #' @inheritParams coef.deeptrafo
+#' @importFrom purrr transpose
 #'
 #' @exportS3Method
 #'
@@ -71,7 +72,7 @@ coef.dtEnsemble <- function(object, which_param = c("shifting", "interacting"),
   ret <- .call_for_all_members(object, coef.deepregression,
                                which_param = tparam, type = type, ... = ...)
 
-  lapply(purrr::transpose(ret), function(x) do.call("cbind", x))
+  lapply(transpose(ret), function(x) do.call("cbind", x))
 
 }
 
