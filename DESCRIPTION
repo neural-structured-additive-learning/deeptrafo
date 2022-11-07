@@ -27,8 +27,6 @@ Suggests:
     covr,
     tram
 Imports:
-    mgcv,
-    dplyr,
     mlt,
     variables,
     stats,
@@ -37,8 +35,7 @@ Imports:
     Matrix,
     methods,
     R6,
-    reticulate,
-    cotram
+    reticulate
 License: GPL-3
 Encoding: UTF-8
 RoxygenNote: 7.1.2
