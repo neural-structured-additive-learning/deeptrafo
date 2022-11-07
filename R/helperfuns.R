@@ -160,9 +160,10 @@ eval_bsp_prime <- function(y, order = 3, supp = range(y)) {
 #
 # }
 
+#' @importFrom reticulate import_from_path
 eval_bsp_tf <- function(order, supp, ...){
   python_path <- system.file("python", package = "deeptrafo")
-  layer <- reticulate::import_from_path("layers", path = python_path)
+  layer <- import_from_path("layers", path = python_path)
   return(layer$EvalBspTF(order = as.integer(order), supp = supp, ...))
 }
 
@@ -212,7 +213,7 @@ ar_lags_layer <- function(order, supp)
 #
 # }
 
-eval_bsp_tf <- function(order, supp, ...){
+eval_bsp_prime_tf <- function(order, supp, ...){
   python_path <- system.file("python", package = "deeptrafo")
   layer <- reticulate::import_from_path("layers", path = python_path)
   return(layer$EvalBspPrimeTF(order = as.integer(order), supp = supp, ...))
@@ -256,6 +257,7 @@ shift_scale_trafo_multi <- function(w, bsp_dim)
 
 }
 
+#' @importFrom R6 R6Class
 MonoMultiLayer <- R6::R6Class("MonoMultiLayer",
 
                               inherit = KerasLayer,
@@ -650,3 +652,7 @@ tfd_gompertz <- function(loc, scale,
   return(do.call(distributions$gompertz$Gompertz, args))
 
 }
+
+#' @importFrom grDevices rgb
+#' @importFrom graphics matplot
+#' @importFrom stats fitted formula predict rmultinom

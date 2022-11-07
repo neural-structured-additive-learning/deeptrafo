@@ -18,22 +18,27 @@ Depends:
     Formula, 
     tensorflow (>= 2.2.0), 
     keras (>= 2.2.0), 
-    tfprobability, 
+    tfprobability (>= 0.15),
     deepregression
 Suggests:
     testthat,
     knitr,
     ordinal,
-    covr
+    covr,
+    tram,
+    cotram
 Imports:
-    mgcv,
-    dplyr,
     mlt,
     variables,
-    stats
+    stats,
+    purrr,
+    survival,
+    Matrix,
+    methods,
+    R6,
+    reticulate
 License: GPL-3
 Encoding: UTF-8
-LazyData: true
 RoxygenNote: 7.1.2
 StagedInstall: no
 VignetteBuilder: knitr

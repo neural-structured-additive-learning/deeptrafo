@@ -27,8 +27,12 @@ the number of classes of an ordinal outcome.}
 \item{support}{A function returning a vector with two elements, namely
 the support for the basis of y.}
 
-\item{y_basis_fun, y_basis_fun_prime}{Basis functions (and derivatives) for
-the response transformation.}
+\item{y_basis_fun}{Function; basis function for Y}
+
+\item{y_basis_fun_lower}{Function; basis function for lower bound of interval
+censored response}
+
+\item{y_basis_fun_prime}{Function; basis function derivative}
 
 \item{penalize_bsp}{Scalar value > 0; controls amount of penalization of
 Bernstein polynomials.}
@@ -45,6 +49,10 @@ survival, or count.}
 
 \item{atm_toplayer}{Function; a function specifying the layer on top of ATM
 lags.}
+
+\item{basis}{Character or function; implemented options are
+\code{"bernstein"} (a Bernstein polynomial basis), \code{"ordered"}
+(for ordinal responses), or \code{"shiftscale"} for (log-) linear bases}
 }
 \value{
 Returns a named \code{list} with all options, basis functions,

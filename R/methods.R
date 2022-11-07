@@ -19,18 +19,21 @@
 #' @method plot deeptrafo
 #' @exportS3Method
 #'
+#' @importFrom graphics matplot
+#' @importFrom grDevices rgb
+#'
 #' @rdname methodTrafo
 #'
 plot.deeptrafo <- function(
-  x,
-  which = NULL,
-  type = c("smooth", "trafo", "pdf", "cdf"),
-  newdata = NULL,
-  which_param = c("shifting", "interacting"), # for which parameter
-  only_data = FALSE,
-  K = 40,
-  q = NULL,
-  ... # passed to plot function
+    x,
+    which = NULL,
+    type = c("smooth", "trafo", "pdf", "cdf"),
+    newdata = NULL,
+    which_param = c("shifting", "interacting"), # for which parameter
+    only_data = FALSE,
+    K = 40,
+    q = NULL,
+    ... # passed to plot function
 )
 {
 
@@ -80,7 +83,7 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 }
 
 #' @param x Object of class \code{"deeptrafo"}.
-#' @param which_param Character; either \code{"shifting"}, \code{"interacting"}, 
+#' @param which_param Character; either \code{"shifting"}, \code{"interacting"},
 #' or \code{"autoregressive"} (only for autoregressive transformation models).
 #' @param type Either NULL (all types of coefficients are returned),
 #'     "linear" for linear coefficients or "smooth" for coefficients of;
@@ -88,20 +91,21 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 #' @param ... Further arguments, passed to fit, plot or predict function
 #'
 #' @method coef deeptrafo
+#' @importFrom stats coef
 #'
 #' @export
 #' @rdname methodTrafo
 #'
 coef.deeptrafo <- function(
-  object,
-  which_param = c("shifting", "interacting", "autoregressive"),
-  type = NULL,
-  ...
+    object,
+    which_param = c("shifting", "interacting", "autoregressive"),
+    type = NULL,
+    ...
 )
 {
 
   which_param <- match.arg(which_param)
-  
+
   if(which_param == "autoregressive") {
     ret <- try(get_weight_by_opname(object, name = "atm_toplayer", partial_match = TRUE))
     if(inherits(ret, "try-error")) stop("No layer with name atm_toplayer")
@@ -199,13 +203,13 @@ coef.SurvregNN <- function(object, which_param = c("shifting", "interacting"),
 #' @rdname methodTrafo
 #'
 predict.deeptrafo <- function(
-  object,
-  newdata = NULL,
-  type = c("trafo", "pdf", "cdf", "interaction", "shift", "terms"),
-  batch_size = NULL,
-  K = 1e2,
-  q = NULL,
-  ...
+    object,
+    newdata = NULL,
+    type = c("trafo", "pdf", "cdf", "interaction", "shift", "terms"),
+    batch_size = NULL,
+    K = 1e2,
+    q = NULL,
+    ...
 )
 {
 
@@ -322,11 +326,11 @@ predict.deeptrafo <- function(
 #' @rdname methodTrafo
 #'
 fitted.deeptrafo <- function(
-  object,
-  newdata = NULL,
-  batch_size = NULL,
-  convert_fun = as.matrix,
-  ...)
+    object,
+    newdata = NULL,
+    batch_size = NULL,
+    convert_fun = as.matrix,
+    ...)
 {
 
   if (length(object$init_params$image_var) > 0 | !is.null(batch_size)) {
@@ -381,10 +385,10 @@ map_param_string_to_index <- function(which_param)
 #' @rdname methodTrafo
 #'
 logLik.deeptrafo <- function(
-  object,
-  newdata = NULL,
-  convert_fun = function(x, ...) - sum(x, ...),
-  ...
+    object,
+    newdata = NULL,
+    convert_fun = function(x, ...) - sum(x, ...),
+    ...
 )
 {
 
@@ -396,7 +400,7 @@ logLik.deeptrafo <- function(
     y_pred <- fitted.deeptrafo(object, newdata = newdata, ... = ...)
   }
 
- convert_fun(object$model$loss(y, y_pred)$numpy())
+  convert_fun(object$model$loss(y, y_pred)$numpy())
 
 }
 
@@ -412,8 +416,8 @@ logLik.deeptrafo <- function(
 #' @importFrom stats simulate
 #' @rdname methodTrafo
 #'
-simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
-                               seed = NULL, ...) {
+simulate.deeptrafo <- function(
+    object, nsim = 1, seed = NULL, newdata = NULL, ...) {
 
   rtype <- object$init_params$response_type
 
@@ -423,19 +427,19 @@ simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
   rvar <- object$init_params$response_varname
 
   if (is.null(newdata)) {
-    newdata <- m$init_params$data
+    newdata <- object$init_params$data
     newdata <- newdata[-which(names(newdata) == rvar)]
   } else {
     ry <- object$init_params$response
   }
 
-  cdf <- do.call("cbind", predict(m, newdata = newdata, type = "cdf"))
+  cdf <- do.call("cbind", predict(object, newdata = newdata, type = "cdf"))
   pmf <- apply(cbind(0, cdf), 1, diff)
 
   ret <- lapply(1:nsim, function(x) {
     ordered(apply(pmf, 2, function(probs) {
       which(rmultinom(n = 1, size = 1, prob = probs) == 1)
-    }), levels = levels(lvls))
+    }), levels = levels(object$init_params$response))
   })
 
   if (nsim == 1)
@@ -450,6 +454,7 @@ simulate.deeptrafo <- function(object, newdata = NULL, nsim = 1,
 #' @param x Object of class \code{"deeptrafo"}.
 #' @param print_model Logical; print keras model.
 #' @param print_coefs Logical; print coefficients.
+#' @param with_baseline Logical; print baseline coefs.
 #' @param ... Currently ignored.
 #'
 #' @exportS3Method
@@ -509,7 +514,7 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
 
 }
 
-#' @method print deeptrafo
+#' @method summary deeptrafo
 #'
 #' @param object Object of class \code{"deeptrafo"}.
 #' @param ... Further arguments supplied to \code{print.deeptrafo}

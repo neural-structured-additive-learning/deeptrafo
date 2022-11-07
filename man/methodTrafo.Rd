@@ -49,11 +49,11 @@
   ...
 )
 
-\method{simulate}{deeptrafo}(object, newdata = NULL, nsim = 1, seed = NULL, ...)
+\method{simulate}{deeptrafo}(object, nsim = 1, seed = NULL, newdata = NULL, ...)
 
 \method{print}{deeptrafo}(x, print_model = FALSE, print_coefs = TRUE, with_baseline = FALSE, ...)
 
-\method{print}{deeptrafo}(object, ...)
+\method{summary}{deeptrafo}(object, ...)
 }
 \arguments{
 \item{x}{Object of class \code{"deeptrafo"}.}
@@ -61,25 +61,14 @@
 \item{which}{Which effect to plot, default selects all smooth effects in the
 shift term.}
 
-\item{which_param}{Character; either \code{"shifting"}, \code{"interacting"}, 
-or \code{"autoregressive"} (only for autoregressive transformation models).}
-
-\item{only_data}{Logical, if \code{TRUE}, only the data for plotting is returned.}
-
-\item{grid_length}{Integer; the length of an equidistant grid at which a
-two-dimensional function is evaluated for plotting.}
-
-\item{...}{Further arguments supplied to \code{print.deeptrafo}}
-
-\item{object}{Object of class \code{"deeptrafo"}.}
-
 \item{type}{Either NULL (all types of coefficients are returned),
 "linear" for linear coefficients or "smooth" for coefficients of;
 Note that \code{type} is currently not used for \code{"interacting"}.}
 
 \item{newdata}{Named \code{list} or \code{data.frame}; optional new data.}
 
-\item{which_param}{Character; either \code{"shifting"} or \code{"interacting"}.}
+\item{which_param}{Character; either \code{"shifting"}, \code{"interacting"},
+or \code{"autoregressive"} (only for autoregressive transformation models).}
 
 \item{only_data}{Logical, if \code{TRUE}, only the data for plotting is returned.}
 
@@ -106,6 +95,8 @@ observations.}
 \item{print_model}{Logical; print keras model.}
 
 \item{print_coefs}{Logical; print coefficients.}
+
+\item{with_baseline}{Logical; print baseline coefs.}
 }
 \value{
 Returns vector or matrix of predictions, depending on the supplied

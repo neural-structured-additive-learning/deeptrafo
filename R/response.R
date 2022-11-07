@@ -10,14 +10,21 @@ response <- function(y) {
     "survival" = c(0, Inf)
   )
   resp <- R(y, bounds = bound)
-  interval <- as.numeric(mlt:::.cinterval(resp))
-  left <- abs(as.numeric(mlt:::.cleft(resp)) - interval)
-  right <- abs(as.numeric(mlt:::.cright(resp)) - interval)
+  interval <- as.numeric(.cinterval(resp))
+  left <- abs(as.numeric(.cleft(resp)) - interval)
+  right <- abs(as.numeric(.cright(resp)) - interval)
   interval <- abs(interval - left - right)
-  exact <- as.numeric(mlt:::.exact(resp))
+  exact <- as.numeric(.exact(resp))
   structure(cbind(cleft = left, exact = exact, cright = right,
                   cinterval = interval), type = get_response_type(y))
 }
+
+# From package mlt {
+.exact <- function(object) !is.na(object$exact)
+.cinterval <- function(object) !.exact(object)
+.cright <- function(object) is.finite(object$cright)
+.cleft <- function(object) is.finite(object$cleft)
+# }
 
 make_grid <- function(y, n = 1e2) {
   rtype <- get_response_type(y)
@@ -31,12 +38,13 @@ make_grid <- function(y, n = 1e2) {
   mkgrid(var, n = n)
 }
 
+#' @importFrom survival is.Surv
 get_response_type <- function(y) {
   ret <- if (is.ordered(y))
     "ordered"
   else if (is.integer(y))
     "count"
-  else if (survival::is.Surv(y))
+  else if (is.Surv(y))
     "survival"
   else
     "continuous"

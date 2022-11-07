@@ -5,8 +5,6 @@
 #'     the number of classes of an ordinal outcome.
 #' @param support A function returning a vector with two elements, namely
 #'     the support for the basis of y.
-#' @param y_basis_fun,y_basis_fun_prime Basis functions (and derivatives) for
-#'     the response transformation.
 #' @param penalize_bsp Scalar value > 0; controls amount of penalization of
 #'     Bernstein polynomials.
 #' @param order_bsp_penalty Integer; order of Bernstein polynomial penalty. 0
@@ -18,6 +16,13 @@
 #'     survival, or count.
 #' @param atm_toplayer Function; a function specifying the layer on top of ATM
 #'     lags.
+#' @param y_basis_fun Function; basis function for Y
+#' @param y_basis_fun_lower Function; basis function for lower bound of interval
+#'     censored response
+#' @param y_basis_fun_prime Function; basis function derivative
+#' @param basis Character or function; implemented options are
+#'     \code{"bernstein"} (a Bernstein polynomial basis), \code{"ordered"}
+#'     (for ordinal responses), or \code{"shiftscale"} for (log-) linear bases
 #'
 #' @return Returns a named \code{list} with all options, basis functions,
 #'     support, and penalties.
@@ -33,8 +38,8 @@ trafo_control <- function(order_bsp = 10L,
                           order_bsp_penalty = 2,
                           tf_bsps = FALSE,
                           response_type = c("continuous", "ordered", "survival", "count"),
-                          atm_toplayer = function(x) layer_dense(x, units = 1L, 
-                                                                 name = "atm_toplayer", 
+                          atm_toplayer = function(x) layer_dense(x, units = 1L,
+                                                                 name = "atm_toplayer",
                                                                  use_bias = FALSE),
                           basis = c("bernstein", "ordered", "shiftscale")) {
 

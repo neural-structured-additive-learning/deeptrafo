@@ -123,8 +123,8 @@ basisprime_processor <- function(term, data, output_dim = NULL, param_nr, contro
 
   dim_basis <- ncol(bfy)
   predict_trafo_bs <- function(newdata)
-      controls$y_basis_fun_prime(newdata[[extractvar(term)]],
-                                 suppy = suppy)
+    controls$y_basis_fun_prime(newdata[[extractvar(term)]],
+                               suppy = suppy)
 
   layer = tf$identity
 
