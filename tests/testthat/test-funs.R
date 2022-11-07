@@ -46,9 +46,9 @@ check_methods <- function(m, newdata, test_plots = TRUE, grid = TRUE)
   expect_gt(ncol(f), 2)
 
   # if (m$init_params$response_type == "ordered") {
-    # simulate(m)
-    # simulate(m, newdata = newdata)
-    # simulate(m, newdata = newdata[1:10, ])
+  # simulate(m)
+  # simulate(m, newdata = newdata)
+  # simulate(m, newdata = newdata[1:10, ])
   # }
 
   # g <- predict(m, newdata = newdata[, colnames(newdata) != "y"], type = "trafo")
@@ -93,9 +93,9 @@ test_models <- function(fml, which = c("ordinal", "count", "survival"), ...) {
   which <- match.arg(which)
 
   DGP <- switch(which,
-    "ordinal" = dgp_ordinal,
-    "count" = dgp_count,
-    "survival" = dgp_surv
+                "ordinal" = dgp_ordinal,
+                "count" = dgp_count,
+                "survival" = dgp_surv
   )
 
   dat <- DGP()

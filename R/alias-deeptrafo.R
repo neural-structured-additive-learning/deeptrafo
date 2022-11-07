@@ -170,7 +170,7 @@ CoxphNN <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' m <- LehmannNN(y ~ x, data = df)
+#' m <- LehmanNN(y ~ x, data = df)
 #' fit(m, epochs = 2L)
 #'
 #' @export

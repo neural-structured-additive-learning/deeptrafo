@@ -199,7 +199,7 @@ test_that("autoregressive transformation model", {
   expect_is(predict(m, newdata = dat[1:5, -1], q = c(-1, 1), type = "pdf"), "list")
 
   check_methods(m, newdata = dat)
-  
+
   cf <- coef(m, which_param = "autoregressive")
   expect_equal(dim(cf), c(2,1))
 
@@ -213,8 +213,8 @@ test_that("model with fixed weight", {
   m <- deeptrafo(response ~ temp, data = wine,
                  weight_options = weight_control(
                    warmstart_weights = list(list(), list(), list("temp" = 0))
-                   )
                  )
+  )
   expect_equal(coef(m, which_param = "shifting")$temp, matrix(0))
 
 })

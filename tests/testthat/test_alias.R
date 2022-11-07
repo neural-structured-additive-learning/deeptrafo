@@ -128,7 +128,15 @@ test_that("CoxphNN gives same results as tram::Coxph", {
   m <- CoxphNN(y ~ 0 + x, data = d, order = tord)
 
   tmp <- get_weights(m$model)
-  tmp[[1]][] <- ontram:::.to_gamma(coef(tm, with_baseline = TRUE)[1:(tord + 1)])
+  .to_gamma <- function(thetas) {
+    gammas <- c(thetas[1L], log(exp(diff(thetas)) - 1))
+    if (any(!is.finite(gammas))) {
+      gammas[!is.finite(gammas)] <- 1e-20
+    }
+    return(gammas)
+  }
+
+  tmp[[1]][] <- .to_gamma(coef(tm, with_baseline = TRUE)[1:(tord + 1)])
   tmp[[2]][] <- coef(tm)
   set_weights(m$model, tmp)
 
