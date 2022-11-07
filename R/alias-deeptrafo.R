@@ -20,7 +20,7 @@
 #'
 dctm <- function(
   response, intercept = NULL, shift = NULL,
-  shared = NULL, data, lag_formula = NULL,
+  shared = NULL, data,
   response_type = get_response_type(data[[all.vars(response)[1]]]),
   order = get_order(response_type, data[[all.vars(response)[1]]]),
   addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
@@ -30,7 +30,7 @@ dctm <- function(
 
   fml <- forms2form(response, intercept, shift, shared)
 
-  ret <- deeptrafo(formula = fml, data = data, lag_formula = lag_formula,
+  ret <- deeptrafo(formula = fml, data = data,
                    response_type = response_type, order = order,
                    addconst_interaction = addconst_interaction, family = family,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
@@ -67,7 +67,7 @@ dctm <- function(
 #'
 ontram <- function(
   response, intercept = NULL, shift = NULL,
-  shared = NULL, data, lag_formula = NULL,
+  shared = NULL, data,
   response_type = "ordered",
   order = get_order(response_type, data[[all.vars(response)[1]]]),
   addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
@@ -78,7 +78,7 @@ ontram <- function(
   stopifnot(is.ordered(data[[all.vars(response)[1]]][1]))
 
   ret <- dctm(response = response, intercept = intercept, shift = shift,
-              shared = shared, data = data, lag_formula = lag_formula,
+              shared = shared, data = data,
               response_type = response_type, order = order,
               addconst_interaction = addconst_interaction, family = family,
               monitor_metrics = monitor_metrics, trafo_options = trafo_options,
@@ -104,7 +104,7 @@ ontram <- function(
 #' @export
 #'
 ColrNN <- function(
-  formula, data, lag_formula = NULL,
+  formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
@@ -114,7 +114,7 @@ ColrNN <- function(
 
   stopifnot(response_type %in% c("continuous", "survival"))
 
-  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+  ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
                    addconst_interaction = addconst_interaction, family = family,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
@@ -140,7 +140,7 @@ ColrNN <- function(
 #' @export
 #'
 CoxphNN <- function(
-  formula, data, lag_formula = NULL,
+  formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "gompertz", monitor_metrics = NULL,
@@ -150,7 +150,7 @@ CoxphNN <- function(
 
   stopifnot(response_type %in% c("continuous", "survival"))
 
-  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+  ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
                    addconst_interaction = addconst_interaction, family = family,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
@@ -176,7 +176,7 @@ CoxphNN <- function(
 #' @export
 #'
 LehmanNN <- function(
-  formula, data, lag_formula = NULL,
+  formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "gumbel", monitor_metrics = NULL,
@@ -186,7 +186,7 @@ LehmanNN <- function(
 
   stopifnot(response_type %in% c("continuous", "survival"))
 
-  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+  ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
                    addconst_interaction = addconst_interaction, family = family,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
@@ -212,7 +212,7 @@ LehmanNN <- function(
 #' @export
 #'
 BoxCoxNN <- function(
-  formula, data, lag_formula = NULL,
+  formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "normal", monitor_metrics = NULL,
@@ -222,7 +222,7 @@ BoxCoxNN <- function(
 
   stopifnot(response_type %in% c("continuous", "survival"))
 
-  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+  ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
                    addconst_interaction = addconst_interaction, family = family,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
@@ -249,7 +249,7 @@ BoxCoxNN <- function(
 #' @export
 #'
 PolrNN <- function(
-  formula, data, lag_formula = NULL,
+  formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
@@ -259,7 +259,7 @@ PolrNN <- function(
 
   stopifnot(response_type == "ordered")
 
-  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+  ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
                    addconst_interaction = addconst_interaction, family = family,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
@@ -291,7 +291,7 @@ PolrNN <- function(
 #' @export
 #'
 LmNN <- function(
-  formula, data, lag_formula = NULL,
+  formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "normal", monitor_metrics = NULL,
@@ -306,7 +306,7 @@ LmNN <- function(
 
   stopifnot(response_type == "continuous")
 
-  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+  ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
                    addconst_interaction = addconst_interaction, family = family,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
@@ -338,7 +338,7 @@ LmNN <- function(
 #' @export
 #'
 SurvregNN <- function(
-  formula, data, lag_formula = NULL,
+  formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "gompertz", monitor_metrics = NULL,
@@ -367,7 +367,7 @@ SurvregNN <- function(
     basis = "shiftscale"
   )
 
-  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+  ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
                    addconst_interaction = addconst_interaction, family = family,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
@@ -399,7 +399,7 @@ SurvregNN <- function(
 #' @export
 #'
 cotramNN <- function(
-  formula, data, lag_formula = NULL,
+  formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
@@ -417,7 +417,7 @@ cotramNN <- function(
     y_basis_fun_prime = .empty_fun(.get_eval_cotram(order, tsupp))
   )
 
-  ret <- deeptrafo(formula = formula, data = data, lag_formula = lag_formula,
+  ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
                    addconst_interaction = addconst_interaction, family = family,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
