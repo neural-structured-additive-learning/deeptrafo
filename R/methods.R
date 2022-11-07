@@ -19,6 +19,9 @@
 #' @method plot deeptrafo
 #' @exportS3Method
 #'
+#' @importFrom graphics matplot
+#' @importFrom grDevices rgb
+#'
 #' @rdname methodTrafo
 #'
 plot.deeptrafo <- function(
@@ -451,6 +454,7 @@ simulate.deeptrafo <- function(
 #' @param x Object of class \code{"deeptrafo"}.
 #' @param print_model Logical; print keras model.
 #' @param print_coefs Logical; print coefficients.
+#' @param with_baseline Logical; print baseline coefs.
 #' @param ... Currently ignored.
 #'
 #' @exportS3Method
@@ -510,7 +514,7 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
 
 }
 
-#' @method print deeptrafo
+#' @method summary deeptrafo
 #'
 #' @param object Object of class \code{"deeptrafo"}.
 #' @param ... Further arguments supplied to \code{print.deeptrafo}

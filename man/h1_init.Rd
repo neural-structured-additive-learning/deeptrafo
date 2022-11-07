@@ -7,7 +7,12 @@
 h1_init(yterms, h1pred, add_const_positiv = 0)
 }
 \arguments{
-\item{yterms, h1pred}{positions of the left and right RWT term}
+\item{yterms}{Terms for the response}
+
+\item{h1pred}{Interacting predictor}
+
+\item{add_const_positiv}{Shift basis for the predictors to be strictly
+positive}
 }
 \value{
 returns a subnetwork_init function with pre-defined arguments

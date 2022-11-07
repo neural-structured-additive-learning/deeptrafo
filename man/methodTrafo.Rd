@@ -53,7 +53,7 @@
 
 \method{print}{deeptrafo}(x, print_model = FALSE, print_coefs = TRUE, with_baseline = FALSE, ...)
 
-\method{print}{deeptrafo}(object, ...)
+\method{summary}{deeptrafo}(object, ...)
 }
 \arguments{
 \item{x}{Object of class \code{"deeptrafo"}.}
@@ -95,6 +95,8 @@ observations.}
 \item{print_model}{Logical; print keras model.}
 
 \item{print_coefs}{Logical; print coefficients.}
+
+\item{with_baseline}{Logical; print baseline coefs.}
 }
 \value{
 Returns vector or matrix of predictions, depending on the supplied

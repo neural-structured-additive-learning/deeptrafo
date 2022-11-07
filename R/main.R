@@ -45,6 +45,7 @@
 #' @importFrom mlt R
 #' @importFrom Formula as.Formula
 #' @importFrom stats model.matrix model.response model.frame dbeta as.formula
+#'     fitted formula predict rmultinom logLik
 #' @importFrom keras layer_dense layer_add layer_concatenate
 #' @export
 #'
@@ -183,7 +184,11 @@ deeptrafo <- function(
 
 #' Initializes the Processed Additive Predictor for TM's Interaction
 #'
-#' @param yterms,h1pred positions of the left and right RWT term
+#' @param yterms Terms for the response
+#' @param h1pred Interacting predictor
+#' @param add_const_positiv Shift basis for the predictors to be strictly
+#'     positive
+#'
 #' @return returns a subnetwork_init function with pre-defined arguments
 #'
 h1_init <- function(yterms, h1pred, add_const_positiv = 0)
