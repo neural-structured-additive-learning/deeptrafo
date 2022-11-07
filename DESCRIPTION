@@ -25,7 +25,8 @@ Suggests:
     knitr,
     ordinal,
     covr,
-    tram
+    tram,
+    cotram
 Imports:
     mlt,
     variables,
