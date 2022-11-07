@@ -22,15 +22,15 @@
 #' @rdname methodTrafo
 #'
 plot.deeptrafo <- function(
-  x,
-  which = NULL,
-  type = c("smooth", "trafo", "pdf", "cdf"),
-  newdata = NULL,
-  which_param = c("shifting", "interacting"), # for which parameter
-  only_data = FALSE,
-  K = 40,
-  q = NULL,
-  ... # passed to plot function
+    x,
+    which = NULL,
+    type = c("smooth", "trafo", "pdf", "cdf"),
+    newdata = NULL,
+    which_param = c("shifting", "interacting"), # for which parameter
+    only_data = FALSE,
+    K = 40,
+    q = NULL,
+    ... # passed to plot function
 )
 {
 
@@ -80,7 +80,7 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 }
 
 #' @param x Object of class \code{"deeptrafo"}.
-#' @param which_param Character; either \code{"shifting"}, \code{"interacting"}, 
+#' @param which_param Character; either \code{"shifting"}, \code{"interacting"},
 #' or \code{"autoregressive"} (only for autoregressive transformation models).
 #' @param type Either NULL (all types of coefficients are returned),
 #'     "linear" for linear coefficients or "smooth" for coefficients of;
@@ -93,15 +93,15 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 #' @rdname methodTrafo
 #'
 coef.deeptrafo <- function(
-  object,
-  which_param = c("shifting", "interacting", "autoregressive"),
-  type = NULL,
-  ...
+    object,
+    which_param = c("shifting", "interacting", "autoregressive"),
+    type = NULL,
+    ...
 )
 {
 
   which_param <- match.arg(which_param)
-  
+
   if(which_param == "autoregressive") {
     ret <- try(get_weight_by_opname(object, name = "atm_toplayer", partial_match = TRUE))
     if(inherits(ret, "try-error")) stop("No layer with name atm_toplayer")
@@ -199,13 +199,13 @@ coef.SurvregNN <- function(object, which_param = c("shifting", "interacting"),
 #' @rdname methodTrafo
 #'
 predict.deeptrafo <- function(
-  object,
-  newdata = NULL,
-  type = c("trafo", "pdf", "cdf", "interaction", "shift", "terms"),
-  batch_size = NULL,
-  K = 1e2,
-  q = NULL,
-  ...
+    object,
+    newdata = NULL,
+    type = c("trafo", "pdf", "cdf", "interaction", "shift", "terms"),
+    batch_size = NULL,
+    K = 1e2,
+    q = NULL,
+    ...
 )
 {
 
@@ -322,11 +322,11 @@ predict.deeptrafo <- function(
 #' @rdname methodTrafo
 #'
 fitted.deeptrafo <- function(
-  object,
-  newdata = NULL,
-  batch_size = NULL,
-  convert_fun = as.matrix,
-  ...)
+    object,
+    newdata = NULL,
+    batch_size = NULL,
+    convert_fun = as.matrix,
+    ...)
 {
 
   if (length(object$init_params$image_var) > 0 | !is.null(batch_size)) {
@@ -381,10 +381,10 @@ map_param_string_to_index <- function(which_param)
 #' @rdname methodTrafo
 #'
 logLik.deeptrafo <- function(
-  object,
-  newdata = NULL,
-  convert_fun = function(x, ...) - sum(x, ...),
-  ...
+    object,
+    newdata = NULL,
+    convert_fun = function(x, ...) - sum(x, ...),
+    ...
 )
 {
 
@@ -396,7 +396,7 @@ logLik.deeptrafo <- function(
     y_pred <- fitted.deeptrafo(object, newdata = newdata, ... = ...)
   }
 
- convert_fun(object$model$loss(y, y_pred)$numpy())
+  convert_fun(object$model$loss(y, y_pred)$numpy())
 
 }
 

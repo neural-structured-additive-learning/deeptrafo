@@ -55,18 +55,18 @@
 #'     and add the suffix "NN" to the function name.
 #'
 deeptrafo <- function(
-  formula,
-  data,
-  lag_formula = NULL,
-  response_type = get_response_type(data[[all.vars(fml)[1]]]),
-  order = get_order(response_type, data[[all.vars(fml)[1]]]),
-  addconst_interaction = 0,
-  family = "logistic",
-  monitor_metrics = NULL,
-  trafo_options = trafo_control(order_bsp = order,
-                                response_type = response_type),
-  return_data = FALSE,
-  ...
+    formula,
+    data,
+    lag_formula = NULL,
+    response_type = get_response_type(data[[all.vars(fml)[1]]]),
+    order = get_order(response_type, data[[all.vars(fml)[1]]]),
+    addconst_interaction = 0,
+    family = "logistic",
+    monitor_metrics = NULL,
+    trafo_options = trafo_control(order_bsp = order,
+                                  response_type = response_type),
+    return_data = FALSE,
+    ...
 )
 {
   # How many terms are in the formula
@@ -116,22 +116,21 @@ deeptrafo <- function(
     # extract from lag formula the variables as simple sum and
     # layers for additional transformation
     tlag_formula <- apply_atm_lags(lag_formula)
-    list_of_formulas$yterms <- as.formula(paste0(form2text(list_of_formulas$yterms),
-                                                 " + ", tlag_formula))
+    list_of_formulas$yterms <- as.formula(
+      paste0(form2text(list_of_formulas$yterms), " + ", tlag_formula))
 
   }
 
   # define how to get a trafo model from predictor
-  from_pred_to_trafo_fun <- from_preds_to_trafo(atm_toplayer = trafo_options$atm_toplayer,
-                                                const_ia = addconst_interaction)
+  from_pred_to_trafo_fun <- from_preds_to_trafo(
+    atm_toplayer = trafo_options$atm_toplayer, const_ia = addconst_interaction)
 
   atm_lag_processor <- atm_lag_processor_factory(rvar)
 
-  trafo_processor <- list(bsfun = basis_processor,
-                          bsfunl = basis_processor_lower,
-                          bspfun = basisprime_processor,
-                          ia = ia_processor,
-                          atmlag = atm_lag_processor)
+  trafo_processor <- list(
+    bsfun = basis_processor, bsfunl = basis_processor_lower,
+    bspfun = basisprime_processor, ia = ia_processor,
+    atmlag = atm_lag_processor)
 
   dots <- list(...)
 
@@ -157,18 +156,14 @@ deeptrafo <- function(
     h1_init(yterms = which(names(list_of_formulas) == "yterms"),
             h1pred = which(names(list_of_formulas) == "h1pred"),
             add_const_positiv = addconst_interaction)
-  snwb[[which(names(list_of_formulas) == "yterms")]] <- function(...) return(NULL)
+  snwb[[which(names(list_of_formulas) == "yterms")]] <- function(...)
+    return(NULL)
 
-  args <- c(list(y = y,
-                 family = family,
-                 data = data,
-                 list_of_formulas = list_of_formulas,
-                 subnetwork_builder = snwb,
-                 from_preds_to_output = from_pred_to_trafo_fun,
-                 loss = tloss,
-                 monitor_metrics = monitor_metrics,
-                 additional_processor = additional_processor),
-            dots)
+  args <- c(list(
+    y = y, family = family, data = data, list_of_formulas = list_of_formulas,
+    subnetwork_builder = snwb, from_preds_to_output = from_pred_to_trafo_fun,
+    loss = tloss, monitor_metrics = monitor_metrics,
+    additional_processor = additional_processor), dots)
 
   ret <- do.call("deepregression", args)
 
@@ -279,8 +274,8 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
 
         outputs <- lapply(1:length(pp_y), function(j) layer_add_identity(
           lapply(1:length(pp_in), function(i) pp_lay[[layer_matching[i]]]$layer(
-              pp_y[[j]]$layer(inputs_y[[j]]),
-              tf$add(inputs[[i]], add_const_positiv)
+            pp_y[[j]]$layer(inputs_y[[j]]),
+            tf$add(inputs[[i]], add_const_positiv)
           )
           )
         ))
@@ -368,8 +363,8 @@ atm_init <- function(atmnr, h1nr)
 #'
 #' @export
 from_preds_to_trafo <- function(
-  atm_toplayer = function(x) layer_dense(x, units = 1L, name = "atm_toplayer"),
-  const_ia = NULL
+    atm_toplayer = function(x) layer_dense(x, units = 1L, name = "atm_toplayer"),
+    const_ia = NULL
 )
 {
 
