@@ -7,7 +7,6 @@
 LehmanNN(
   formula,
   data,
-  lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0,
@@ -19,13 +18,11 @@ LehmanNN(
 }
 \arguments{
 \item{formula}{Formula specifying the response, interaction, shift terms
-as \code{response | interacting ~ shifting}.}
+as \code{response | interacting ~ shifting}.
+auto-regressive transformation models (ATMs).}
 
 \item{data}{Named \code{list} or \code{data.frame} which may contain both
 structured and unstructured data.}
-
-\item{lag_formula}{Optional formula for lags of the response in
-auto-regressive transformation models (ATMs).}
 
 \item{response_type}{Character; type of response. One of \code{"continuous"},
 \code{"survival"}, \code{"count"}, or \code{"ordered"}. If not supplied
