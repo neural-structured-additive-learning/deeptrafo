@@ -89,7 +89,7 @@ test_that("autoregressive transformation model", {
   dat$ylag <- lag(dat$y)
   dat$ylag2 <- lag(dat$y, n = 2L)
   dat <- na.omit(dat)
-  m <- dctm(~ y, ~ s(x), ~ z + s(z) + atmlag(ylag) + atmlag(ylag2), data = dat)
+  m <- dctm(~ y, ~ s(x), ~ z + s(z) + atplag(ylag) + atplag(ylag2), data = dat)
   hist <- fit(m, epochs = 2L)
 
   expect_false(any(is.nan(hist$metrics$loss)))

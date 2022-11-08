@@ -111,12 +111,12 @@ deeptrafo <- function(
 
   # check for ATMs
   ftms <- attr(terms(formula), "term.labels")
-  is_atm <- any(grepl("atmlag", ftms))
+  is_atm <- any(grepl("atplag", ftms))
   if (is_atm) {
 
     # extract from lag formula the variables as simple sum and
     # layers for additional transformation
-    tlag_formula <- paste0(grep("atmlag", ftms, value = TRUE), collapse = "+")
+    tlag_formula <- paste0(grep("atplag", ftms, value = TRUE), collapse = "+")
     list_of_formulas$yterms <- as.formula(
       paste0(form2text(list_of_formulas$yterms), " + ", tlag_formula))
 
@@ -131,7 +131,7 @@ deeptrafo <- function(
   trafo_processor <- list(
     bsfun = basis_processor, bsfunl = basis_processor_lower,
     bspfun = basisprime_processor, ia = ia_processor,
-    atmlag = atm_lag_processor)
+    atplag = atm_lag_processor)
 
   dots <- list(...)
 
