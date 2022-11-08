@@ -62,13 +62,16 @@ Deep normal linear regression
 }
 \examples{
 set.seed(1)
-library(tram)
 df <- data.frame(y = 10 + rnorm(50), x = rnorm(50))
 optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
 m <- LmNN(y ~ 0 + x, data = df, optimizer = optimizer)
+\dontrun{
+library(tram)
 fit(m, epochs = 900L, validation_split = 0)
 logLik(mm <- Lm(y ~ x, data = df)); logLik(m)
 coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
                                          coef(m, which = "shifting")))
+}
+coef(m)
 
 }

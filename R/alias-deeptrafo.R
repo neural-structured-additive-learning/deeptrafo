@@ -14,7 +14,7 @@
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
 #' m <- dctm(response = ~ y, shift = ~ x, data = df)
-#' fit(m, epochs = 2L)
+#' coef(m)
 #'
 #' @export
 #'
@@ -61,7 +61,7 @@ dctm <- function(
 #' @examples
 #' df <- data.frame(y = ordered(sample.int(6, 50, TRUE)), x = rnorm(50))
 #' m <- ontram(response = ~ y, shift = ~ x, data = df)
-#' fit(m, epochs = 2L)
+#' coef(m)
 #'
 #' @export
 #'
@@ -99,7 +99,7 @@ ontram <- function(
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
 #' m <- ColrNN(y ~ x, data = df)
-#' fit(m, epochs = 2L)
+#' coef(m)
 #'
 #' @export
 #'
@@ -135,7 +135,7 @@ ColrNN <- function(
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
 #' m <- CoxphNN(y ~ x, data = df)
-#' fit(m, epochs = 2L)
+#' coef(m)
 #'
 #' @export
 #'
@@ -171,7 +171,7 @@ CoxphNN <- function(
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
 #' m <- LehmanNN(y ~ x, data = df)
-#' fit(m, epochs = 2L)
+#' coef(m)
 #'
 #' @export
 #'
@@ -207,7 +207,7 @@ LehmanNN <- function(
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
 #' m <- BoxCoxNN(y ~ x, data = df)
-#' fit(m, epochs = 2L)
+#' coef(m)
 #'
 #' @export
 #'
@@ -244,7 +244,7 @@ BoxCoxNN <- function(
 #' df <- data.frame(y = ordered(sample.int(5, 50, replace = TRUE)),
 #'      x = rnorm(50))
 #' m <- PolrNN(y ~ x, data = df)
-#' fit(m, epochs = 2L)
+#' coef(m)
 #'
 #' @export
 #'
@@ -279,14 +279,17 @@ PolrNN <- function(
 #'
 #' @examples
 #' set.seed(1)
-#' library(tram)
 #' df <- data.frame(y = 10 + rnorm(50), x = rnorm(50))
 #' optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
 #' m <- LmNN(y ~ 0 + x, data = df, optimizer = optimizer)
+#' \dontrun{
+#' library(tram)
 #' fit(m, epochs = 900L, validation_split = 0)
 #' logLik(mm <- Lm(y ~ x, data = df)); logLik(m)
 #' coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
 #'                                          coef(m, which = "shifting")))
+#' }
+#' coef(m)
 #'
 #' @export
 #'
@@ -326,14 +329,17 @@ LmNN <- function(
 #'
 #' @examples
 #' set.seed(1)
-#' library(tram)
 #' df <- data.frame(y = abs(1 + rnorm(50)), x = rnorm(50))
 #' optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
 #' m <- SurvregNN(y ~ 0 + x, data = df, optimizer = optimizer)
+#' coef(m)
+#' \dontrun{
+#' library(tram)
 #' fit(m, epochs = 500L, validation_split = 0)
 #' logLik(mm <- Survreg(y ~ x, data = df, dist = "loglogistic")); logLik(m)
 #' coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
 #'                                          coef(m, which = "shifting")))
+#' }
 #'
 #' @export
 #'
@@ -387,14 +393,17 @@ SurvregNN <- function(
 #'
 #' @examples
 #' set.seed(1)
-#' library(cotram)
 #' df <- data.frame(y = as.integer(abs(1 + rnorm(50, sd = 10))), x = rnorm(50))
 #' optimizer <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
 #' m <- cotramNN(y ~ 0 + x, data = df, optimizer = optimizer, order = 6)
+#' coef(m)
+#' \dontrun{
+#' library(cotram)
 #' fit(m, epochs = 800L, validation_split = 0)
 #' logLik(mm <- cotram(y ~ x, data = df, method = "logit")); logLik(m)
 #' coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
 #'                                          coef(m, which = "shifting")))
+#'}
 #'
 #' @export
 #'

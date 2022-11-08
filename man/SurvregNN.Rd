@@ -60,13 +60,16 @@ Deep parametric survival regression
 }
 \examples{
 set.seed(1)
-library(tram)
 df <- data.frame(y = abs(1 + rnorm(50)), x = rnorm(50))
 optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
 m <- SurvregNN(y ~ 0 + x, data = df, optimizer = optimizer)
+coef(m)
+\dontrun{
+library(tram)
 fit(m, epochs = 500L, validation_split = 0)
 logLik(mm <- Survreg(y ~ x, data = df, dist = "loglogistic")); logLik(m)
 coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
                                          coef(m, which = "shifting")))
+}
 
 }
