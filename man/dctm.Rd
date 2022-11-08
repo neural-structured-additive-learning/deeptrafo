@@ -74,6 +74,6 @@ Deep conditional transformation models with alternative formula interface
 \examples{
 df <- data.frame(y = rnorm(50), x = rnorm(50))
 m <- dctm(response = ~ y, shift = ~ x, data = df)
-fit(m, epochs = 2L)
+coef(m)
 
 }

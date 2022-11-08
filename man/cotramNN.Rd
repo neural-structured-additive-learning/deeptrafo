@@ -59,13 +59,16 @@ Deep distribution-free count regression
 }
 \examples{
 set.seed(1)
-library(cotram)
 df <- data.frame(y = as.integer(abs(1 + rnorm(50, sd = 10))), x = rnorm(50))
 optimizer <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
 m <- cotramNN(y ~ 0 + x, data = df, optimizer = optimizer, order = 6)
+coef(m)
+\dontrun{
+library(cotram)
 fit(m, epochs = 800L, validation_split = 0)
 logLik(mm <- cotram(y ~ x, data = df, method = "logit")); logLik(m)
 coef(mm, with_baseline = TRUE); unlist(c(coef(m, which = "interacting"),
                                          coef(m, which = "shifting")))
+}
 
 }

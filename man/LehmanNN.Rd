@@ -64,6 +64,6 @@ Lehmann-type neural network transformation models
 \examples{
 df <- data.frame(y = rnorm(50), x = rnorm(50))
 m <- LehmanNN(y ~ x, data = df)
-fit(m, epochs = 2L)
+coef(m)
 
 }
