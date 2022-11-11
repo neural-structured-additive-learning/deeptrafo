@@ -10,7 +10,6 @@ dctm(
   shift = NULL,
   shared = NULL,
   data,
-  lag_formula = NULL,
   response_type = get_response_type(data[[all.vars(response)[1]]]),
   order = get_order(response_type, data[[all.vars(response)[1]]]),
   addconst_interaction = 0,
@@ -33,9 +32,6 @@ and shift part of the model}
 
 \item{data}{Named \code{list} or \code{data.frame} which may contain both
 structured and unstructured data.}
-
-\item{lag_formula}{Optional formula for lags of the response in
-auto-regressive transformation models (ATMs).}
 
 \item{response_type}{Character; type of response. One of \code{"continuous"},
 \code{"survival"}, \code{"count"}, or \code{"ordered"}. If not supplied

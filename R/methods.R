@@ -464,7 +464,7 @@ simulate.deeptrafo <- function(
 print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
                             with_baseline = FALSE, ...) {
 
-  atm <- !is.null(x$init_params$lag_formula)
+  atm <- x$init_params$is_atm
   atm_text <- if (atm) "autoregressive" else ""
 
   if (print_model)
@@ -491,11 +491,6 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
   cat("\t", mtype, "outcome", atm_text, "deep conditional transformation model\n\n")
   cat("\nInteracting: ", int, "\n")
   cat("\nShifting: ", shift, "\n")
-
-  if (atm) {
-    lags <- fml2txt(x$init_params$lag_formula)
-    cat("\nLags: ", lags, "\n")
-  }
 
   if (print_coefs) {
     cfb <- coef(x, which_param = "interacting")

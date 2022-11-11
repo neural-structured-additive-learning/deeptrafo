@@ -190,10 +190,10 @@ test_that("autoregressive transformation model", {
 
   dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
   dat$ylag <- lag(dat$y)
-  dat$ylag2 <- lag(dat$y, n=2L)
+  dat$ylag2 <- lag(dat$y, n = 2L)
   dat <- na.omit(dat)
-  fml <- y | s(x) ~ z + s(z)
-  m <- deeptrafo(fml, dat, lag_formula = ~ ylag + ylag2)
+  fml <- y | s(x) ~ 0 + s(z) + atplag(ylag) + atplag(ylag2)
+  m <- deeptrafo(fml, dat) # , lag_formula = ~ ylag + ylag2)
 
   expect_is(predict(m, newdata = dat[1:5, -1], K = 2, type = "pdf"), "list")
   expect_is(predict(m, newdata = dat[1:5, -1], q = c(-1, 1), type = "pdf"), "list")

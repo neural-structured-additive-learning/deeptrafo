@@ -222,7 +222,7 @@ eval_bsp_prime_tf <- function(order, supp, ...){
 apply_atm_lags <- function(form)
 {
 
-  paste(paste0("atmlag(", all.vars(form), ")"), collapse=" + ")
+  paste(paste0("atplag(", all.vars(form), ")"), collapse=" + ")
 
 }
 

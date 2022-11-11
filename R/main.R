@@ -2,7 +2,6 @@
 #'
 #' @param formula Formula specifying the response, interaction, shift terms
 #'     as \code{response | interacting ~ shifting}.
-#' @param lag_formula Optional formula for lags of the response in
 #'     auto-regressive transformation models (ATMs).
 #' @param data Named \code{list} or \code{data.frame} which may contain both
 #'     structured and unstructured data.
@@ -58,14 +57,13 @@
 deeptrafo <- function(
     formula,
     data,
-    lag_formula = NULL,
     response_type = get_response_type(data[[all.vars(fml)[1]]]),
     order = get_order(response_type, data[[all.vars(fml)[1]]]),
     addconst_interaction = 0,
     family = "logistic",
     monitor_metrics = NULL,
-    trafo_options = trafo_control(order_bsp = order,
-                                  response_type = response_type),
+    trafo_options = trafo_control(
+      order_bsp = order, response_type = response_type),
     return_data = FALSE,
     ...
 )
@@ -112,13 +110,16 @@ deeptrafo <- function(
   y <- response(resp)
 
   # check for ATMs
-  if (!is.null(lag_formula)) {
+  ftms <- attr(tms <- terms(list_of_formulas$h2), "term.labels")
+  is_atm <- any(atps <- grepl("atplag", ftms))
+  if (is_atm) {
 
     # extract from lag formula the variables as simple sum and
     # layers for additional transformation
-    tlag_formula <- apply_atm_lags(lag_formula)
+    tlag_formula <- paste0(grep("atplag", ftms, value = TRUE), collapse = "+")
     list_of_formulas$yterms <- as.formula(
       paste0(form2text(list_of_formulas$yterms), " + ", tlag_formula))
+    list_of_formulas$h2 <- drop.terms(tms, which(atps))
 
   }
 
@@ -131,7 +132,7 @@ deeptrafo <- function(
   trafo_processor <- list(
     bsfun = basis_processor, bsfunl = basis_processor_lower,
     bspfun = basisprime_processor, ia = ia_processor,
-    atmlag = atm_lag_processor)
+    atplag = atm_lag_processor)
 
   dots <- list(...)
 
@@ -168,8 +169,8 @@ deeptrafo <- function(
 
   ret <- do.call("deepregression", args)
 
+  ret$init_params$is_atm <- is_atm
   ret$init_params$formula <- formula
-  ret$init_params$lag_formula <- lag_formula
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
   ret$init_params$response_type <- response_type
