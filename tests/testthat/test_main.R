@@ -192,7 +192,7 @@ test_that("autoregressive transformation model", {
   dat$ylag <- lag(dat$y)
   dat$ylag2 <- lag(dat$y, n = 2L)
   dat <- na.omit(dat)
-  fml <- y | s(x) ~ z + s(z) + atplag(ylag) + atplag(ylag2)
+  fml <- y | s(x) ~ 0 + s(z) + atplag(ylag) + atplag(ylag2)
   m <- deeptrafo(fml, dat) # , lag_formula = ~ ylag + ylag2)
 
   expect_is(predict(m, newdata = dat[1:5, -1], K = 2, type = "pdf"), "list")

@@ -110,8 +110,8 @@ deeptrafo <- function(
   y <- response(resp)
 
   # check for ATMs
-  ftms <- attr(terms(formula), "term.labels")
-  is_atm <- any(grepl("atplag", ftms))
+  ftms <- attr(tms <- terms(list_of_formulas$h2), "term.labels")
+  is_atm <- any(atps <- grepl("atplag", ftms))
   if (is_atm) {
 
     # extract from lag formula the variables as simple sum and
@@ -119,6 +119,7 @@ deeptrafo <- function(
     tlag_formula <- paste0(grep("atplag", ftms, value = TRUE), collapse = "+")
     list_of_formulas$yterms <- as.formula(
       paste0(form2text(list_of_formulas$yterms), " + ", tlag_formula))
+    list_of_formulas$h2 <- drop.terms(tms, which(atps))
 
   }
 
