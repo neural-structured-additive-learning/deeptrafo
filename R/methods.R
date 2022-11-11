@@ -109,7 +109,7 @@ coef.deeptrafo <- function(
   if (which_param == "autoregressive") {
     ret <- try(c(get_weight_by_opname(object, name = "atm_toplayer", partial_match = TRUE)))
     if (inherits(ret, "try-error")) stop("No layer with name atm_toplayer")
-    names(ret) <- grep("atplag", attr(terms(m$init_params$formula), "term.labels"), value = TRUE)
+    names(ret) <- grep("atplag", attr(terms(object$init_params$formula), "term.labels"), value = TRUE)
     return(ret)
   }
 
