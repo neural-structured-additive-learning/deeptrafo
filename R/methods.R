@@ -106,16 +106,16 @@ coef.deeptrafo <- function(
 
   which_param <- match.arg(which_param)
 
-  if(which_param == "autoregressive") {
-    ret <- try(get_weight_by_opname(object, name = "atm_toplayer", partial_match = TRUE))
-    if(inherits(ret, "try-error")) stop("No layer with name atm_toplayer")
+  if (which_param == "autoregressive") {
+    ret <- try(c(get_weight_by_opname(object, name = "atm_toplayer", partial_match = TRUE)))
+    if (inherits(ret, "try-error")) stop("No layer with name atm_toplayer")
+    names(ret) <- grep("atplag", attr(terms(m$init_params$formula), "term.labels"), value = TRUE)
     return(ret)
   }
 
   is_interaction <- which_param == "interacting"
   which_param <- map_param_string_to_index(which_param)
 
-  # else, return lags
   ret <- coef.deepregression(object, which_param = which_param, type = type)
 
   if (is_interaction) {
@@ -492,6 +492,12 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
   cat("\nInteracting: ", int, "\n")
   cat("\nShifting: ", shift, "\n")
 
+  if (atm) {
+    lags <- fml2txt(as.formula(paste0("~", x$init_params$lag_formula)))
+    cat("\nLags: ", lags, "\n")
+  }
+
+
   if (print_coefs) {
     cfb <- coef(x, which_param = "interacting")
     if (no_int) {
@@ -503,6 +509,8 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
     }
     cat("\nShift coefficients:\n")
     print(unlist(coef(x, which_param = "shifting")))
+    cat("\nLag coefficients:\n")
+    print(unlist(coef(x, which_param = "autoregressive")))
   }
 
   return(invisible(x))

@@ -193,7 +193,7 @@ test_that("autoregressive transformation model", {
   dat$ylag2 <- lag(dat$y, n = 2L)
   dat <- na.omit(dat)
   fml <- y | s(x) ~ 0 + s(z) + atplag(ylag) + atplag(ylag2)
-  m <- deeptrafo(fml, dat) # , lag_formula = ~ ylag + ylag2)
+  m <- deeptrafo(fml, dat)
 
   expect_is(predict(m, newdata = dat[1:5, -1], K = 2, type = "pdf"), "list")
   expect_is(predict(m, newdata = dat[1:5, -1], q = c(-1, 1), type = "pdf"), "list")
@@ -201,7 +201,7 @@ test_that("autoregressive transformation model", {
   check_methods(m, newdata = dat)
 
   cf <- coef(m, which_param = "autoregressive")
-  expect_equal(dim(cf), c(2,1))
+  expect_equal(length(cf), 2)
 
 })
 

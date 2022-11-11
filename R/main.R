@@ -112,6 +112,7 @@ deeptrafo <- function(
   # check for ATMs
   ftms <- attr(tms <- terms(list_of_formulas$h2), "term.labels")
   is_atm <- any(atps <- grepl("atplag", ftms))
+  tlag_formula <- NULL
   if (is_atm) {
 
     # extract from lag formula the variables as simple sum and
@@ -170,6 +171,7 @@ deeptrafo <- function(
   ret <- do.call("deepregression", args)
 
   ret$init_params$is_atm <- is_atm
+  ret$init_params$lag_formula <- tlag_formula
   ret$init_params$formula <- formula
   ret$init_params$trafo_options <- trafo_options
   ret$init_params$response_varname <- rvar
