@@ -132,7 +132,7 @@ coef.deeptrafo <- function(
 }
 
 #' @exportS3Method coef LmNN
-coef.LmNN <- function(object, which_param = c("shifting", "interacting"),
+coef.LmNN <- function(object, which_param = c("shifting", "interacting", "autoregressive"),
                       type = NULL, ...) {
 
   which_param <- match.arg(which_param)
@@ -156,7 +156,7 @@ coef.LmNN <- function(object, which_param = c("shifting", "interacting"),
 }
 
 #' @exportS3Method coef SurvregNN
-coef.SurvregNN <- function(object, which_param = c("shifting", "interacting"),
+coef.SurvregNN <- function(object, which_param = c("shifting", "interacting", "autoregressive"),
                            type = NULL, ...) {
 
   which_param <- match.arg(which_param)
@@ -509,8 +509,10 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
     }
     cat("\nShift coefficients:\n")
     print(unlist(coef(x, which_param = "shifting")))
-    cat("\nLag coefficients:\n")
-    print(unlist(coef(x, which_param = "autoregressive")))
+    if (atm) {
+      cat("\nLag coefficients:\n")
+      print(unlist(coef(x, which_param = "autoregressive")))
+    }
   }
 
   return(invisible(x))
