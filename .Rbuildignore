@@ -2,7 +2,6 @@
 ^doc$
 ^Meta$
 .travis.yml
-*.Rproj
 README_files
 ^codecov\.yml$
 ^.*\.Rproj$
