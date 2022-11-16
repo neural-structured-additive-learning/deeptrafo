@@ -2,9 +2,11 @@
 ^doc$
 ^Meta$
 .travis.yml
-deepregression.Rproj
+*.Rproj
 README_files
 ^codecov\.yml$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 inst/illustrations
+inst/demos
+README.md
