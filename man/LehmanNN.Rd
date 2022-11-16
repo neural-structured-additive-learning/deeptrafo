@@ -60,7 +60,9 @@ Lehmann-type neural network transformation models
 }
 \examples{
 df <- data.frame(y = rnorm(50), x = rnorm(50))
-m <- LehmanNN(y ~ x, data = df)
-coef(m)
+m <- LehmanNN(y ~ 0 + x, data = df)
+if (!is.null(m$model)) {
+   coef(m)
+}
 
 }

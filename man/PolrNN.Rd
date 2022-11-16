@@ -62,6 +62,8 @@ Deep (proportional odds) logistic regression
 df <- data.frame(y = ordered(sample.int(5, 50, replace = TRUE)),
      x = rnorm(50))
 m <- PolrNN(y ~ x, data = df)
-coef(m)
+if (!is.null(m$model)) {
+   coef(m)
+}
 
 }

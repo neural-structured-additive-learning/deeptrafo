@@ -61,6 +61,8 @@ Cox proportional hazards type neural network transformation models
 \examples{
 df <- data.frame(y = rnorm(50), x = rnorm(50))
 m <- CoxphNN(y ~ x, data = df)
-coef(m)
+if (!is.null(m$model)) {
+   coef(m)
+}
 
 }
