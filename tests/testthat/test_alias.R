@@ -105,7 +105,7 @@ test_that("gompertz base distribution works for ordinal case", {
   wine$noise <- rnorm(nrow(wine))
   fml <- rating ~ 0 + temp
   optimizer <- optimizer_adam(learning_rate = 0.1, decay = 5e-4)
-  m <- deeptrafo(fml, wine, family = "gompertz", monitor_metric = NULL,
+  m <- deeptrafo(fml, wine, latent_distr = "gompertz", monitor_metric = NULL,
                  optimizer = optimizer)
   m %>% fit(epochs = 300, batch_size = nrow(wine), validation_split = 0)
   llm <- logLik(m)

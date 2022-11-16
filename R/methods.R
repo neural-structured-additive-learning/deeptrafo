@@ -535,10 +535,10 @@ summary.deeptrafo <- function(object, ...) {
 
 # Helpers -----------------------------------------------------------------
 
-get_bd <- function(family) {
-  if (inherits(family, "python.builtin.object"))
-    return(family)
-  switch(family,
+get_bd <- function(latent_distr) {
+  if (inherits(latent_distr, "python.builtin.object"))
+    return(latent_distr)
+  switch(latent_distr,
          "normal" = tfd_normal(loc = 0, scale = 1),
          "logistic" = tfd_logistic(loc = 0, scale = 1),
          "gumbel" = tfd_gumbel(loc = 0, scale = 1),

@@ -13,8 +13,10 @@
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' m <- dctm(response = ~ y, shift = ~ 0 + x, data = df)
-#' if (!is.null(m$model)) {
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#'    m <- dctm(response = ~ y, shift = ~ 0 + x, data = df)
 #'    coef(m)
 #' }
 #'
@@ -25,7 +27,7 @@ dctm <- function(
   shared = NULL, data,
   response_type = get_response_type(data[[all.vars(response)[1]]]),
   order = get_order(response_type, data[[all.vars(response)[1]]]),
-  addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
+  addconst_interaction = 0, latent_distr = "logistic", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   ...
 ) {
@@ -34,7 +36,7 @@ dctm <- function(
 
   ret <- deeptrafo(formula = fml, data = data,
                    response_type = response_type, order = order,
-                   addconst_interaction = addconst_interaction, family = family,
+                   addconst_interaction = addconst_interaction, latent_distr = latent_distr,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
@@ -62,8 +64,10 @@ dctm <- function(
 #'
 #' @examples
 #' df <- data.frame(y = ordered(sample.int(6, 50, TRUE)), x = rnorm(50))
-#' m <- ontram(response = ~ y, shift = ~ x, data = df)
-#' if (!is.null(m$model)) {
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     m <- ontram(response = ~ y, shift = ~ x, data = df)
 #'    coef(m)
 #' }
 #'
@@ -74,7 +78,7 @@ ontram <- function(
   shared = NULL, data,
   response_type = "ordered",
   order = get_order(response_type, data[[all.vars(response)[1]]]),
-  addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
+  addconst_interaction = 0, latent_distr = "logistic", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   ...
 ) {
@@ -84,7 +88,7 @@ ontram <- function(
   ret <- dctm(response = response, intercept = intercept, shift = shift,
               shared = shared, data = data,
               response_type = response_type, order = order,
-              addconst_interaction = addconst_interaction, family = family,
+              addconst_interaction = addconst_interaction, latent_distr = latent_distr,
               monitor_metrics = monitor_metrics, trafo_options = trafo_options,
               ... = ...)
 
@@ -102,9 +106,11 @@ ontram <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' m <- ColrNN(y ~ x, data = df)
-#' if (!is.null(m$model)) {
-#'    coef(m)
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     m <- ColrNN(y ~ x, data = df)
+#'     coef(m)
 #' }
 #'
 #' @export
@@ -113,7 +119,7 @@ ColrNN <- function(
   formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
-  addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
+  addconst_interaction = 0, latent_distr = "logistic", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   ...
 ) {
@@ -122,7 +128,7 @@ ColrNN <- function(
 
   ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
-                   addconst_interaction = addconst_interaction, family = family,
+                   addconst_interaction = addconst_interaction, latent_distr = latent_distr,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
@@ -140,9 +146,11 @@ ColrNN <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' m <- CoxphNN(y ~ x, data = df)
-#' if (!is.null(m$model)) {
-#'    coef(m)
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     m <- CoxphNN(y ~ x, data = df)
+#'     coef(m)
 #' }
 #'
 #' @export
@@ -151,7 +159,7 @@ CoxphNN <- function(
   formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
-  addconst_interaction = 0, family = "gompertz", monitor_metrics = NULL,
+  addconst_interaction = 0, latent_distr = "gompertz", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   ...
 ) {
@@ -160,7 +168,7 @@ CoxphNN <- function(
 
   ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
-                   addconst_interaction = addconst_interaction, family = family,
+                   addconst_interaction = addconst_interaction, latent_distr = latent_distr,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
@@ -178,9 +186,11 @@ CoxphNN <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' m <- LehmanNN(y ~ 0 + x, data = df)
-#' if (!is.null(m$model)) {
-#'    coef(m)
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     m <- LehmanNN(y ~ 0 + x, data = df)
+#'     coef(m)
 #' }
 #'
 #' @export
@@ -189,7 +199,7 @@ LehmanNN <- function(
   formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
-  addconst_interaction = 0, family = "gumbel", monitor_metrics = NULL,
+  addconst_interaction = 0, latent_distr = "gumbel", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   ...
 ) {
@@ -198,7 +208,7 @@ LehmanNN <- function(
 
   ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
-                   addconst_interaction = addconst_interaction, family = family,
+                   addconst_interaction = addconst_interaction, latent_distr = latent_distr,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
@@ -216,9 +226,11 @@ LehmanNN <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' m <- BoxCoxNN(y ~ x, data = df)
-#' if (!is.null(m$model)) {
-#'    coef(m)
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     m <- BoxCoxNN(y ~ x, data = df)
+#'     coef(m)
 #' }
 #'
 #' @export
@@ -227,7 +239,7 @@ BoxCoxNN <- function(
   formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
-  addconst_interaction = 0, family = "normal", monitor_metrics = NULL,
+  addconst_interaction = 0, latent_distr = "normal", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   ...
 ) {
@@ -236,7 +248,7 @@ BoxCoxNN <- function(
 
   ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
-                   addconst_interaction = addconst_interaction, family = family,
+                   addconst_interaction = addconst_interaction, latent_distr = latent_distr,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
@@ -255,9 +267,11 @@ BoxCoxNN <- function(
 #' @examples
 #' df <- data.frame(y = ordered(sample.int(5, 50, replace = TRUE)),
 #'      x = rnorm(50))
-#' m <- PolrNN(y ~ x, data = df)
-#' if (!is.null(m$model)) {
-#'    coef(m)
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     m <- PolrNN(y ~ x, data = df)
+#'     coef(m)
 #' }
 #'
 #' @export
@@ -266,7 +280,7 @@ PolrNN <- function(
   formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
-  addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
+  addconst_interaction = 0, latent_distr = "logistic", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   ...
 ) {
@@ -275,7 +289,7 @@ PolrNN <- function(
 
   ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
-                   addconst_interaction = addconst_interaction, family = family,
+                   addconst_interaction = addconst_interaction, latent_distr = latent_distr,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
@@ -294,11 +308,13 @@ PolrNN <- function(
 #' @examples
 #' set.seed(1)
 #' df <- data.frame(y = 10 + rnorm(50), x = rnorm(50))
-#' m <- LmNN(y ~ 0 + x, data = df)
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     m <- LmNN(y ~ 0 + x, data = df)
 #' \dontrun{
-#' optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
-#' m <- LmNN(y ~ 0 + x, data = df, optimizer = optimizer)
-#' if (!is.null(m$model)) {
+#'     optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
+#'     m <- LmNN(y ~ 0 + x, data = df, optimizer = optimizer)
 #'     library(tram)
 #'     fit(m, epochs = 900L, validation_split = 0)
 #'     logLik(mm <- Lm(y ~ x, data = df)); logLik(m)
@@ -313,7 +329,7 @@ LmNN <- function(
   formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
-  addconst_interaction = 0, family = "normal", monitor_metrics = NULL,
+  addconst_interaction = 0, latent_distr = "normal", monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = 1L,
                                 response_type = response_type,
                                 y_basis_fun = eval_lin,
@@ -327,7 +343,7 @@ LmNN <- function(
 
   ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
-                   addconst_interaction = addconst_interaction, family = family,
+                   addconst_interaction = addconst_interaction, latent_distr = latent_distr,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
@@ -346,11 +362,13 @@ LmNN <- function(
 #' @examples
 #' set.seed(1)
 #' df <- data.frame(y = abs(1 + rnorm(50)), x = rnorm(50))
-#' m <- SurvregNN(y ~ 0 + x, data = df)
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     m <- SurvregNN(y ~ 0 + x, data = df)
 #' \dontrun{
-#' optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
-#' m <- SurvregNN(y ~ 0 + x, data = df, optimizer = optimizer)
-#' if (!is.null(m$model)) {
+#'     optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
+#'     m <- SurvregNN(y ~ 0 + x, data = df, optimizer = optimizer)
 #'     library(tram)
 #'     fit(m, epochs = 500L, validation_split = 0)
 #'     logLik(mm <- Survreg(y ~ x, data = df, dist = "loglogistic")); logLik(m)
@@ -365,7 +383,7 @@ SurvregNN <- function(
   formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
-  addconst_interaction = 0, family = "gompertz", monitor_metrics = NULL,
+  addconst_interaction = 0, latent_distr = "gompertz", monitor_metrics = NULL,
   trafo_options = NULL,
   ...
 ) {
@@ -393,7 +411,7 @@ SurvregNN <- function(
 
   ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
-                   addconst_interaction = addconst_interaction, family = family,
+                   addconst_interaction = addconst_interaction, latent_distr = latent_distr,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
@@ -412,11 +430,13 @@ SurvregNN <- function(
 #' @examples
 #' set.seed(1)
 #' df <- data.frame(y = as.integer(abs(1 + rnorm(50, sd = 10))), x = rnorm(50))
-#' m <- cotramNN(y ~ 0 + x, data = df, order = 6)
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     m <- cotramNN(y ~ 0 + x, data = df, order = 6)
 #' \dontrun{
-#' optimizer <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
-#' m <- cotramNN(y ~ 0 + x, data = df, optimizer = optimizer, order = 6)
-#' if (!is.null(m$model)) {
+#'     optimizer <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
+#'     m <- cotramNN(y ~ 0 + x, data = df, optimizer = optimizer, order = 6)
 #'     library(cotram)
 #'     fit(m, epochs = 800L, validation_split = 0)
 #'     logLik(mm <- cotram(y ~ x, data = df, method = "logit")); logLik(m)
@@ -431,7 +451,7 @@ cotramNN <- function(
   formula, data,
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
-  addconst_interaction = 0, family = "logistic", monitor_metrics = NULL,
+  addconst_interaction = 0, latent_distr = "logistic", monitor_metrics = NULL,
   ...
 ) {
 
@@ -448,7 +468,7 @@ cotramNN <- function(
 
   ret <- deeptrafo(formula = formula, data = data,
                    response_type = response_type, order = order,
-                   addconst_interaction = addconst_interaction, family = family,
+                   addconst_interaction = addconst_interaction, latent_distr = latent_distr,
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 

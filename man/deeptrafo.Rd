@@ -10,7 +10,7 @@ deeptrafo(
   response_type = get_response_type(data[[all.vars(fml)[1]]]),
   order = get_order(response_type, data[[all.vars(fml)[1]]]),
   addconst_interaction = 0,
-  family = "logistic",
+  latent_distr = "logistic",
   monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   return_data = FALSE,
@@ -42,7 +42,7 @@ term. This ensures a monotone non-decreasing transformation function in
 the response when using (tensor product) spline bases in the interacting
 term.}
 
-\item{family}{A \code{tfd_distribution} or character; the base distribution for
+\item{latent_distr}{A \code{tfd_distribution} or character; the base distribution for
 transformation models. If character, can be \code{"normal"}, \code{"logistic"},
 \code{"gumbel"} or \code{"gompertz"}.}
 
@@ -80,13 +80,14 @@ nn <- \(x) x |>
     layer_dense(1L)
 
 fml <- rating ~ 0 + temp + contact + s(z, df = 3) + nn(x)
-
-m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL,
+if (reticulate::py_module_available("tensorflow") &
+    reticulate::py_module_available("keras") &
+    reticulate::py_module_available("tensorflow_probability")) {
+m <- deeptrafo(fml, wine, latent_distr = "logistic", monitor_metric = NULL,
     return_data = TRUE, list_of_deep_models = list(nn = nn))
 
 print(m)
 
-if (!is.null(m$model)) {
     m \%>\% fit(epochs = 10, batch_size = nrow(wine))
     coef(m, which_param = "interacting")
     coef(m, which_param = "shifting")

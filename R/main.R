@@ -19,7 +19,7 @@
 #'     term. This ensures a monotone non-decreasing transformation function in
 #'     the response when using (tensor product) spline bases in the interacting
 #'     term.
-#' @param family A \code{tfd_distribution} or character; the base distribution for
+#' @param latent_distr A \code{tfd_distribution} or character; the base distribution for
 #'     transformation models. If character, can be \code{"normal"}, \code{"logistic"},
 #'     \code{"gumbel"} or \code{"gompertz"}.
 #' @param trafo_options Options for transformation models such as the basis
@@ -42,13 +42,14 @@
 #'     layer_dense(1L)
 #'
 #' fml <- rating ~ 0 + temp + contact + s(z, df = 3) + nn(x)
-#'
-#' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL,
+#' if (reticulate::py_module_available("tensorflow") &
+#'     reticulate::py_module_available("keras") &
+#'     reticulate::py_module_available("tensorflow_probability")) {
+#' m <- deeptrafo(fml, wine, latent_distr = "logistic", monitor_metric = NULL,
 #'     return_data = TRUE, list_of_deep_models = list(nn = nn))
 #'
 #' print(m)
 #'
-#' if (!is.null(m$model)) {
 #'     m %>% fit(epochs = 10, batch_size = nrow(wine))
 #'     coef(m, which_param = "interacting")
 #'     coef(m, which_param = "shifting")
@@ -66,7 +67,7 @@
 #' @importFrom mlt R
 #' @importFrom Formula as.Formula
 #' @importFrom stats model.matrix model.response model.frame dbeta as.formula
-#'     fitted formula predict rmultinom logLik
+#'     fitted formula predict rmultinom logLik terms drop.terms
 #' @importFrom keras layer_dense layer_add layer_concatenate
 #' @export
 #'
@@ -82,7 +83,7 @@ deeptrafo <- function(
     response_type = get_response_type(data[[all.vars(fml)[1]]]),
     order = get_order(response_type, data[[all.vars(fml)[1]]]),
     addconst_interaction = 0,
-    family = "logistic",
+    latent_distr = "logistic",
     monitor_metrics = NULL,
     trafo_options = trafo_control(
       order_bsp = order, response_type = response_type),
@@ -173,8 +174,8 @@ deeptrafo <- function(
   attr(additional_processor, "controls") <- trafo_options
 
   # Loss function
-  # tloss <- get_loss(response_type, family)
-  tloss <- nll(family)
+  # tloss <- get_loss(response_type, latent_distr)
+  tloss <- nll(latent_distr)
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
@@ -185,7 +186,7 @@ deeptrafo <- function(
     return(NULL)
 
   args <- c(list(
-    y = y, family = family, data = data, list_of_formulas = list_of_formulas,
+    y = y, family = latent_distr, data = data, list_of_formulas = list_of_formulas,
     subnetwork_builder = snwb, from_preds_to_output = from_pred_to_trafo_fun,
     loss = tloss, monitor_metrics = monitor_metrics,
     additional_processor = additional_processor), dots)

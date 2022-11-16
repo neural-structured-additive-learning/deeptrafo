@@ -10,7 +10,7 @@ SurvregNN(
   response_type = get_response_type(data[[all.vars(formula)[1]]]),
   order = get_order(response_type, data[[all.vars(formula)[1]]]),
   addconst_interaction = 0,
-  family = "gompertz",
+  latent_distr = "gompertz",
   monitor_metrics = NULL,
   trafo_options = NULL,
   ...
@@ -41,7 +41,7 @@ term. This ensures a monotone non-decreasing transformation function in
 the response when using (tensor product) spline bases in the interacting
 term.}
 
-\item{family}{A \code{tfd_distribution} or character; the base distribution for
+\item{latent_distr}{A \code{tfd_distribution} or character; the base distribution for
 transformation models. If character, can be \code{"normal"}, \code{"logistic"},
 \code{"gumbel"} or \code{"gompertz"}.}
 
@@ -61,11 +61,13 @@ Deep parametric survival regression
 \examples{
 set.seed(1)
 df <- data.frame(y = abs(1 + rnorm(50)), x = rnorm(50))
-m <- SurvregNN(y ~ 0 + x, data = df)
+if (reticulate::py_module_available("tensorflow") &
+    reticulate::py_module_available("keras") &
+    reticulate::py_module_available("tensorflow_probability")) {
+    m <- SurvregNN(y ~ 0 + x, data = df)
 \dontrun{
-optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
-m <- SurvregNN(y ~ 0 + x, data = df, optimizer = optimizer)
-if (!is.null(m$model)) {
+    optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
+    m <- SurvregNN(y ~ 0 + x, data = df, optimizer = optimizer)
     library(tram)
     fit(m, epochs = 500L, validation_split = 0)
     logLik(mm <- Survreg(y ~ x, data = df, dist = "loglogistic")); logLik(m)
