@@ -1,4 +1,4 @@
-# deeptransformation
+# R package deeptransformation
 
 [![R build status](https://github.com/neural-structured-additive-learning/deeptransformation/workflows/R-CMD-check/badge.svg)](https://github.com/neural-structured-additive-learning/deeptransformation/actions) [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
@@ -8,17 +8,17 @@ This package provides function to fit
 -   Autoregressive Transformation Models (Ruegamer et al., 2021)
 -   Deep Interpretable Ensembles (Kook et al., 2022)
 
-using deepregression.
+using `deepregression`.
 
 # Installation
 
 To install the package, use the following command:
 
 ``` r
-devtools::install_github("neural-structured-additive-learning/deeptransformation")
+remotes::install_github("neural-structured-additive-learning/deeptransformation")
 ```
 
-Note that the installation requires additional packages (see below) and including `deepregression`.
+Note that the installation requires additional packages (see below) including `deepregression`.
 
 # How to cite this?
 
@@ -47,7 +47,7 @@ For autoregressive transformation models, please cite:
 For transformation ensembles, please cite:
 
     @article{kook2022,
-      title={Transforming autoregression for expressive forecasts with parametric uncertainty quantification},
+      title={Deep interpretable ensembles},
       author={Kook, Lucas and G{\"o}tschi, Andrea and Baumann, Philipp and Hothorn, Torsten and Sick, Beate},
       year={2022},
       eprint={2205.12729},
