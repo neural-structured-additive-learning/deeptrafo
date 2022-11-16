@@ -2,9 +2,9 @@ Package: deeptrafo
 Title: Fitting Deep Conditional Transformation Models
 Version: 0.1
 Authors@R: c(
-    person("David", "Ruegamer", , "david.ruegamer@gmail.com", role = c("aut", "cre")),
-    person("Lucas", "Kook", , "lucasheinrich.kook@uzh.ch", role = c("aut")),
+    person("Lucas", "Kook", , "lucasheinrich.kook@gmail.com", role = c("aut", "cre")),
     person("Philipp", "Baumann", , "baumann@kof.ethz.ch", role = c("aut"))
+    person("David", "Ruegamer", , "david.ruegamer@gmail.com", role = c("aut")),
     )
 Description: Allows for the specification of deep conditional transformation 
     models and ordinal neural network transformation models, as described in
