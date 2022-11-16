@@ -33,8 +33,6 @@ Imports:
     stats,
     purrr,
     survival,
-    Matrix,
-    methods,
     R6,
     reticulate
 License: GPL-3
