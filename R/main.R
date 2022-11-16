@@ -34,12 +34,34 @@
 #'
 #' @examples
 #' data("wine", package = "ordinal")
-#' wine$noise <- rnorm(nrow(wine))
-#' fml <- rating ~ 0 + temp
-#' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL, return_data = TRUE)
-#' m %>% fit(epochs = 20, batch_size = nrow(wine))
-#' coef(m, which_param = "interacting")
-#' coef(m, which_param = "shifting")
+#' wine$z <- rnorm(nrow(wine))
+#' wine$x <- rnorm(nrow(wine))
+#'
+#' nn <- \(x) x |>
+#'     layer_dense(input_shape = 1L, units = 2L, activation = "relu") |>
+#'     layer_dense(1L)
+#'
+#' fml <- rating ~ 0 + temp + contact + s(z, df = 3) + nn(x)
+#'
+#' m <- deeptrafo(fml, wine, family = "logistic", monitor_metric = NULL,
+#'     return_data = TRUE, list_of_deep_models = list(nn = nn))
+#'
+#' print(m)
+#'
+#' if (!is.null(m$model)) {
+#'     m %>% fit(epochs = 10, batch_size = nrow(wine))
+#'     coef(m, which_param = "interacting")
+#'     coef(m, which_param = "shifting")
+#'     fitted(m)
+#'     predict(m, type = "pdf")
+#'     predict(m, type = "pdf", newdata = wine[, -2])
+#'     logLik(m)
+#'     logLik(m, newdata = wine[1:10, ])
+#'     plot(m)
+#'     mcv <- cv(m, cv_folds = 3)
+#'     ens <- ensemble(m, n_ensemble = 3)
+#'     coef(ens)
+#' }
 #'
 #' @importFrom mlt R
 #' @importFrom Formula as.Formula
