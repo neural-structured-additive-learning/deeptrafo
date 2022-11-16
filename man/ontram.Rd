@@ -70,7 +70,9 @@ Ordinal neural network transformation models
 \examples{
 df <- data.frame(y = ordered(sample.int(6, 50, TRUE)), x = rnorm(50))
 m <- ontram(response = ~ y, shift = ~ x, data = df)
-coef(m)
+if (!is.null(m$model)) {
+   coef(m)
+}
 
 }
 \references{

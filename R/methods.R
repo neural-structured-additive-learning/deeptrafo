@@ -57,7 +57,7 @@ plot.deeptrafo <- function(
     rname <- x$init_params$response_varname
     rtype <- x$init_params$response_type
     ry <- x$init_params$response
-    preds <- predict(x, type = type, newdata = newdata, K = K, ...)
+    preds <- predict.deeptrafo(x, type = type, newdata = newdata, K = K, ...)
     if (is.null(newdata)) {
       y <- x$init_params$response
       plot(y, preds, xlab = "response", ylab = type)

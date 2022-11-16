@@ -27,12 +27,6 @@
 #'
 #' @method ensemble deeptrafo
 #'
-#' @examples
-#' dat <- data.frame(y = rnorm(100), x = rnorm(100))
-#' m <- deeptrafo(y ~ 0 + x, data = dat)
-#' ens <- ensemble(m, n_ensemble = 2)
-#' coef(ens)
-#'
 #' @export
 ensemble.deeptrafo <- function(x, n_ensemble = 5, reinitialize = TRUE,
                                mylapply = lapply, verbose = FALSE, patience = 20,
@@ -145,16 +139,18 @@ logLik.dtEnsemble <- function(
 plot.dtEnsemble <- function(
   x,
   which = NULL,
+  type = c("smooth", "trafo", "pdf", "cdf"),
+  newdata = NULL,
   which_param = c("shifting", "interacting"),
   only_data = FALSE,
-  grid_length = 40,
+  K = 40,
+  q = NULL,
   ...
 ) {
-
   .call_for_all_members(
-    x, plot.deeptrafo, which = which, which_param = which_param,
-    only_data = only_data, grid_length = grid_length, ... = ...
-    )
+    x, plot.deeptrafo, which = which, type = type, which_param = which_param,
+    only_data = only_data, K = K, q = q, ... = ...
+  ) |> invisible()
 }
 
 # Helpers
