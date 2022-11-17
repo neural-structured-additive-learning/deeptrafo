@@ -7,10 +7,10 @@ Authors@R: c(
     person("David", "Ruegamer", , "david.ruegamer@gmail.com", role = c("aut"))
     )
 Description: Allows for the specification of deep conditional transformation 
-    models and ordinal neural network transformation models, as described in
-    Baumann et al (2021) <doi:10.1007/978-3-030-86523-8_1> and 
+    models (DCTMs) and ordinal neural network transformation models, as 
+    described in Baumann et al (2021) <doi:10.1007/978-3-030-86523-8_1> and 
     Kook et al (2022) <doi:10.1016/j.patcog.2021.108263>. Extensions such as
-    autoregressive DTMs (Ruegamer et al, 2022, <doi:10.48550/arXiv.2110.08248>)
+    autoregressive DCTMs (Ruegamer et al, 2022, <doi:10.48550/arXiv.2110.08248>)
     and transformation ensembles (Kook et al, 2022, <doi:10.48550/arXiv.2205.12729>)
     are implemented.
 Depends: 

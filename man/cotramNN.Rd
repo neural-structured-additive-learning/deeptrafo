@@ -61,7 +61,7 @@ if (reticulate::py_module_available("tensorflow") &
     reticulate::py_module_available("keras") &
     reticulate::py_module_available("tensorflow_probability")) {
     m <- cotramNN(y ~ 0 + x, data = df, order = 6)
-\dontrun{
+\donttest{
     optimizer <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
     m <- cotramNN(y ~ 0 + x, data = df, optimizer = optimizer, order = 6)
     library(cotram)

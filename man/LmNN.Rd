@@ -67,7 +67,7 @@ if (reticulate::py_module_available("tensorflow") &
     reticulate::py_module_available("keras") &
     reticulate::py_module_available("tensorflow_probability")) {
     m <- LmNN(y ~ 0 + x, data = df)
-\dontrun{
+\donttest{
     optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
     m <- LmNN(y ~ 0 + x, data = df, optimizer = optimizer)
     library(tram)
