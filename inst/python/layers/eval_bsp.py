@@ -7,7 +7,7 @@ class EvalBspTF(tf.keras.layers.Layer):
     def __init__(self, order, supp, **kwargs):
         super(EvalBspTF, self).__init__(**kwargs)
         self.order = order
-        self.supp = supp
+        self.supp = tf.cast(supp, dtype="float32")
 
     def call(self, input):
         input = tf.cast(input, dtype="float32")
@@ -33,7 +33,7 @@ class EvalBspPrimeTF(tf.keras.layers.Layer):
     def __init__(self, order, supp, **kwargs):
         super(EvalBspPrimeTF, self).__init__(**kwargs)
         self.order = order
-        self.supp = supp
+        self.supp = tf.cast(supp, dtype="float32")
 
     def call(self, input):
         input = tf.cast(input, dtype="float32")
