@@ -228,7 +228,8 @@ apply_atm_lags <- function(form)
 
 # TensorFlow repeat function which is not available for TF 2.0
 tf_repeat <- function(a, dim)
-  tf$reshape(tf$tile(tf$expand_dims(a, axis = -1L),  c(1L, 1L, dim)), shape = list(-1L, a$shape[[2]]*dim))
+  tf$reshape(tensor = tf$tile(tf$expand_dims(input = a, axis = -1L),  c(1L, 1L, dim)), 
+             shape = list(-1L, a$shape[[2]]*dim))
 
 ###############################################################################################
 # for trafo with interacting features
@@ -321,7 +322,10 @@ layer_mono_multi <- function(object,
                              kernel_regularizer = NULL,
                              trafo = mono_trafo_multi
 ) {
-  create_layer(MonoMultiLayer, object, list(
+  
+  python_path <- system.file("python", package = "deeptrafo")
+  layers <- reticulate::import_from_path("layers", path = python_path)
+  return(layers$MonoMultiLayer(
     name = name,
     trainable = trainable,
     output_dim = as.integer(units),
@@ -356,62 +360,6 @@ layer_combined_mono <- function(object,
     ))
   }
 
-}
-
-
-########## other version
-
-MonoMultiTrafoLayer <- R6::R6Class("MonoMultiTrafoLayer",
-
-                                   inherit = KerasLayer,
-
-                                   public = list(
-
-                                     output_dim = NULL,
-
-                                     kernel = NULL,
-
-                                     dim_bsp = NULL,
-
-                                     initialize = function(output_dim, dim_bsp) {
-                                       self$output_dim <- output_dim
-                                       self$dim_bsp <- dim_bsp
-                                     },
-
-                                     build = function(input_shape) {
-                                       self$kernel <- self$add_weight(
-                                         name = 'kernel',
-                                         shape = list(input_shape[[2]], self$output_dim),
-                                         initializer = initializer_random_normal(),
-                                         trainable = TRUE
-                                       )
-                                     },
-
-                                     call = function(x, mask = NULL) {
-                                       tf$multiply(x, tf$transpose(mono_trafo_multi(self$kernel, self$dim_bsp)))
-                                     },
-
-                                     compute_output_shape = function(input_shape) {
-                                       list(input_shape[[1]], self$output_dim)
-                                     }
-                                   )
-)
-
-# define layer wrapper function
-layer_mono_multi_trafo <- function(object,
-                                   input_shape = NULL,
-                                   output_dim = 1L,
-                                   dim_bsp = NULL,
-                                   name = "constraint_mono_layer_multi_trafo",
-                                   trainable = TRUE
-) {
-  create_layer(MonoMultiTrafoLayer, object, list(
-    name = name,
-    trainable = trainable,
-    input_shape = input_shape,
-    output_dim = as.integer(output_dim),
-    dim_bsp = as.integer(dim_bsp)
-  ))
 }
 
 # to retrieve the weights on their original scale
