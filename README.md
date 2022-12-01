@@ -164,5 +164,11 @@ booktitle = {2020 25th International Conference on Pattern Recognition ({ICPR})}
 When using the software, please cite
 
 ```
-
+@article{kook2022estimating,
+  title={Estimating Conditional Distributions with Neural Networks using R package deeptrafo},
+  author={Kook, Lucas and Baumann, Philipp F. M. and D{\"u}rr, Oliver and Sick, Beate and R{\"u}gamer, David},
+  journal={arXiv preprint arXiv:2211.13665},
+  year={2022},
+  doi={10.48550/arXiv.2211.13665}
+}
 ```
