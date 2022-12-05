@@ -32,7 +32,8 @@ ensemble.deeptrafo <- function(x, n_ensemble = 5, reinitialize = TRUE,
                                mylapply = lapply, verbose = FALSE, patience = 20,
                                plot = TRUE, print_members = TRUE, stop_if_nan = TRUE,
                                save_weights = TRUE, callbacks = list(),
-                               save_fun = NULL, ...) {
+                               save_fun = NULL, seed = seq_len(n_ensemble),
+                               ...) {
 
   ret <- ensemble.deepregression(
     x = x, n_ensemble = n_ensemble,
@@ -40,7 +41,7 @@ ensemble.deeptrafo <- function(x, n_ensemble = 5, reinitialize = TRUE,
     verbose = verbose, patience = patience,
     plot = plot, print_members = print_members,
     stop_if_nan = stop_if_nan, save_weights = save_weights,
-    callbacks = callbacks, save_fun = save_fun,
+    callbacks = callbacks, save_fun = save_fun, seed = seed,
     ... = ...
   )
 
