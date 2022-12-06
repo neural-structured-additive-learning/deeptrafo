@@ -163,7 +163,7 @@ eval_bsp_prime <- function(y, order = 3, supp = range(y)) {
 #' @importFrom reticulate import_from_path
 eval_bsp_tf <- function(order, supp, ...){
   python_path <- system.file("python", package = "deeptrafo")
-  layer <- import_from_path("layers", path = python_path)
+  layer <- import_from_path("dtlayers", path = python_path)
   return(layer$EvalBspTF(order = as.integer(order), supp = supp, ...))
 }
 
@@ -215,7 +215,7 @@ ar_lags_layer <- function(order, supp)
 
 eval_bsp_prime_tf <- function(order, supp, ...){
   python_path <- system.file("python", package = "deeptrafo")
-  layer <- reticulate::import_from_path("layers", path = python_path)
+  layer <- reticulate::import_from_path("dtlayers", path = python_path)
   return(layer$EvalBspPrimeTF(order = as.integer(order), supp = supp, ...))
 }
 
@@ -228,7 +228,7 @@ apply_atm_lags <- function(form)
 
 # TensorFlow repeat function which is not available for TF 2.0
 tf_repeat <- function(a, dim)
-  tf$reshape(tensor = tf$tile(tf$expand_dims(input = a, axis = -1L),  c(1L, 1L, dim)), 
+  tf$reshape(tensor = tf$tile(tf$expand_dims(input = a, axis = -1L),  c(1L, 1L, dim)),
              shape = list(-1L, a$shape[[2]]*dim))
 
 ###############################################################################################
@@ -322,9 +322,9 @@ layer_mono_multi <- function(object,
                              kernel_regularizer = NULL,
                              trafo = mono_trafo_multi
 ) {
-  
+
   python_path <- system.file("python", package = "deeptrafo")
-  layers <- reticulate::import_from_path("layers", path = python_path)
+  layers <- reticulate::import_from_path("dtlayers", path = python_path)
   return(layers$MonoMultiLayer(
     name = name,
     trainable = trainable,

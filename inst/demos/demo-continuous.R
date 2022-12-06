@@ -17,8 +17,8 @@ data("BostonHousing2", package = "mlbench")
 
 tm <- Colr(cmedv ~ nox + age, data = BostonHousing2, order = 6)
 
-m <- deeptrafo(cmedv ~ 0 + nox + age, data = BostonHousing2, order = 6,
-               optimizer = optimizer_adam(learning_rate = 0.01))
+m <- deeptrafo(cmedv ~ 0 + nox + lasso(age, la = 1), data = BostonHousing2, order = 6,
+               optimizer = optimizer_adam(learning_rate = 0.1, decay = 1e-4))
 fit(m, epochs = 2e3, validation_split = NULL, batch_size = nrow(BostonHousing2))
 
 coef(tm)
