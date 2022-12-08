@@ -383,7 +383,7 @@ map_param_string_to_index <- function(which_param)
 #' @param newdata Named \code{list} or \code{data.frame}; optional new data.
 #' @param convert_fun Function; applied to the log-likelihood values of all
 #'     observations.
-#' @param ... Currently ignored.
+#' @param ... Additional arguments to \code{fitted.deeptrafo()}
 #'
 #' @exportS3Method
 #'
@@ -406,6 +406,49 @@ logLik.deeptrafo <- function(
   }
 
   convert_fun(object$model$loss(y, y_pred)$numpy())
+
+}
+
+#' @method residuals deeptrafo
+#'
+#' @param object Object of class \code{"deeptrafo"}.
+#' @param newdata Named \code{list} or \code{data.frame}; optional new data.
+#' @param ... Additional arguments to \code{fitted.deeptrafo()}
+#' @param return_gradients Return individual gradients instead of the summed
+#'     gradients; the residuals are \code{0.5 * rowSums(gradients)}
+#'
+#' @exportS3Method
+#'
+#' @rdname methodTrafo
+#'
+residuals.deeptrafo <- function(
+    object,
+    newdata = NULL,
+    return_gradients = FALSE,
+    ...
+)
+{
+
+  with(tf$GradientTape() %as% tape, {
+    if (is.null(newdata)) {
+      y <- object$init_params$y
+      y_pred <- fitted.deeptrafo(object, ... = ...)
+    } else {
+      y <- response(newdata[[object$init_params$response_varname]])
+      y_pred <- fitted.deeptrafo(object, newdata = newdata, ... = ...)
+    }
+    a <- y_pred
+    a[] <- 0
+    a <- tf$Variable(a)
+    nlli <- object$model$loss(y, y_pred + a)
+  })
+
+  gr <- tape$gradient(nlli, a)$numpy()[, -4]
+
+  if (return_gradients)
+    return(gr)
+
+  0.5 * rowSums(gr)
 
 }
 
