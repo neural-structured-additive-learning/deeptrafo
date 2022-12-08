@@ -177,15 +177,19 @@ plot.dtEnsemble <- function(
     if (!is.null(newdata[[rname]])) {
       y <- attr(pdat[[1]], "y")
       preds <- do.call("cbind", pdat)
-      print(preds)
-      matplot(y, preds)
+      matplot(sort(y), preds[order(y),], type = "p")
     } else {
       y <- attr(pdat[[1]], "y")
       preds <- do.call("rbind", pdat)
-      matplot(y, t(preds), type = ifelse(
-        rtype %in% c("ordered", "count"), "s", "l"),
-        lty = rep(1:length(pdat), each = NROW(pdat[[1]])))
+      ttype <- ifelse(rtype %in% c("ordered", "count"), "s", "l")
+      print(ttype)
+      matplot(y, t(preds), type = ttype, lty = rep(
+        1:length(pdat), each = NROW(pdat[[1]])))
     }
+  } else {
+    y <- attr(pdat[[1]], "y")
+    preds <- do.call("cbind", pdat)
+    matplot(sort(y), preds[order(y),], type = "p")
   }
 
   return(invisible(pdat))

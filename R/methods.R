@@ -61,7 +61,7 @@ plot.deeptrafo <- function(
 
     if (is.null(newdata)) {
       if (only_data)
-        return(structure(preds, y = y))
+        return(structure(preds, y = ry))
       plot(ry, preds, xlab = "response", ylab = type)
     } else {
       if (!is.null(newdata[[rname]])) {
