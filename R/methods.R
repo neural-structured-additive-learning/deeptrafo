@@ -58,17 +58,28 @@ plot.deeptrafo <- function(
     rtype <- x$init_params$response_type
     ry <- x$init_params$response
     preds <- predict.deeptrafo(x, type = type, newdata = newdata, K = K, ...)
+
     if (is.null(newdata)) {
-      y <- x$init_params$response
-      plot(y, preds, xlab = "response", ylab = type)
-    } else if (is.null(newdata[[rname]])) {
-      y <- as.numeric(names(preds))
-      if (rtype %in% c("ordered", "count")) {
-        ttype <- "s"
-      } else ttype <- "l"
-      preds <- do.call("cbind", preds)
-      matplot(y, t(preds), type = ttype, col = rgb(.1, .1, .1, .5), lty = 1,
-              xlab = "response", ylab = type)
+      if (only_data)
+        return(structure(preds, y = y))
+      plot(ry, preds, xlab = "response", ylab = type)
+    } else {
+      if (!is.null(newdata[[rname]])) {
+        y <- newdata[[rname]]
+        if (only_data)
+          return(structure(preds, y = y))
+        plot(y, preds, xlab = "response", ylab = type)
+      } else {
+        y <- as.numeric(names(preds))
+        if (rtype %in% c("ordered", "count")) {
+          ttype <- "s"
+        } else ttype <- "l"
+        preds <- do.call("cbind", preds)
+        if (only_data)
+          return(structure(preds, y = y))
+        matplot(y, t(preds), type = ttype, col = rgb(.1, .1, .1, .5), lty = 1,
+                xlab = "response", ylab = type)
+      }
     }
   }
 
