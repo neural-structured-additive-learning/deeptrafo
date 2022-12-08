@@ -271,8 +271,13 @@ predict.deeptrafo <- function(
 
   ytransf <- aTtheta + w_eta
 
-  if (type == "trafo")
-    return(ytransf %>% as.matrix)
+  if (type == "trafo") {
+    trf <- ytransf %>% as.matrix
+    if (rtype == "ordered") {
+      trf[which(c(cright) == 1),] <- Inf
+    }
+    return(trf)
+  }
 
   if (type == "cdf") {
 
