@@ -51,6 +51,9 @@ occur}
 \item{save_fun}{Function; function to be applied to each member to be stored
 in the final result.}
 
+\item{seed}{Numeric vector of length \code{n_ensemble}; seeds for model
+initialization.}
+
 \item{...}{Further arguments passed to \code{object$fit_fun}.}
 }
 \value{
