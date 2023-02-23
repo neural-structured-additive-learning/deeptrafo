@@ -1,4 +1,4 @@
-#' Generic methods for neural network transformation models
+#' Plot method for deep conditional transformation models
 #'
 #' @param x Object of class \code{"deeptrafo"}.
 #' @param which Which effect to plot, default selects all smooth effects in the
@@ -22,7 +22,6 @@
 #' @importFrom graphics matplot
 #' @importFrom grDevices rgb
 #'
-#' @rdname methodTrafo
 #'
 plot.deeptrafo <- function(
     x,
@@ -82,9 +81,11 @@ get_weight_by_name_ia <- function(x, name, param_nr)
 
 }
 
+#' S3 methods for deep conditional transformation models
+#'
 #' @param x Object of class \code{"deeptrafo"}.
 #' @param which_param Character; either \code{"shifting"}, \code{"interacting"},
-#' or \code{"autoregressive"} (only for autoregressive transformation models).
+#'     or \code{"autoregressive"} (only for autoregressive transformation models).
 #' @param type Either NULL (all types of coefficients are returned),
 #'     "linear" for linear coefficients or "smooth" for coefficients of;
 #'     Note that \code{type} is currently not used for \code{"interacting"}.

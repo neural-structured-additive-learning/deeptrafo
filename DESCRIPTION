@@ -15,7 +15,6 @@ Description: Allows for the specification of deep conditional transformation
     are implemented.
 Depends: 
     R (>= 4.0.0), 
-    Formula, 
     tensorflow (>= 2.2.0), 
     keras (>= 2.2.0), 
     tfprobability (>= 0.15),
@@ -34,6 +33,7 @@ Imports:
     purrr,
     survival,
     R6,
+    Formula, 
     reticulate
 License: GPL-3
 Encoding: UTF-8
