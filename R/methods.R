@@ -568,7 +568,13 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
       print(unlist(cfb))
     }
     cat("\nShift coefficients:\n")
-    print(unlist(coef(x, which_param = "shifting")))
+    cfx <- coef(x)
+    rns <- lapply(cfx, rownames)
+    which_no_names <- which(unlist(lapply(rns, is.null)))
+    if (length(which_no_names) > 0)
+      rns[[which_no_names]] <- names(rns)[[which_no_names]]
+    names(cfx) <- rns
+    print(unlist(cfx))
     if (atm) {
       cat("\nLag coefficients:\n")
       print(unlist(coef(x, which_param = "autoregressive")))
