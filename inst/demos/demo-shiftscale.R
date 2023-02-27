@@ -45,5 +45,5 @@ matplot(qy, mpreds <- t(do.call("cbind", preds)), type = "l")
 
 contour(nd$x, qy, t(mpreds), col = 2, nlevels = 110)
 points(x, y, pch = 20, col = rgb(.1, .1, .1, .5))
-# lapply(seq_along(nd$x), \(pr) lines(nd$x[pr] + sqrt(mpreds[, pr]) / 3, qy, col = rgb(.5, .1, .1, .5)))
-
+# lapply(seq_along(nd$x), \(pr) lines(nd$x[pr] + sqrt(mpreds[, pr]) / 3,
+#        qy, col = rgb(.5, .1, .1, .5)))
