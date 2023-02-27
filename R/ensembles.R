@@ -19,6 +19,8 @@
 #' @param callbacks List; callbacks used for fitting.
 #' @param save_fun Function; function to be applied to each member to be stored
 #'     in the final result.
+#' @param seed Numeric vector of length \code{n_ensemble}; seeds for model
+#'     initialization.
 #' @param ... Further arguments passed to \code{object$fit_fun}.
 #'
 #' @return Ensemble of \code{"deeptrafo"} models with list of training histories
