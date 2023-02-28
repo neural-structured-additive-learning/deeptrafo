@@ -15,21 +15,21 @@
 
 # Linear and log-linear bases ---------------------------------------------
 
-eval_lin <- function(y) {
+eval_lin <- function(y, suppy = NULL) {
   ret <- cbind(1, y)
   if (NROW(ret) == 1)
     return(as.vector(ret))
   ret
 }
 
-eval_lin_prime <- function(y) {
+eval_lin_prime <- function(y, suppy = NULL) {
   ret <- cbind(0, rep(1, length(y)))
   if (NROW(ret) == 1)
     return(as.vector(ret))
   ret
 }
 
-eval_loglin <- function(y) {
+eval_loglin <- function(y, suppy = NULL) {
   stopifnot(y > 0)
   ret <- cbind(1, log(y))
   if (NROW(ret) == 1)
@@ -37,7 +37,7 @@ eval_loglin <- function(y) {
   ret
 }
 
-eval_loglin_prime <- function(y) {
+eval_loglin_prime <- function(y, suppy = NULL) {
   stopifnot(y > 0)
   ret <- cbind(0, 1/y)
   if (NROW(ret) == 1)

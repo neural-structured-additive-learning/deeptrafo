@@ -6,7 +6,7 @@ check_methods <- function(m, newdata, test_plots = TRUE, grid = TRUE)
 {
 
   # fit
-  hist <- m %>% fit(epochs = 2)
+  hist <- m %>% fit(epochs = 2, verbose = FALSE)
   expect_is(hist, "keras_training_history")
 
   # plot
@@ -103,7 +103,7 @@ test_models <- function(fml, which = c("ordinal", "count", "survival"), ...) {
 
   if (which == "ordinal")
     expect_false(any(is.nan(m$model$loss(m$init_params$y, fitted(m))$numpy())))
-  hist <- fit(m, epochs = 2L)
+  hist <- fit(m, epochs = 2L, verbose = FALSE)
 
   if (which == "ordinal")
     expect_equal(m$init_params$trafo_options$order_bsp, 5L)

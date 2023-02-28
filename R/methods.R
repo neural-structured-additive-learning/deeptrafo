@@ -57,17 +57,28 @@ plot.deeptrafo <- function(
     rtype <- x$init_params$response_type
     ry <- x$init_params$response
     preds <- predict.deeptrafo(x, type = type, newdata = newdata, K = K, ...)
+
     if (is.null(newdata)) {
-      y <- x$init_params$response
-      plot(y, preds, xlab = "response", ylab = type)
-    } else if (is.null(newdata[[rname]])) {
-      y <- as.numeric(names(preds))
-      if (rtype %in% c("ordered", "count")) {
-        ttype <- "s"
-      } else ttype <- "l"
-      preds <- do.call("cbind", preds)
-      matplot(y, t(preds), type = ttype, col = rgb(.1, .1, .1, .5), lty = 1,
-              xlab = "response", ylab = type)
+      if (only_data)
+        return(structure(preds, y = ry))
+      plot(ry, preds, xlab = "response", ylab = type)
+    } else {
+      if (!is.null(newdata[[rname]])) {
+        y <- newdata[[rname]]
+        if (only_data)
+          return(structure(preds, y = y))
+        plot(y, preds, xlab = "response", ylab = type)
+      } else {
+        y <- as.numeric(names(preds))
+        if (rtype %in% c("ordered", "count")) {
+          ttype <- "s"
+        } else ttype <- "l"
+        preds <- do.call("cbind", preds)
+        if (only_data)
+          return(structure(preds, y = y))
+        matplot(y, t(preds), type = ttype, col = rgb(.1, .1, .1, .5), lty = 1,
+                xlab = "response", ylab = type)
+      }
     }
   }
 
@@ -272,8 +283,13 @@ predict.deeptrafo <- function(
 
   ytransf <- aTtheta + w_eta
 
-  if (type == "trafo")
-    return(ytransf %>% as.matrix)
+  if (type == "trafo") {
+    trf <- ytransf %>% as.matrix
+    if (rtype == "ordered") {
+      trf[which(c(cright) == 1),] <- Inf
+    }
+    return(trf)
+  }
 
   if (type == "cdf") {
 
@@ -379,7 +395,7 @@ map_param_string_to_index <- function(which_param)
 #' @param newdata Named \code{list} or \code{data.frame}; optional new data.
 #' @param convert_fun Function; applied to the log-likelihood values of all
 #'     observations.
-#' @param ... Currently ignored.
+#' @param ... Additional arguments to \code{fitted.deeptrafo()}
 #'
 #' @exportS3Method
 #'
@@ -402,6 +418,49 @@ logLik.deeptrafo <- function(
   }
 
   convert_fun(object$model$loss(y, y_pred)$numpy())
+
+}
+
+#' @method residuals deeptrafo
+#'
+#' @param object Object of class \code{"deeptrafo"}.
+#' @param newdata Named \code{list} or \code{data.frame}; optional new data.
+#' @param ... Additional arguments to \code{fitted.deeptrafo()}
+#' @param return_gradients Return individual gradients instead of the summed
+#'     gradients; the residuals are \code{0.5 * rowSums(gradients)}
+#'
+#' @exportS3Method
+#'
+#' @rdname methodTrafo
+#'
+residuals.deeptrafo <- function(
+    object,
+    newdata = NULL,
+    return_gradients = FALSE,
+    ...
+)
+{
+  tape <- \() NULL
+  with(tf$GradientTape() %as% tape, {
+    if (is.null(newdata)) {
+      y <- object$init_params$y
+      y_pred <- fitted.deeptrafo(object, ... = ...)
+    } else {
+      y <- response(newdata[[object$init_params$response_varname]])
+      y_pred <- fitted.deeptrafo(object, newdata = newdata, ... = ...)
+    }
+    a <- y_pred
+    a[] <- 0
+    a <- tf$Variable(a)
+    nlli <- object$model$loss(y, y_pred + a)
+  })
+
+  gr <- tape$gradient(nlli, a)$numpy()[, -4]
+
+  if (return_gradients)
+    return(gr)
+
+  0.5 * rowSums(gr)
 
 }
 
@@ -466,17 +525,17 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
                             with_baseline = FALSE, ...) {
 
   atm <- x$init_params$is_atm
-  atm_text <- if (atm) "autoregressive" else ""
+  atm_text <- if (atm) "autoregressive" else NULL
 
   if (print_model)
     print(x$model)
 
   mtype <- switch(
     x$init_params$response_type,
-    "ordered" = "Ordinal",
-    "count" = "Count",
-    "survival" = "Continuous",
-    "continuous" = "Continuous"
+    "ordered" = "ordinal",
+    "count" = "count",
+    "survival" = "continuous",
+    "continuous" = "continuous"
   )
 
   fmls <- x$init_params$list_of_formulas
@@ -489,7 +548,10 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
                 fml2txt(formula(x$init_params$formula, lhs = 2L, rhs = 0L)[[2]]))
   shift <- ifelse(no_shift, "~1", fml2txt(fmls[[3]]))
 
-  cat("\t", mtype, "outcome", atm_text, "deep conditional transformation model\n\n")
+  trained <- ifelse(is.null(x$model$history), "Untrained", "Trained")
+  cat("\t", trained, mtype, "outcome", atm_text, "deep conditional transformation model\n")
+  cat("\nCall:\n")
+  print(x$init_params$call)
   cat("\nInteracting: ", int, "\n")
   cat("\nShifting: ", shift, "\n")
 
@@ -509,7 +571,13 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
       print(unlist(cfb))
     }
     cat("\nShift coefficients:\n")
-    print(unlist(coef(x, which_param = "shifting")))
+    cfx <- coef(x)
+    rns <- lapply(cfx, rownames)
+    which_no_names <- which(unlist(lapply(rns, is.null)))
+    if (length(which_no_names) > 0)
+      rns[which_no_names] <- names(rns)[which_no_names]
+    names(cfx) <- rns
+    print(unlist(cfx))
     if (atm) {
       cat("\nLag coefficients:\n")
       print(unlist(coef(x, which_param = "autoregressive")))

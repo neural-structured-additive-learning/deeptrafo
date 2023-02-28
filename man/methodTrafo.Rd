@@ -5,6 +5,7 @@
 \alias{predict.deeptrafo}
 \alias{fitted.deeptrafo}
 \alias{logLik.deeptrafo}
+\alias{residuals.deeptrafo}
 \alias{simulate.deeptrafo}
 \alias{print.deeptrafo}
 \alias{summary.deeptrafo}
@@ -35,6 +36,8 @@
   convert_fun = function(x, ...) -sum(x, ...),
   ...
 )
+
+\method{residuals}{deeptrafo}(object, newdata = NULL, return_gradients = FALSE, ...)
 
 \method{simulate}{deeptrafo}(object, nsim = 1, seed = NULL, newdata = NULL, ...)
 
@@ -67,6 +70,9 @@ ignored.}
 
 \item{convert_fun}{Function; applied to the log-likelihood values of all
 observations.}
+
+\item{return_gradients}{Return individual gradients instead of the summed
+gradients; the residuals are \code{0.5 * rowSums(gradients)}}
 
 \item{nsim}{Integer; number of simulations; defaults to 1.}
 

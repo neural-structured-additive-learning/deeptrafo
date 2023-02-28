@@ -7,6 +7,7 @@ set.seed(1234)
 # Deps --------------------------------------------------------------------
 
 library(tram)
+library(survival)
 devtools::load_all(".")
 
 # Data --------------------------------------------------------------------
@@ -17,14 +18,29 @@ GBSG2$time <- as.double(GBSG2$time)
 
 # Model -------------------------------------------------------------------
 
-tm <- Colr(surv ~ horTh + age, data = GBSG2, order = 10)
+tm <- Coxph(surv ~ horTh + age, data = GBSG2, order = 6, support = range(GBSG2$time))
+m <- CoxphNN(surv ~ 0 + horTh + age, data = GBSG2, order = 6)
+cxph <- coxph(surv ~ horTh + age, data = GBSG2)
 
-m <- deeptrafo(surv ~ 0 + horTh + age, data = GBSG2,
-               optimizer = optimizer_adam(learning_rate = 0.01))
-fit(m, epochs = 2e3, validation_split = NULL, batch_size = nrow(GBSG2))
+cfb <- coef(tm)
+cfx <- coef(tm, with_baseline = TRUE)
+cfx <- cfx[!names(cfx) %in% names(cfb)]
+tmp <- get_weights(m$model)
+tmp[[1]][] <- c(cfx[1], log(exp(diff(cfx)) - 1 + 1e-6))
+tmp[[2]][] <- cfb[1]
+tmp[[3]][] <- cfb[2]
+set_weights(m$model, tmp)
+
+unlist(coef(m, which = "int"))
+coef(tm, with_baseline = TRUE)
 
 coef(tm)
 unlist(coef(m, which = "shifting"))
+
+# Martingale residuals
+all.equal(residuals(m), unname(residuals(tm)), tolerance = 1e-4)
+plot(residuals(m), -residuals(cxph, type = "martingale"))
+abline(0, 1)
 
 # Unconditional case ------------------------------------------------------
 

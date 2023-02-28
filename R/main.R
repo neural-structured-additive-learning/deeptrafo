@@ -91,6 +91,9 @@ deeptrafo <- function(
     ...
 )
 {
+
+  call <- match.call()
+
   # How many terms are in the formula
   fml <- as.Formula(formula)
   ninteracting <- length(attr(fml, "lhs"))
@@ -202,9 +205,10 @@ deeptrafo <- function(
   ret$init_params$response <- resp
   ret$init_params$prepare_y_valdata <- response
   ret$init_params$data <- if (return_data) data else NULL
+  ret$init_params$call <- call
 
   class(ret) <- c("deeptrafo", "deepregression")
-  return(ret)
+  ret
 
 }
 
@@ -392,7 +396,6 @@ atm_init <- function(atmnr, h1nr)
 #'
 #' @details Not intended to be used directly by the end user.
 #'
-#' @export
 from_preds_to_trafo <- function(
     atm_toplayer = function(x) layer_dense(x, units = 1L, name = "atm_toplayer"),
     const_ia = NULL
@@ -442,7 +445,6 @@ from_preds_to_trafo <- function(
 #' @import tfprobability
 #' @import keras
 #' @import tensorflow
-#' @export
 #'
 nll <- function(base_distribution) {
 

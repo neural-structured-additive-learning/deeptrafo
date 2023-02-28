@@ -150,10 +150,52 @@ plot.dtEnsemble <- function(
   q = NULL,
   ...
 ) {
-  .call_for_all_members(
+  pdat <- .call_for_all_members(
     x, plot.deeptrafo, which = which, type = type, which_param = which_param,
-    only_data = only_data, K = K, q = q, ... = ...
+    newdata = newdata, only_data = TRUE, K = K, q = q, ... = ...
   ) |> invisible()
+
+  if (only_data)
+    return(pdat)
+
+  type <- match.arg(type)
+  rname <- x$init_params$response_varname
+  rtype <- x$init_params$response_type
+
+  if (type == "smooth") {
+
+    pdat <- transpose(pdat)
+    terms <- names(pdat)
+
+    lapply(terms, \(term) {
+
+      pd <- pdat[[term]]
+      value <- pd[[1]]$value
+      peff <- do.call("cbind", lapply(pd, \(x) x$partial_effect))
+      matplot(sort(value), peff[order(value),], type = "b", pch = 1, main = term)
+    })
+
+  } else if (!is.null(newdata)) {
+    if (!is.null(newdata[[rname]])) {
+      y <- attr(pdat[[1]], "y")
+      preds <- do.call("cbind", pdat)
+      matplot(sort(y), preds[order(y),], type = "p")
+    } else {
+      y <- attr(pdat[[1]], "y")
+      preds <- do.call("rbind", pdat)
+      ttype <- ifelse(rtype %in% c("ordered", "count"), "s", "l")
+      print(ttype)
+      matplot(y, t(preds), type = ttype, lty = rep(
+        1:length(pdat), each = NROW(pdat[[1]])))
+    }
+  } else {
+    y <- attr(pdat[[1]], "y")
+    preds <- do.call("cbind", pdat)
+    matplot(sort(y), preds[order(y),], type = "p")
+  }
+
+  return(invisible(pdat))
+
 }
 
 # Helpers
@@ -168,3 +210,4 @@ plot.dtEnsemble <- function(
     FUN(object, ... = ...)
   })
 }
+

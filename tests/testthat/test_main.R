@@ -23,7 +23,8 @@ test_that("unconditional additive model", {
   valdat <- data.frame(y = rcauchy(100), x = rcauchy(100), z = rcauchy(100))
   fml <- y ~ 1
   m <- deeptrafo(fml, dat)
-  hist <- fit(m, epochs = 10, validation_data = list(x = valdat, y = valdat$y))
+  hist <- fit(m, epochs = 10, validation_data = list(x = valdat, y = valdat$y),
+              verbose = FALSE)
   expect_false(any(is.nan(hist$metrics$loss)))
 
   check_methods(m, newdata = dat, test_plots = FALSE)
@@ -76,7 +77,8 @@ test_that("ordinal NLL works", {
 
   df <- data.frame(y = ordered(rep(1:5, each = 5)))
   m <- deeptrafo(y ~ 1, data = df)
-  fit(m, validation_split = NULL, epochs = 10, batch_size = nrow(df))
+  fit(m, validation_split = NULL, epochs = 10, batch_size = nrow(df),
+      verbose = FALSE)
   # coef(m); coef(m, "interacting")
 
   cf0 <- qlogis((1:4)/5)
@@ -215,7 +217,7 @@ test_that("model with fixed weight", {
                    warmstart_weights = list(list(), list(), list("temp" = 0))
                  )
   )
-  expect_equal(coef(m, which_param = "shifting")$temp, matrix(0))
+  expect_equal(unname(coef(m, which_param = "shifting")$temp[1, 1]), 0)
 
 })
 
