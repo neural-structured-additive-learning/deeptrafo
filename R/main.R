@@ -194,7 +194,7 @@ deeptrafo <- function(
     loss = tloss, monitor_metrics = monitor_metrics,
     additional_processor = additional_processor), dots)
 
-  ret <- do.call("deepregression", args)
+  ret <- suppressWarnings(do.call("deepregression", args))
 
   ret$init_params$is_atm <- is_atm
   ret$init_params$lag_formula <- tlag_formula
