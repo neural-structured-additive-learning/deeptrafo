@@ -207,6 +207,17 @@ test_that("autoregressive transformation model", {
 
 })
 
+test_that("autoregressive transformation model specification", {
+
+  dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+  dat$ylag <- lag(dat$y)
+  dat$ylag2 <- lag(dat$y, n = 2L)
+  dat <- na.omit(dat)
+  expect_length(coef(deeptrafo(y ~ atplag(ylag), data = dat), which = "auto"), 1)
+  expect_length(coef(deeptrafo(y ~ atplag(ylag) + atplag(ylag2), data = dat), which = "auto"), 2)
+
+})
+
 # Misc --------------------------------------------------------------------
 
 test_that("model with fixed weight", {
