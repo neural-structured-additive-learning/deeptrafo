@@ -2,14 +2,15 @@
 context("Test deeptrafo residuals")
 
 test_that("residuals coincide with tram (ordinal)", {
-  library(tram)
+  library("tram")
 
   data("wine", package = "ordinal")
   tm <- Polr(rating ~ temp + contact, data = wine)
 
   m <- deeptrafo(rating ~ 0 + temp + contact, data = wine,
                  optimizer = optimizer_adam(learning_rate = 0.1, decay = 1e-4))
-  fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine))
+  fit(m, epochs = 3e2, validation_split = NULL, batch_size = nrow(wine),
+      verbose = FALSE)
 
   expect_equal(residuals(m), residuals(tm), tolerance = 1e-4)
 })

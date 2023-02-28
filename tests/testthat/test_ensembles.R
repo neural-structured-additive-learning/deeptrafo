@@ -22,7 +22,7 @@ check_ensemble <- function(formula = y ~ 1,
 
   m <- deeptrafo(formula, df, ... = ...)
 
-  ens <- ensemble(m, n_ensemble = 2L)
+  ens <- ensemble(m, n_ensemble = 2L, verbose = FALSE)
 
   check_ensemble_methods(ens)
 

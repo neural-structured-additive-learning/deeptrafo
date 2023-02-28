@@ -440,7 +440,7 @@ residuals.deeptrafo <- function(
     ...
 )
 {
-
+  tape <- \() NULL
   with(tf$GradientTape() %as% tape, {
     if (is.null(newdata)) {
       y <- object$init_params$y
