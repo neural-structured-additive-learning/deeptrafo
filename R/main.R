@@ -91,6 +91,9 @@ deeptrafo <- function(
     ...
 )
 {
+
+  call <- match.call()
+
   # How many terms are in the formula
   fml <- as.Formula(formula)
   ninteracting <- length(attr(fml, "lhs"))
@@ -202,6 +205,7 @@ deeptrafo <- function(
   ret$init_params$response <- resp
   ret$init_params$prepare_y_valdata <- response
   ret$init_params$data <- if (return_data) data else NULL
+  ret$init_params$call <- call
 
   class(ret) <- c("deeptrafo", "deepregression")
   ret

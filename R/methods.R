@@ -532,10 +532,10 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
 
   mtype <- switch(
     x$init_params$response_type,
-    "ordered" = "Ordinal",
-    "count" = "Count",
-    "survival" = "Continuous",
-    "continuous" = "Continuous"
+    "ordered" = "ordinal",
+    "count" = "count",
+    "survival" = "continuous",
+    "continuous" = "continuous"
   )
 
   fmls <- x$init_params$list_of_formulas
@@ -548,7 +548,10 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
                 fml2txt(formula(x$init_params$formula, lhs = 2L, rhs = 0L)[[2]]))
   shift <- ifelse(no_shift, "~1", fml2txt(fmls[[3]]))
 
-  cat("\t", mtype, "outcome", atm_text, "deep conditional transformation model\n")
+  trained <- ifelse(is.null(x$model$history), "Untrained", "Trained")
+  cat("\t", trained, mtype, "outcome", atm_text, "deep conditional transformation model\n")
+  cat("\nCall:\n")
+  print(x$init_params$call)
   cat("\nInteracting: ", int, "\n")
   cat("\nShifting: ", shift, "\n")
 
