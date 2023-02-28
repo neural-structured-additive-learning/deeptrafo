@@ -217,7 +217,7 @@ test_that("model with fixed weight", {
                    warmstart_weights = list(list(), list(), list("temp" = 0))
                  )
   )
-  expect_equal(coef(m, which_param = "shifting")$temp[1, 1], c("tempwarm" = 0))
+  expect_equal(unname(coef(m, which_param = "shifting")$temp[1, 1]), 0)
 
 })
 

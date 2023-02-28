@@ -572,7 +572,7 @@ print.deeptrafo <- function(x, print_model = FALSE, print_coefs = TRUE,
     rns <- lapply(cfx, rownames)
     which_no_names <- which(unlist(lapply(rns, is.null)))
     if (length(which_no_names) > 0)
-      rns[[which_no_names]] <- names(rns)[which_no_names]
+      rns[which_no_names] <- names(rns)[which_no_names]
     names(cfx) <- rns
     print(unlist(cfx))
     if (atm) {
