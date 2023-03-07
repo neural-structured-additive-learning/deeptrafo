@@ -18,7 +18,8 @@ Depends:
     tensorflow (>= 2.2.0), 
     keras (>= 2.2.0), 
     tfprobability (>= 0.15),
-    deepregression
+    deepregression,
+    data.table
 Suggests:
     testthat,
     knitr,
@@ -33,7 +34,7 @@ Imports:
     purrr,
     survival,
     R6,
-    Formula, 
+    Formula,
     reticulate
 License: GPL-3
 Encoding: UTF-8
