@@ -138,22 +138,19 @@ basisprime_processor <- function(term, data, output_dim = NULL, param_nr, contro
 
 atm_lag_processor_factory <- function(rvar){
 
-  return(
-    atm_lag_processor <- function(term, data, output_dim = NULL, param_nr=4, controls=NULL)
-    {
+    atm_lag_processor <- function(term, data, output_dim = NULL, param_nr = 4,
+                                  controls = NULL) {
 
       name <- makelayername(term, param_nr)
-
-      layer <- eval_bsp_tf(order = controls$order_bsp, controls$supp(data[extractvar(rvar)]))
-
+      layer <- eval_bsp_tf(
+        order = controls$order_bsp, controls$supp(data[extractvar(rvar)])
+      )
       list(
         data_trafo = function() data[extractvar(term)],
         predict_trafo = function(newdata) newdata[extractvar(term)],
         input_dim = 1L,
         layer = layer
       )
-
     }
-  )
 
 }

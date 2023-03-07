@@ -191,8 +191,8 @@ test_that("survival model with NN component", {
 test_that("autoregressive transformation model", {
 
   dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
-  dat$ylag <- lag(dat$y)
-  dat$ylag2 <- lag(dat$y, n = 2L)
+  dat$ylag <- c(dat$y[-1], NA)
+  dat$ylag2 <- c(dat$y[-1:-2], NA, NA)
   dat <- na.omit(dat)
   fml <- y | s(x) ~ 0 + s(z) + atplag(ylag) + atplag(ylag2)
   m <- deeptrafo(fml, dat)
@@ -204,6 +204,17 @@ test_that("autoregressive transformation model", {
 
   cf <- coef(m, which_param = "autoregressive")
   expect_equal(length(cf), 2)
+
+})
+
+test_that("autoregressive transformation model specification", {
+
+  dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
+  dat$ylag <- lag(dat$y)
+  dat$ylag2 <- lag(dat$y, n = 2L)
+  dat <- na.omit(dat)
+  expect_length(coef(deeptrafo(y ~ atplag(ylag), data = dat), which = "auto"), 1)
+  expect_length(coef(deeptrafo(y ~ atplag(ylag) + atplag(ylag2), data = dat), which = "auto"), 2)
 
 })
 

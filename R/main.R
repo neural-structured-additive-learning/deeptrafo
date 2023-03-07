@@ -146,7 +146,10 @@ deeptrafo <- function(
     tlag_formula <- paste0(grep("atplag", ftms, value = TRUE), collapse = "+")
     list_of_formulas$yterms <- as.formula(
       paste0(form2text(list_of_formulas$yterms), " + ", tlag_formula))
-    list_of_formulas$h2 <- drop.terms(tms, which(atps))
+    if (length(ftms) > length(which(atps)))
+      list_of_formulas$h2 <- drop.terms(tms, which(atps))
+    else
+      list_of_formulas$h2 <- ~1
 
   }
 
