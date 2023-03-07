@@ -24,7 +24,7 @@
 #'
 #'
 plot.deeptrafo <- function(
-    x,
+    x, # object
     which = NULL,
     type = c("smooth", "trafo", "pdf", "cdf"),
     newdata = NULL,
@@ -37,6 +37,14 @@ plot.deeptrafo <- function(
 {
 
   type <- match.arg(type)
+
+  if (!is.null(newdata) && grepl("atplag", x$init_params$lag_formula)) {
+    lags <- unlist(strsplit(x$init_params$lag_formula, "\\+"))
+    lags <- as.numeric(gsub("\\D", "", lags))
+    newdata <- create_lags(rvar = x$init_params$response_varname,
+                           d_list = newdata, 
+                           lags = lags)$data
+  }
 
   if (type == "smooth") {
     which_param <- match.arg(which_param)
@@ -238,8 +246,7 @@ predict.deeptrafo <- function(
   if (!is.null(newdata) && grepl("atplag", object$init_params$lag_formula)) {
     lags <- unlist(strsplit(object$init_params$lag_formula, "\\+"))
     lags <- as.numeric(gsub("\\D", "", lags))
-    atplags <- paste0("atplag(", paste0(lags, collapse = ","), ")")
-    newdata <- create_lags(rname, atplags, newdata)$data
+    newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data
   }
 
   # Predict over grid of responses, if response not contained in newdata
@@ -416,6 +423,14 @@ logLik.deeptrafo <- function(
 )
 {
 
+  if (!is.null(newdata) && grepl("atplag", object$init_params$lag_formula)) {
+    lags <- unlist(strsplit(object$init_params$lag_formula, "\\+"))
+    lags <- as.numeric(gsub("\\D", "", lags))
+    newdata <- create_lags(rvar = object$init_params$response_varname,
+                           d_list = newdata, 
+                           lags = lags)$data
+  }
+  
   if (is.null(newdata)) {
     y <- object$init_params$y
     y_pred <- fitted.deeptrafo(object, ... = ...)

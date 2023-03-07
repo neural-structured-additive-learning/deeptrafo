@@ -143,7 +143,7 @@ deeptrafo <- function(
     # extract from lag formula the variables as simple sum and
     # layers for additional transformation
     tlag_formula <- paste0(grep("atplag", ftms, value = TRUE), collapse = "+")
-    lags <- create_lags(rvar, tlag_formula, data)
+    lags <- create_lags(rvar = rvar, d_list = data, atplags = tlag_formula)
     data <- lags$data
     
     resp <- data[[rvar]] # creating lags reduces data set size
