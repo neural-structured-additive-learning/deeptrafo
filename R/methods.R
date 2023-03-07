@@ -234,6 +234,13 @@ predict.deeptrafo <- function(
   fam <- object$init_params$family
   discrete <- as.numeric(rtype %in% c("count", "ordered"))
   bd <- get_bd(fam)
+  
+  if (!is.null(newdata) && grepl("atplag", object$init_params$lag_formula)) {
+    lags <- unlist(strsplit(object$init_params$lag_formula, "\\+"))
+    lags <- as.numeric(gsub("\\D", "", lags))
+    atplags <- paste0("atplag(", paste0(lags, collapse = ","), ")")
+    newdata <- create_lags(rname, atplags, newdata)$data
+  }
 
   # Predict over grid of responses, if response not contained in newdata
   if (!is.null(newdata)) {
