@@ -340,8 +340,8 @@ create_lags <- function(rvar,
                         d_list
 ) {
   
-  lags <- unlist(strsplit(atplags, ","))
-  lags <- as.numeric(gsub("\\D", "", lags)) # positive integers only
+  lags <- gsub("^atplag\\(|\\)$","",atplags)
+  lags <- eval(parse(text = paste0("c(", lags,")")))
   lags_nms <- paste0(rvar,"_lag_", lags)
   atplags <- paste0("atplag(", lags_nms, ")", collapse = "+")
   d <- as.data.table(d_list)
