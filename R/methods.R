@@ -363,6 +363,13 @@ fitted.deeptrafo <- function(
     convert_fun = as.matrix,
     ...)
 {
+  if (!is.null(newdata) && grepl("atplag", object$init_params$lag_formula)) {
+    lags <- unlist(strsplit(object$init_params$lag_formula, "\\+"))
+    lags <- as.numeric(gsub("\\D", "", lags))
+    newdata <- create_lags(rvar = object$init_params$response_varname,
+                           d_list = newdata,
+                           lags = lags)$data
+  }
 
   if (length(object$init_params$image_var) > 0 | !is.null(batch_size)) {
 
