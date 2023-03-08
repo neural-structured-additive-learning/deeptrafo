@@ -354,6 +354,14 @@ create_lags <- function(rvar,
   return(list(data = as.list(na.omit(d)), fm = atplags))
 }
 
+fm_to_lag <- function(l_fm) {
+  
+  # return lags (numeric) from lag_formula (string)
+  
+  lags <- unlist(strsplit(l_fm, "\\+"))
+  as.numeric(gsub("\\D", "", lags))
+}
+
 layer_combined_mono <- function(object,
                                 units = 1L,
                                 dim_bsp = NULL,

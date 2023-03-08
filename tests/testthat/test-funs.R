@@ -26,23 +26,28 @@ check_methods <- function(m, newdata, test_plots = TRUE, grid = TRUE)
   # fitted
   fitt <- m %>% fitted()
   expect_is(fitt, "matrix")
+  
+  numb_lags <- 0
+  if (m$init_params$is_atm) {
+    numb_lags <- length(fm_to_lag(m$init_params$lag_formula))
+  }
 
   # predict
   a <- predict(m, newdata = newdata, type = "trafo")
   this_n <- nrow(newdata)
-  expect_equal(dim(a), c(this_n, 1))
+  expect_equal(dim(a), c(this_n - numb_lags, 1))
   b <- predict(m, newdata = newdata, type = "pdf")
-  expect_equal(dim(b), c(this_n, 1))
+  expect_equal(dim(b), c(this_n - numb_lags, 1))
   # expect_true(all(b >= 0))
   c <- predict(m, newdata = newdata, type = "cdf")
-  expect_equal(dim(c), c(this_n, 1))
+  expect_equal(dim(c), c(this_n - numb_lags, 1))
   expect_true(all(c >= 0) & all(c <= 1))
   d <- predict(m, newdata = newdata, type = "interaction")
-  expect_equal(dim(d), c(this_n, 1))
+  expect_equal(dim(d), c(this_n - numb_lags, 1))
   e <- predict(m, newdata = newdata, type = "shift")
-  expect_equal(dim(e), c(this_n, 1))
+  expect_equal(dim(e), c(this_n - numb_lags, 1))
   f <- predict(m, newdata = newdata, type = "terms")
-  expect_equal(nrow(f), this_n, 1)
+  expect_equal(nrow(f), this_n - numb_lags, 1)
   expect_gt(ncol(f), 2)
 
   # if (m$init_params$response_type == "ordered") {
