@@ -438,16 +438,16 @@ logLik.deeptrafo <- function(
   if (!is.null(newdata) && !is.null(object$init_params$lag_formula)) {
     lags <- fm_to_lag(object$init_params$lag_formula)
     newdata <- create_lags(rvar = object$init_params$response_varname,
-                           d_list = newdata, 
+                           d_list = newdata,
                            lags = lags)$data
   }
   
   if (is.null(newdata)) {
     y <- object$init_params$y
-    y_pred <- fitted.deeptrafo(object, ... = ...)
+    y_pred <- fitted.deeptrafo(object, call_create_lags = F, ... = ...)
   } else {
     y <- response(newdata[[object$init_params$response_varname]])
-    y_pred <- fitted.deeptrafo(object, newdata = newdata, ... = ...)
+    y_pred <- fitted.deeptrafo(object, call_create_lags = F, newdata = newdata, ... = ...)
   }
 
   convert_fun(object$model$loss(y, y_pred)$numpy())
