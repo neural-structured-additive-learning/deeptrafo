@@ -256,7 +256,9 @@ predict.deeptrafo <- function(
         ygrd <- ygrd[1]
       ret <- lapply(ygrd, function(ty) { # overwrite response, then predict
         newdata[[rname]] <- rep(ty, NROW(newdata[[1]]))
-        newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data
+        if(!is.null(object$init_params$lag_formula)) {
+          newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data  
+        }
         predict.deeptrafo(object, newdata = newdata, type = type,
                           batch_size = batch_size, K = NULL, q = NULL,
                           ... = ...)
@@ -266,7 +268,10 @@ predict.deeptrafo <- function(
     }
   }
   
-  newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data
+  if (!is.null(newdata) && !is.null(object$init_params$lag_formula)) {
+    lags <- fm_to_lag(object$init_params$lag_formula)
+    newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data
+  }
 
   # Compute predictions from fitted values
   mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size, call_create_lags = F)
