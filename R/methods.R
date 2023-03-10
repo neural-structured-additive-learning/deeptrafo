@@ -38,7 +38,7 @@ plot.deeptrafo <- function(
 
   type <- match.arg(type)
 
-  if (!is.null(newdata) && !is.null(x$init_params$lag_formula)) {
+  if (x$init_params$is_atm && !is.null(newdata)) {
     lags <- fm_to_lag(x$init_params$lag_formula)
     newdata <- create_lags(rvar = x$init_params$response_varname,
                            d_list = newdata,
@@ -242,7 +242,7 @@ predict.deeptrafo <- function(
   discrete <- as.numeric(rtype %in% c("count", "ordered"))
   bd <- get_bd(fam)
 
-  if (!is.null(newdata) && !is.null(object$init_params$lag_formula)) {
+  if (object$init_params$is_atm && !is.null(newdata)) {
     lags <- fm_to_lag(object$init_params$lag_formula)
   }
 
@@ -256,7 +256,7 @@ predict.deeptrafo <- function(
         ygrd <- ygrd[1]
       ret <- lapply(ygrd, function(ty) { # overwrite response, then predict
         newdata[[rname]] <- rep(ty, NROW(newdata[[1]]))
-        if(!is.null(object$init_params$lag_formula)) {
+        if(object$init_params$is_atm) {
           newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data
         }
         predict.deeptrafo(object, newdata = newdata, type = type,
@@ -268,7 +268,7 @@ predict.deeptrafo <- function(
     }
   }
 
-  if (!is.null(newdata) && !is.null(object$init_params$lag_formula)) {
+  if (object$init_params$is_atm && !is.null(newdata)) {
     lags <- fm_to_lag(object$init_params$lag_formula)
     newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data
   }
@@ -352,6 +352,7 @@ predict.deeptrafo <- function(
 #' @param newdata Optional new data, either \code{data.frame} or named \code{list}
 #' @param batch_size Integer; optional, useful if data is too large.
 #' @param convert_fun Function; to convert the TF tensor.
+#' @param call_create_lags Logical; lags may already be computed by a different method (e.g. plot)
 #' @param ... Currently ignored.
 #'
 #' @return Returns matrix of fitted values.
@@ -370,7 +371,7 @@ fitted.deeptrafo <- function(
     ...)
 {
   l_fm <- object$init_params$lag_formula
-  if ((!is.null(newdata) && grepl("atplag", l_fm)) && call_create_lags) {
+  if ((object$init_params$is_atm && !is.null(newdata)) && call_create_lags) {
     lags <- fm_to_lag(l_fm)
     newdata <- create_lags(rvar = object$init_params$response_varname,
                            d_list = newdata,
@@ -436,7 +437,7 @@ logLik.deeptrafo <- function(
 )
 {
 
-  if (!is.null(newdata) && !is.null(object$init_params$lag_formula)) {
+  if (object$init_params$is_atm && !is.null(newdata)) {
     lags <- fm_to_lag(object$init_params$lag_formula)
     newdata <- create_lags(rvar = object$init_params$response_varname,
                            d_list = newdata,
