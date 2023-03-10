@@ -335,6 +335,33 @@ layer_mono_multi <- function(object,
   ))
 }
 
+create_lags <- function(rvar, 
+                        d_list,
+                        atplags = NULL,
+                        lags = NULL
+) {
+  
+  if (is.null(lags)) {
+    lags <- gsub("^atplag\\(|\\)$","",atplags)
+    lags <- eval(parse(text = paste0("c(", lags,")"))) 
+  }
+  
+  lags_nms <- paste0(rvar,"_lag_", lags)
+  atplags <- paste0("atplag(", lags_nms, ")", collapse = "+")
+  d <- as.data.table(d_list) # shift() benchmarked with great performance
+  d[, (lags_nms) := shift(get(rvar), n = lags, type = "lag", fill = NA)]
+  
+  return(list(data = as.list(na.omit(d)), fm = atplags))
+}
+
+fm_to_lag <- function(l_fm) {
+  
+  # return lags (numeric) from lag_formula (string)
+  
+  lags <- unlist(strsplit(l_fm, "\\+"))
+  as.numeric(gsub("\\D", "", lags))
+}
+
 layer_combined_mono <- function(object,
                                 units = 1L,
                                 dim_bsp = NULL,

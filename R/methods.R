@@ -24,7 +24,7 @@
 #'
 #'
 plot.deeptrafo <- function(
-    x,
+    x, # object
     which = NULL,
     type = c("smooth", "trafo", "pdf", "cdf"),
     newdata = NULL,
@@ -37,6 +37,13 @@ plot.deeptrafo <- function(
 {
 
   type <- match.arg(type)
+
+  if (!is.null(newdata) && !is.null(x$init_params$lag_formula)) {
+    lags <- fm_to_lag(x$init_params$lag_formula)
+    newdata <- create_lags(rvar = x$init_params$response_varname,
+                           d_list = newdata, 
+                           lags = lags)$data
+  }
 
   if (type == "smooth") {
     which_param <- match.arg(which_param)
@@ -121,7 +128,7 @@ coef.deeptrafo <- function(
   if (which_param == "autoregressive") {
     ret <- try(c(get_weight_by_opname(object, name = "atm_toplayer", partial_match = TRUE)))
     if (inherits(ret, "try-error")) stop("No layer with name atm_toplayer")
-    names(ret) <- grep("atplag", attr(terms(object$init_params$formula), "term.labels"), value = TRUE)
+    names(ret) <- unlist(strsplit(object$init_params$lag_formula, "\\+"))
     return(ret)
   }
 
@@ -234,6 +241,10 @@ predict.deeptrafo <- function(
   fam <- object$init_params$family
   discrete <- as.numeric(rtype %in% c("count", "ordered"))
   bd <- get_bd(fam)
+  
+  if (!is.null(newdata) && !is.null(object$init_params$lag_formula)) {
+    lags <- fm_to_lag(object$init_params$lag_formula)
+  }
 
   # Predict over grid of responses, if response not contained in newdata
   if (!is.null(newdata)) {
@@ -241,11 +252,13 @@ predict.deeptrafo <- function(
       ygrd <- if (is.null(q)) {
         make_grid(object$init_params$response, n = K)[[1]]
       } else q
-
       if (type == "shift") # shift independent of response, skip
         ygrd <- ygrd[1]
       ret <- lapply(ygrd, function(ty) { # overwrite response, then predict
         newdata[[rname]] <- rep(ty, NROW(newdata[[1]]))
+        if(!is.null(object$init_params$lag_formula)) {
+          newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data  
+        }
         predict.deeptrafo(object, newdata = newdata, type = type,
                           batch_size = batch_size, K = NULL, q = NULL,
                           ... = ...)
@@ -254,9 +267,14 @@ predict.deeptrafo <- function(
       return(ret)
     }
   }
+  
+  if (!is.null(newdata) && !is.null(object$init_params$lag_formula)) {
+    lags <- fm_to_lag(object$init_params$lag_formula)
+    newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data
+  }
 
   # Compute predictions from fitted values
-  mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
+  mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size, call_create_lags = F)
 
   if (type == "terms")
     return(mod_output)
@@ -347,8 +365,16 @@ fitted.deeptrafo <- function(
     newdata = NULL,
     batch_size = NULL,
     convert_fun = as.matrix,
+    call_create_lags = TRUE, # in predict() already called once
     ...)
 {
+  l_fm <- object$init_params$lag_formula
+  if ((!is.null(newdata) && grepl("atplag", l_fm)) && call_create_lags) {
+    lags <- fm_to_lag(l_fm)
+    newdata <- create_lags(rvar = object$init_params$response_varname,
+                           d_list = newdata,
+                           lags = lags)$data
+  }
 
   if (length(object$init_params$image_var) > 0 | !is.null(batch_size)) {
 
@@ -409,12 +435,19 @@ logLik.deeptrafo <- function(
 )
 {
 
+  if (!is.null(newdata) && !is.null(object$init_params$lag_formula)) {
+    lags <- fm_to_lag(object$init_params$lag_formula)
+    newdata <- create_lags(rvar = object$init_params$response_varname,
+                           d_list = newdata,
+                           lags = lags)$data
+  }
+  
   if (is.null(newdata)) {
     y <- object$init_params$y
-    y_pred <- fitted.deeptrafo(object, ... = ...)
+    y_pred <- fitted.deeptrafo(object, call_create_lags = F, ... = ...)
   } else {
     y <- response(newdata[[object$init_params$response_varname]])
-    y_pred <- fitted.deeptrafo(object, newdata = newdata, ... = ...)
+    y_pred <- fitted.deeptrafo(object, call_create_lags = F, newdata = newdata, ... = ...)
   }
 
   convert_fun(object$model$loss(y, y_pred)$numpy())
