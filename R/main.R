@@ -216,7 +216,6 @@ deeptrafo <- function(
   ret$init_params$call <- call
 
   class(ret) <- c("deeptrafo", "deepregression")
-  if (is_atm) class(ret) <- c("atm", class(ret))
   ret
 
 }

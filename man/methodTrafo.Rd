@@ -28,7 +28,14 @@
   ...
 )
 
-\method{fitted}{deeptrafo}(object, newdata = NULL, batch_size = NULL, convert_fun = as.matrix, ...)
+\method{fitted}{deeptrafo}(
+  object,
+  newdata = NULL,
+  batch_size = NULL,
+  convert_fun = as.matrix,
+  call_create_lags = TRUE,
+  ...
+)
 
 \method{logLik}{deeptrafo}(
   object,
