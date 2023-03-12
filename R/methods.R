@@ -206,6 +206,10 @@ coef.SurvregNN <- function(object, which_param = c("shifting", "interacting", "a
 #' @param q Numeric or factor; user-supplied grid of response values to evaluate
 #'     the predictions. Defaults to \code{NULL}. If overwritten, \code{K} is
 #'     ignored.
+#' @param pred_grid Logical; set TRUE, if user provides a predefined grid for an
+#'     atp/atm model through newdata which holds two attributes. The first 
+#'     attribute, rname, should hold the column name (string) of the response 
+#'     variable while the second attribute, y, should hold the grid name.
 #' @param ... Currently ignored.
 #'
 #' @return Returns vector or matrix of predictions, depending on the supplied
@@ -228,6 +232,7 @@ predict.deeptrafo <- function(
     batch_size = NULL,
     K = 1e2,
     q = NULL,
+    pred_grid = FALSE,
     ...
 )
 {
@@ -257,7 +262,8 @@ predict.deeptrafo <- function(
       ret <- lapply(ygrd, function(ty) { # overwrite response, then predict
         newdata[[rname]] <- rep(ty, NROW(newdata[[1]]))
         if(object$init_params$is_atm) {
-          newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data
+          newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags, 
+                                 pred_grid = pred_grid)$data
         }
         predict.deeptrafo(object, newdata = newdata, type = type,
                           batch_size = batch_size, K = NULL, q = NULL,
@@ -270,7 +276,8 @@ predict.deeptrafo <- function(
 
   if (object$init_params$is_atm && !is.null(newdata)) {
     lags <- fm_to_lag(object$init_params$lag_formula)
-    newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags)$data
+    newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags,
+                           pred_grid = pred_grid)$data
   }
 
   # Compute predictions from fitted values

@@ -341,7 +341,8 @@ layer_mono_multi <- function(object,
 create_lags <- function(rvar,
                         d_list,
                         atplags = NULL,
-                        lags = NULL
+                        lags = NULL,
+                        pred_grid = FALSE
 ) {
 
   if (is.null(lags)) {
@@ -352,7 +353,13 @@ create_lags <- function(rvar,
   lags_nms <- paste0(rvar,"_lag_", lags)
   atplags <- paste0("atplag(", lags_nms, ")", collapse = "+")
   d <- as.data.table(d_list) # shift() benchmarked with great performance
-  d[, (lags_nms) := shift(get(rvar), n = lags, type = "lag", fill = NA)]
+
+  if (pred_grid) {
+    d[, (lags_nms) := shift(get(attr(pred_grid, "rname")), n = lags, 
+                            type = "lag", fill = NA), by = get(attr(pred_grid, "y"))]
+  } else {
+    d[, (lags_nms) := shift(get(rvar), n = lags, type = "lag", fill = NA)]
+  }
 
   return(list(data = as.list(na.omit(d)), fm = atplags))
 }
