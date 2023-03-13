@@ -24,7 +24,7 @@
 #'
 #'
 plot.deeptrafo <- function(
-    x,
+    x, # object
     which = NULL,
     type = c("smooth", "trafo", "pdf", "cdf"),
     newdata = NULL,
@@ -37,6 +37,13 @@ plot.deeptrafo <- function(
 {
 
   type <- match.arg(type)
+
+  if (x$init_params$is_atm && !is.null(newdata)) {
+    lags <- fm_to_lag(x$init_params$lag_formula)
+    newdata <- create_lags(rvar = x$init_params$response_varname,
+                           d_list = newdata,
+                           lags = lags)$data
+  }
 
   if (type == "smooth") {
     which_param <- match.arg(which_param)
@@ -121,7 +128,7 @@ coef.deeptrafo <- function(
   if (which_param == "autoregressive") {
     ret <- try(c(get_weight_by_opname(object, name = "atm_toplayer", partial_match = TRUE)))
     if (inherits(ret, "try-error")) stop("No layer with name atm_toplayer")
-    names(ret) <- grep("atplag", attr(terms(object$init_params$formula), "term.labels"), value = TRUE)
+    names(ret) <- unlist(strsplit(object$init_params$lag_formula, "\\+"))
     return(ret)
   }
 
@@ -199,6 +206,10 @@ coef.SurvregNN <- function(object, which_param = c("shifting", "interacting", "a
 #' @param q Numeric or factor; user-supplied grid of response values to evaluate
 #'     the predictions. Defaults to \code{NULL}. If overwritten, \code{K} is
 #'     ignored.
+#' @param pred_grid Logical; set TRUE, if user provides a predefined grid for an
+#'     atp/atm model through newdata which holds two attributes. The first 
+#'     attribute, rname, should hold the column name (string) of the response 
+#'     variable while the second attribute, y, should hold the grid name.
 #' @param ... Currently ignored.
 #'
 #' @return Returns vector or matrix of predictions, depending on the supplied
@@ -221,6 +232,7 @@ predict.deeptrafo <- function(
     batch_size = NULL,
     K = 1e2,
     q = NULL,
+    pred_grid = FALSE,
     ...
 )
 {
@@ -235,17 +247,24 @@ predict.deeptrafo <- function(
   discrete <- as.numeric(rtype %in% c("count", "ordered"))
   bd <- get_bd(fam)
 
+  if (object$init_params$is_atm && !is.null(newdata)) {
+    lags <- fm_to_lag(object$init_params$lag_formula)
+  }
+
   # Predict over grid of responses, if response not contained in newdata
   if (!is.null(newdata)) {
     if (is.null(newdata[[rname]])) {
       ygrd <- if (is.null(q)) {
         make_grid(object$init_params$response, n = K)[[1]]
       } else q
-
       if (type == "shift") # shift independent of response, skip
         ygrd <- ygrd[1]
       ret <- lapply(ygrd, function(ty) { # overwrite response, then predict
         newdata[[rname]] <- rep(ty, NROW(newdata[[1]]))
+        if(object$init_params$is_atm) {
+          newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags, 
+                                 pred_grid = pred_grid)$data
+        }
         predict.deeptrafo(object, newdata = newdata, type = type,
                           batch_size = batch_size, K = NULL, q = NULL,
                           ... = ...)
@@ -255,8 +274,15 @@ predict.deeptrafo <- function(
     }
   }
 
+  if (object$init_params$is_atm && !is.null(newdata)) {
+    lags <- fm_to_lag(object$init_params$lag_formula)
+    newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags,
+                           pred_grid = pred_grid)$data
+  }
+
   # Compute predictions from fitted values
-  mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size)
+  mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size,
+                                 call_create_lags = FALSE)
 
   if (type == "terms")
     return(mod_output)
@@ -333,6 +359,7 @@ predict.deeptrafo <- function(
 #' @param newdata Optional new data, either \code{data.frame} or named \code{list}
 #' @param batch_size Integer; optional, useful if data is too large.
 #' @param convert_fun Function; to convert the TF tensor.
+#' @param call_create_lags Logical; lags may already be computed by a different method (e.g. plot)
 #' @param ... Currently ignored.
 #'
 #' @return Returns matrix of fitted values.
@@ -347,8 +374,16 @@ fitted.deeptrafo <- function(
     newdata = NULL,
     batch_size = NULL,
     convert_fun = as.matrix,
+    call_create_lags = TRUE, # in predict() already called once
     ...)
 {
+  l_fm <- object$init_params$lag_formula
+  if ((object$init_params$is_atm && !is.null(newdata)) && call_create_lags) {
+    lags <- fm_to_lag(l_fm)
+    newdata <- create_lags(rvar = object$init_params$response_varname,
+                           d_list = newdata,
+                           lags = lags)$data
+  }
 
   if (length(object$init_params$image_var) > 0 | !is.null(batch_size)) {
 
@@ -409,12 +444,20 @@ logLik.deeptrafo <- function(
 )
 {
 
+  if (object$init_params$is_atm && !is.null(newdata)) {
+    lags <- fm_to_lag(object$init_params$lag_formula)
+    newdata <- create_lags(rvar = object$init_params$response_varname,
+                           d_list = newdata,
+                           lags = lags)$data
+  }
+
   if (is.null(newdata)) {
     y <- object$init_params$y
-    y_pred <- fitted.deeptrafo(object, ... = ...)
+    y_pred <- fitted.deeptrafo(object, call_create_lags = FALSE, ... = ...)
   } else {
     y <- response(newdata[[object$init_params$response_varname]])
-    y_pred <- fitted.deeptrafo(object, newdata = newdata, ... = ...)
+    y_pred <- fitted.deeptrafo(object, call_create_lags = FALSE,
+                               newdata = newdata, ... = ...)
   }
 
   convert_fun(object$model$loss(y, y_pred)$numpy())

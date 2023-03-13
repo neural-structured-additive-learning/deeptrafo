@@ -140,17 +140,22 @@ deeptrafo <- function(
   is_atm <- any(atps <- grepl("atplag", ftms))
   tlag_formula <- NULL
   if (is_atm) {
-
     # extract from lag formula the variables as simple sum and
     # layers for additional transformation
     tlag_formula <- paste0(grep("atplag", ftms, value = TRUE), collapse = "+")
+    lags <- create_lags(rvar = rvar, d_list = data, atplags = tlag_formula)
+    data <- lags$data
+
+    resp <- data[[rvar]] # creating lags reduces data set size
+    y <- response(resp)
+
+    tlag_formula <- lags$fm
     list_of_formulas$yterms <- as.formula(
       paste0(form2text(list_of_formulas$yterms), " + ", tlag_formula))
     if (length(ftms) > length(which(atps)))
       list_of_formulas$h2 <- drop.terms(tms, which(atps))
     else
       list_of_formulas$h2 <- ~1
-
   }
 
   # define how to get a trafo model from predictor

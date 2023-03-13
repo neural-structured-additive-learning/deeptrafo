@@ -28,12 +28,13 @@ Suggests:
     covr
 Imports:
     mlt,
+    data.table,
     variables,
     stats,
     purrr,
     survival,
     R6,
-    Formula, 
+    Formula,
     reticulate
 License: GPL-3
 Encoding: UTF-8

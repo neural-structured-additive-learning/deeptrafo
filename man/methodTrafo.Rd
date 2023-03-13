@@ -25,10 +25,18 @@
   batch_size = NULL,
   K = 100,
   q = NULL,
+  pred_grid = FALSE,
   ...
 )
 
-\method{fitted}{deeptrafo}(object, newdata = NULL, batch_size = NULL, convert_fun = as.matrix, ...)
+\method{fitted}{deeptrafo}(
+  object,
+  newdata = NULL,
+  batch_size = NULL,
+  convert_fun = as.matrix,
+  call_create_lags = TRUE,
+  ...
+)
 
 \method{logLik}{deeptrafo}(
   object,
@@ -68,8 +76,15 @@ if \code{newdata} does not contain the response.}
 the predictions. Defaults to \code{NULL}. If overwritten, \code{K} is
 ignored.}
 
+\item{pred_grid}{Logical; set TRUE, if user provides a predefined grid for an
+atp/atm model through newdata which holds two attributes. The first 
+attribute, rname, should hold the column name (string) of the response 
+variable while the second attribute, y, should hold the grid name.}
+
 \item{convert_fun}{Function; applied to the log-likelihood values of all
 observations.}
+
+\item{call_create_lags}{Logical; lags may already be computed by a different method (e.g. plot)}
 
 \item{return_gradients}{Return individual gradients instead of the summed
 gradients; the residuals are \code{0.5 * rowSums(gradients)}}

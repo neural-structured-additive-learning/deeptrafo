@@ -86,10 +86,7 @@ test_that("survival model with response-varying effects", {
 test_that("autoregressive transformation model", {
 
   dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
-  dat$ylag <- lag(dat$y)
-  dat$ylag2 <- lag(dat$y, n = 2L)
-  dat <- na.omit(dat)
-  m <- dctm(~ y, ~ s(x), ~ z + s(z) + atplag(ylag) + atplag(ylag2), data = dat)
+  m <- dctm(~ y, ~ s(x), ~ z + s(z) + atplag(1:2), data = dat)
   hist <- fit(m, epochs = 2L, verbose = FALSE)
 
   expect_false(any(is.nan(hist$metrics$loss)))
