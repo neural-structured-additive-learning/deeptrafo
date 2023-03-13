@@ -351,7 +351,7 @@ create_lags <- function(rvar,
     lags <- eval(parse(text = paste0("c(", lags,")")))
   }
 
-  lags_nms <- lags # paste0(rvar,"_lag_", lags)
+  lags_nms <- paste0(rvar,"_lag_", lags)
   atplags <- paste0("atplag(", lags_nms, ")", collapse = "+")
   d <- as.data.table(d_list) # shift() benchmarked with great performance
 
