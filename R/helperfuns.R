@@ -338,6 +338,7 @@ layer_mono_multi <- function(object,
 }
 
 #' @importFrom data.table shift `:=` as.data.table
+#' @importFrom stats na.omit
 create_lags <- function(rvar,
                         d_list,
                         atplags = NULL,
