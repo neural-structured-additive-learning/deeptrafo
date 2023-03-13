@@ -355,13 +355,13 @@ create_lags <- function(rvar,
   d <- as.data.table(d_list) # shift() benchmarked with great performance
 
   if (pred_grid) {
-    d[, (lags_nms) := shift(get(attr(pred_grid, "rname")), n = lags, 
+    d[, (lags_nms) := shift(get(attr(pred_grid, "rname")), n = lags,
                             type = "lag", fill = NA), by = get(attr(pred_grid, "y"))]
   } else {
     d[, (lags_nms) := shift(get(rvar), n = lags, type = "lag", fill = NA)]
   }
 
-  return(list(data = as.list(na.omit(d)), fm = atplags))
+  return(list(data = as.list(d), fm = atplags))
 }
 
 fm_to_lag <- function(l_fm) {

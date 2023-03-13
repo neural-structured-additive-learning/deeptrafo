@@ -26,10 +26,10 @@ check_methods <- function(m, newdata, test_plots = TRUE, grid = TRUE)
   # fitted
   fitt <- m %>% fitted()
   expect_is(fitt, "matrix")
-  
+
   numb_lags <- 0
   if (m$init_params$is_atm) {
-    numb_lags <- max(fm_to_lag(m$init_params$lag_formula))
+    numb_lags <- max(deeptrafo:::fm_to_lag(m$init_params$lag_formula))
   }
 
   # predict
