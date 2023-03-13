@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 
 class MonoMultiLayer(tf.keras.layers.Layer):    
-    def __init__(self, output_dim = None, kernel = None, dim_bsp = None, kernel_regularizer = None, trafo = None, initializer = keras.initializers.RandomNormal(), **kwargs):
+    def __init__(self, output_dim = None, kernel = None, dim_bsp = None, kernel_regularizer = None, trafo = None, initializer = keras.initializers.RandomNormal(seed = 1), **kwargs):
         super(MonoMultiLayer, self).__init__(**kwargs)
         self.output_dim = output_dim
         self.dim_bsp = dim_bsp

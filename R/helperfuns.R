@@ -282,7 +282,7 @@ MonoMultiLayer <- R6::R6Class("MonoMultiLayer",
                                 initialize = function(output_dim, dim_bsp,
                                                       # input_dim,
                                                       kernel_regularizer,
-                                                      initializer = initializer_random_normal(),
+                                                      initializer = initializer_random_normal(seed = 1L),
                                                       trafo = trafo)
                                 {
                                   self$output_dim <- output_dim
@@ -361,7 +361,7 @@ create_lags <- function(rvar,
     d[, (lags_nms) := shift(get(rvar), n = lags, type = "lag", fill = NA)]
   }
 
-  return(list(data = as.list(d), fm = atplags))
+  return(list(data = as.list(na.omit(d)), fm = atplags))
 }
 
 fm_to_lag <- function(l_fm) {
