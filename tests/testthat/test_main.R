@@ -204,6 +204,22 @@ test_that("autoregressive transformation model", {
 
 })
 
+test_that("autoregressive count transformation model", {
+
+  dat <- data.frame(y = round(rnorm(100, mean = 1e3, sd = 20)), x = rnorm(100), z = rnorm(100))
+  fml <- y | s(x) ~ 0 + s(z) + atplag(1, 2) # max lag (i.e. 2) reduces data set (also at predict)
+  m <- deeptrafo(fml, dat)
+
+  expect_is(predict(m, newdata = dat[1:10, -1], K = 2, type = "pdf"), "list")
+  expect_is(predict(m, newdata = dat[1:10, -1], q = range(dat$y), type = "pdf"), "list")
+
+  check_methods(m, newdata = dat)
+
+  cf <- coef(m, which_param = "autoregressive")
+  expect_equal(length(cf), 2)
+
+})
+
 test_that("autoregressive transformation model specification", {
 
   dat <- data.frame(y = rnorm(100), x = rnorm(100), z = rnorm(100))
