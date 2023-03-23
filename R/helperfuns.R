@@ -320,7 +320,8 @@ layer_mono_multi <- function(object,
                              name = "constraint_mono_layer_multi",
                              trainable = TRUE,
                              kernel_regularizer = NULL,
-                             trafo = mono_trafo_multi
+                             trafo = mono_trafo_multi,
+                             initializer = initializer_random_normal(seed = sample.int(1e4, 1))
 ) {
 
   python_path <- system.file("python", package = "deeptrafo")
@@ -332,7 +333,8 @@ layer_mono_multi <- function(object,
       output_dim = as.integer(units),
       dim_bsp = as.integer(dim_bsp),
       kernel_regularizer = kernel_regularizer,
-      trafo = trafo
+      trafo = trafo,
+      initializer = initializer
     )
   )
 }
