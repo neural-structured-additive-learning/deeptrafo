@@ -6,7 +6,6 @@
 #' @param n_ensemble Numeric; number of ensemble members to fit.
 #' @param print_members Logical; print results for each member.
 #' @param verbose Logical; whether to print training in each fold.
-#' @param patience Integer; number of patience for early stopping.
 #' @param plot Logical; whether to plot the resulting losses in each fold.
 #' @param save_weights Logical; whether to save the ensemble weights.
 #' @param stop_if_nan Logical; whether to stop ensembling if \code{NaN} values
@@ -16,7 +15,7 @@
 #'     in the final result.
 #' @param seed Numeric vector of length \code{n_ensemble}; seeds for model
 #'     initialization.
-#' @param ... Further arguments passed to \code{deeptrafo}.
+#' @param ... Further arguments passed to \code{deeptrafo} and \code{fit}.
 #'
 #' @return Ensemble of \code{"deeptrafo"} models with list of training histories
 #'     and fitted weights included in \code{ensemble_results}. For details see
@@ -24,9 +23,9 @@
 #'
 #' @export
 trafoensemble <- function(
-    formula, data, n_ensemble = 5, verbose = FALSE, patience = 20,
-    print_members = TRUE, stop_if_nan = TRUE, save_weights = TRUE,
-    callbacks = list(), save_fun = NULL, seed = seq_len(n_ensemble),
+    formula, data, n_ensemble = 5, verbose = FALSE, print_members = TRUE,
+    stop_if_nan = TRUE, save_weights = TRUE, callbacks = list(),
+    save_fun = NULL, seed = seq_len(n_ensemble),
     ...
 ) {
 
