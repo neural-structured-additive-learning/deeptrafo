@@ -46,8 +46,6 @@ in the final result.}
 initialization.}
 
 \item{...}{Further arguments passed to \code{deeptrafo} and \code{fit}.}
-
-\item{plot}{Logical; whether to plot the resulting losses in each fold.}
 }
 \value{
 Ensemble of \code{"deeptrafo"} models with list of training histories

@@ -6,7 +6,6 @@
 #' @param n_ensemble Numeric; number of ensemble members to fit.
 #' @param print_members Logical; print results for each member.
 #' @param verbose Logical; whether to print training in each fold.
-#' @param plot Logical; whether to plot the resulting losses in each fold.
 #' @param save_weights Logical; whether to save the ensemble weights.
 #' @param stop_if_nan Logical; whether to stop ensembling if \code{NaN} values
 #'     occur
