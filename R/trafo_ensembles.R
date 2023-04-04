@@ -20,6 +20,8 @@
 #'     and fitted weights included in \code{ensemble_results}. For details see
 #'     the return statment in \code{\link[deepregression]{ensemble}}.
 #'
+#' @importFrom stats update
+#'
 #' @export
 trafoensemble <- function(
     formula, data, n_ensemble = 5, verbose = FALSE, print_members = TRUE,
