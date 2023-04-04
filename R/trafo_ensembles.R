@@ -53,9 +53,9 @@ trafoensemble <- function(
 
     st1 <- Sys.time()
 
-    member <- eval(template$init_params$call)
+    member <- update(template$init_params, tf_seed = seed[iter])
     member <- reinit_optimizer(member)
-    member <- deepregression:::reinit_weights(member, seed[iter])
+    member <- deepregression::reinit_weights(member, seed[iter])
 
     x_train <- prepare_data(member$init_params$parsed_formulas_content,
                             gamdata = member$init_params$gamdata$data_trafos)
@@ -71,7 +71,7 @@ trafoensemble <- function(
       ret[[iter]]$weighthistory <- get_weights(member$model)
 
     if (!is.null(save_fun))
-      ret[[iter]]$save_fun_result <- save_fun(this_mod)
+      ret[[iter]]$save_fun_result <- save_fun(member)
 
     if(stop_if_nan && any(is.nan(ret$metrics$validloss)))
       stop("Member ", iter, " with NaN's in validation loss")
