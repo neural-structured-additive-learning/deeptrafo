@@ -218,3 +218,41 @@ test_that("reinit works as expected", {
                     ens$ensemble_results[[2]]$metrics$loss))
 
 })
+
+test_that("weighted transformation ensemble", {
+
+  set.seed(123)
+
+  dgp <- function(n = 1e2) {
+    x = runif(n)
+    y = sin(x * pi * 3) + rnorm(n, sd = 0.1)
+    data.frame(y = y, x = x)
+  }
+
+  ### Generate train, validation, test data
+  train_data <- dgp()
+  validation_data <- dgp()
+  test_data <- dgp()
+
+  ### Train ensemble with early stopping (separate validation split)
+  ens <- trafoensemble(
+    y ~ x, data = train_data, epochs = 10, n_ensemble = 3, verbose = FALSE,
+    validation_split = 0.1, optimizer = optimizer_adam(learning_rate = 0.1),
+    callbacks = list(callback_early_stopping(patience = 50))
+  )
+
+  ### Compute the optimal weights on the validation data (weights = NULL; default)
+  tuned <- weighted_logLik(ens, newdata = validation_data)
+
+  expect_true(all(tuned$weights <= 1))
+  expect_true(all(tuned$weights >= 0))
+  expect_length(tuned$weights, 3L)
+  expect_lt(tuned$ensemble, tuned$mean)
+
+  ### Use optimal weights and make test predictions (weights = tuned$weights)
+  test_nll <- weighted_logLik(ens, weights = tuned$weights, newdata = test_data)
+
+  expect_equal(tuned$weights, test_nll$weights)
+  expect_lt(test_nll$ensemble, test_nll$mean)
+
+})
