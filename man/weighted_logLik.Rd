@@ -30,7 +30,8 @@ observations.}
 \item{...}{Further arguments supplied to \code{print.deeptrafo}}
 }
 \value{
-
+Returns list of ensemble members, average, and ensemble
+   log-likelihood converted by \code{convert_fun}
 }
 \description{
 Tune and evaluate weighted transformation ensembles

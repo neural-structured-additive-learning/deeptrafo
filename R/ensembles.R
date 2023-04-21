@@ -209,7 +209,8 @@ plot.dtEnsemble <- function(
 #'
 #' @importFrom stats optim weighted.mean
 #'
-#' @return
+#' @return Returns list of ensemble members, average, and ensemble
+#'    log-likelihood converted by \code{convert_fun}
 #' @export
 #'
 weighted_logLik <- function(
