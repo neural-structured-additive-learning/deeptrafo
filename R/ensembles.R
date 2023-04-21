@@ -223,7 +223,7 @@ weighted_logLik <- function(
 
   stopifnot(inherits(object, "dtEnsemble"))
 
-  indiv <- call_for_all_members(
+  indiv <- .call_for_all_members(
     object, logLik.deeptrafo, newdata = newdata, y = y,
     convert_fun = convert_fun, ... = ...
   )
