@@ -207,6 +207,8 @@ plot.dtEnsemble <- function(
 #'     on
 #' @inheritParams logLik.deeptrafo
 #'
+#' @importFrom stats optim weighted.mean
+#'
 #' @return
 #' @export
 #'
@@ -221,8 +223,8 @@ weighted_logLik <- function(
 
   stopifnot(inherits(object, "dtEnsemble"))
 
-  indiv <- deeptrafo:::.call_for_all_members(
-    object, deeptrafo:::logLik.deeptrafo, newdata = newdata, y = y,
+  indiv <- call_for_all_members(
+    object, logLik.deeptrafo, newdata = newdata, y = y,
     convert_fun = convert_fun, ... = ...
   )
 
@@ -231,7 +233,7 @@ weighted_logLik <- function(
   if (is.null(newdata)) {
     y <- object$init_params$y
   } else {
-    y <- deeptrafo:::response(newdata[[object$init_params$response_varname]])
+    y <- response(newdata[[object$init_params$response_varname]])
   }
 
   if (is.null(weights)) {
