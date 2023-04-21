@@ -198,6 +198,64 @@ plot.dtEnsemble <- function(
 
 }
 
+#' Tune and evaluate weighted transformation ensembles
+#'
+#' @param object Object of class \code{"dtEnsemble"}
+#' @param weights Numeric; weight-vector of length \code{n_ensemble}, if
+#'     \code{NULL} the weights are tuned on \code{newdata}
+#' @param newdata List or data.frame; new data to evaluate or tune the weights
+#'     on
+#' @inheritParams logLik.deeptrafo
+#'
+#' @return
+#' @export
+#'
+weighted_logLik <- function(
+    object,
+    weights = NULL,
+    newdata = NULL,
+    convert_fun = function(x, ...) mean(x, ...),
+    batch_size = NULL,
+    ...
+) {
+
+  stopifnot(inherits(object, "dtEnsemble"))
+
+  indiv <- deeptrafo:::.call_for_all_members(
+    object, deeptrafo:::logLik.deeptrafo, newdata = newdata, y = y,
+    convert_fun = convert_fun, ... = ...
+  )
+
+  fitt <- fitted(object, newdata = newdata, batch_size = NULL)
+
+  if (is.null(newdata)) {
+    y <- object$init_params$y
+  } else {
+    y <- deeptrafo:::response(newdata[[object$init_params$response_varname]])
+  }
+
+  if (is.null(weights)) {
+    obj <- function(weights) {
+      y_pred <- apply(simplify2array(fitt), 1:2, weighted.mean, w = weights)
+      convert_fun(object$model$loss(y, y_pred)$numpy())
+    }
+    opt <- optim(rep(1, length(fitt)), obj, lower = .Machine$double.eps,
+                 upper = 1 - .Machine$double.eps, method = "L-BFGS-B")
+    ensemble_loss <- opt$value
+    weights <- opt$par
+    weights <- weights / sum(weights)
+  } else {
+    y_pred <- apply(simplify2array(fitt), 1:2, weighted.mean, w = weights)
+    ensemble_loss <- convert_fun(object$model$loss(y, y_pred)$numpy())
+  }
+
+  list(members = unlist(indiv),
+       mean = mean(unlist(indiv)),
+       ensemble = ensemble_loss,
+       weights = weights)
+
+}
+
 # Helpers
 
 #' @importFrom keras set_weights
