@@ -15,6 +15,7 @@ trafoensemble(
   callbacks = list(),
   save_fun = NULL,
   seed = seq_len(n_ensemble),
+  tf_seeds = seq_len(n_ensemble),
   ...
 )
 }
@@ -43,7 +44,15 @@ occur}
 in the final result.}
 
 \item{seed}{Numeric vector of length \code{n_ensemble}; seeds for model
-initialization.}
+re-initialization. Changing these seeds does not change the  parameters
+of the interacting predictor \code{coef(obj, which_param = "interacting")},
+change \code{tf_seeds} to adapt those coefficients.}
+
+\item{tf_seeds}{Numeric vector of length \code{n_ensemble}; explicit seed for
+changing the parameters of the interacting predictor. Distinct from
+\code{seed} which is used for weight re-initialization of the rest of the
+model (i.e., the shifting predictor and potential neural network components
+in the interacting component).}
 
 \item{...}{Further arguments passed to \code{deeptrafo} and \code{fit}.}
 }

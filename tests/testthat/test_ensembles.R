@@ -143,12 +143,12 @@ test_that("deep ensemble with count outcome", {
 test_that("ensembles with callbacks, custom optimizers work", {
   df <- dgp_cont()
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1),
-                       n_ensemble = 3, seed = rep(1, 3), tf_seed = 1)
+                       n_ensemble = 3, seed = rep(1, 3), tf_seeds = rep(1, 3))
   cfb <- unname(c(unlist(coef(ens))))
   expect_equal(cfb, rep(cfb[1], 3))
   expect_equal(ll <- unname(unlist(logLik(ens))), unname(rep(ll[1], 5)))
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1),
-                       n_ensemble = 3, seed = rep(1, 3), tf_seed = 1,
+                       n_ensemble = 3, seed = rep(1, 3), tf_seeds = rep(1, 3),
                        callbacks = list(callback_early_stopping()),
                        validation_split = 0.05)
   expect_length(ens$ensemble_results[[2]]$metrics$loss, 2)
@@ -159,28 +159,31 @@ test_that("reinit works as expected", {
 
   ### No special args
   ens <- trafoensemble(y ~ 1, data = df, n_ensemble = 3, seed = c(2, 10, 20),
+                       tf_seeds = c(2, 10, 20),
                        epochs = 3, validation_split = 0.1)
   expect_false(any(ens$ensemble_results[[1]]$metrics$loss ==
                      ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom optimizer
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = c(2, 10, 20), epochs = 3,
+                       n_ensemble = 3, seed = c(2, 10, 20), tf_seeds = c(2, 10, 20),
+                       epochs = 3,
                        validation_split = 0.1)
   expect_false(any(ens$ensemble_results[[1]]$metrics$loss ==
                      ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom callback
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = c(2, 10, 20), epochs = 3,
-                       callbacks = callback_early_stopping(patience = 0),
+                       n_ensemble = 3, seed = c(2, 10, 20), tf_seeds = c(2, 10, 20),
+                       epochs = 3, callbacks = callback_early_stopping(patience = 0),
                        validation_split = 0.1)
   expect_false(any(ens$ensemble_results[[1]]$metrics$loss ==
                      ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom neural network
   ens <- trafoensemble(y ~ nn(x), data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = c(2, 10, 20), epochs = 3,
+                       n_ensemble = 3, seed = c(2, 10, 20), tf_seeds = c(2, 10, 20),
+                       epochs = 3,
                        callbacks = callback_early_stopping(patience = 0),
                        validation_split = 0.1, list_of_deep_models = list(
                          nn = \(x) x %>% layer_dense(1, activation = "relu")))
@@ -189,29 +192,29 @@ test_that("reinit works as expected", {
 
   ### No special args + seed
   ens <- trafoensemble(y ~ 1, data = df, n_ensemble = 3, seed = rep(1, 3),
-                       epochs = 3, validation_split = 0.1)
+                       tf_seeds = rep(1, 3), epochs = 3, validation_split = 0.1)
   expect_true(all(ens$ensemble_results[[1]]$metrics$loss ==
                     ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom optimizer + seed
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = rep(1, 3), epochs = 3,
-                       validation_split = 0.1)
+                       n_ensemble = 3, seed = rep(1, 3), tf_seeds = rep(1, 3),
+                       epochs = 3, validation_split = 0.1)
   expect_true(all(ens$ensemble_results[[1]]$metrics$loss ==
                     ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom callback + seed
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = rep(1, 3), epochs = 3,
-                       callbacks = callback_early_stopping(patience = 0),
+                       n_ensemble = 3, seed = rep(1, 3), tf_seeds = rep(1, 3),
+                       epochs = 3, callbacks = callback_early_stopping(patience = 0),
                        validation_split = 0.1)
   expect_true(all(ens$ensemble_results[[1]]$metrics$loss ==
                     ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom neural network + seed
   ens <- trafoensemble(y ~ nn(x), data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = rep(1, 3), epochs = 3,
-                       callbacks = callback_early_stopping(patience = 0),
+                       n_ensemble = 3, seed = rep(1, 3), tf_seeds = rep(1, 3),
+                       epochs = 3, callbacks = callback_early_stopping(patience = 0),
                        validation_split = 0.1, list_of_deep_models = list(
                          nn = \(x) x %>% layer_dense(1, activation = "relu")))
   expect_true(all(ens$ensemble_results[[1]]$metrics$loss ==
