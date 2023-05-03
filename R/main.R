@@ -102,6 +102,13 @@ deeptrafo <- function(
 
   # Name of the response variable
   rvar <- all.vars(formula)[1]
+  
+  grid_size <- 10L
+  n_size <- nrow(data)
+  #data <- data %>% tidyr::uncount(grid_size)
+  data <- data.table::rbindlist(replicate(n = grid_size, expr = data, simplify = FALSE))
+  data$y_grid <- rep(make_grid(data[[rvar]], n = grid_size)$y, each = n_size)
+  data$ID <- rep(1:n_size, each = grid_size)
 
   # Placeholder Intercept
   int <- 1
@@ -162,11 +169,7 @@ deeptrafo <- function(
   # define how to get a trafo model from predictor
   from_pred_to_trafo_fun <- from_preds_to_trafo(
     atm_toplayer = trafo_options$atm_toplayer, const_ia = addconst_interaction)
-  
-  supp_y <- as.integer(trafo_options$supp())
-  y_grid <- tf$linspace(supp_y[1], supp_y[2], 5L)
-  y_grid <- tf$tile(tf$expand_dims(y_grid, axis=1L), c(1L, 16L))
-  browser()
+
   atm_lag_processor <- atm_lag_processor_factory(rvar)
 
   trafo_processor <- list(
@@ -192,6 +195,9 @@ deeptrafo <- function(
   # Loss function
   # tloss <- get_loss(response_type, latent_distr)
   tloss <- nll(latent_distr)
+  if (crps) {
+    tloss <- crps(latent_distr)
+  }
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
@@ -201,7 +207,6 @@ deeptrafo <- function(
   snwb[[which(names(list_of_formulas) == "yterms")]] <- function(...)
     return(NULL)
 
-  browser()
   args <- c(list(
     y = y, family = latent_distr, data = data, list_of_formulas = list_of_formulas,
     subnetwork_builder = snwb, from_preds_to_output = from_pred_to_trafo_fun,
@@ -209,9 +214,9 @@ deeptrafo <- function(
     additional_processor = additional_processor), dots)
 
   if (crps) {
-    args$y <- data[[rvar]]
-    args$loss
+    args$y <- cbind(args$y, data[["cmedv"]])
   }
+  
   ret <- suppressWarnings(do.call("deepregression", args))
 
   ret$init_params$is_atm <- is_atm
@@ -252,9 +257,6 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
       # potentially access all pp entries
       pp_in <- pp_lay <- pp[[h1pred]]
       pp_y <- pp[[yterms]]
-      browser()
-
-
       # generate pp parts
       gaminput_nrs <- sapply(pp_in, "[[", "gamdata_nr")
       has_gaminp <- !sapply(gaminput_nrs, is.null)
@@ -426,7 +428,6 @@ from_preds_to_trafo <- function(
     # make inputs more readable
     # aTtheta <- tf_stride_cols(list_pred_param$h1pred, 1L)
     # aPrimeTtheta <- tf_stride_cols(list_pred_param$h1pred, 2L)
-    browser()
     h1pred_ncol <- list_pred_param$h1pred$shape[[2]]
     shift_pred <- list_pred_param$h2
 
@@ -476,7 +477,6 @@ nll <- function(base_distribution) {
 
   return(
     function(y_true, y_pred) {
-      browser()
 
       cleft <- tf_stride_cols(y_true, 1L)
       exact <- tf_stride_cols(y_true, 2L)
@@ -528,39 +528,44 @@ crps <- function(base_distribution) {
   
   return(
     function(y_true, y_pred) {
-      browser()
       
-      y_grid <- tf$linspace(supp_y[1], supp_y[2], grid_gran)
+      # h_hat = h_1_hat + h_2_hat
+      h_hat <- layer_add(list(tf_stride_cols(y_pred, 1L),
+                              tf_stride_cols(y_pred, 2L)))
+      # h'
+      h_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 4L),
+                                              1e-8, Inf))
       
-      # F_Z
-      #bd <- tfd_normal(0,1)
+      # rescaling needed?
+      # h_norm <- tf$norm(tf$add(h_hat, h_prime))
+      # h_hat <- tf$divide(h_hat, h_norm)
+      # h_prime <- tf$divide(h_prime, h_norm)
+      
+      # dont forget to add penalty to the loss
       
       # f_Y|X = x
-      res <- eval_density(self, x, y_grid, bd, train = TRUE)
-      y_pred <- res$y_pred
+      f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
+      browser()
       
       # F_Y|X = x
-      cumulative_df <- eval_cdf(res$densities, y_grid)
+      # y_grid needs to be taken from "data"
+      # 1-D integration should be done block wise (per ID)
+      scale_dens <- tfp$math$trapz(f_y_dens, y_grid)
+      f_y <- tf$divide(f_y_dens, scale_dens)
+      F_y_hat <- tfp$math$trapz(f_y_dens, y_grid)
+
+      # 1-D interpolation should be done block wise (per ID)
+      quant <- lin_interpol(F_y_hat, y_grid)
       
-      crp_scores <- calc_crps(y_true, cumulative_df, y_grid)
-      
-      # loss <- tf$reduce_mean(crp_scores)
-      # 
-      # trafo <- layer_add(list(tf_stride_cols(y_pred, 1L), # Shift in 1
-      #                         tf_stride_cols(y_pred, 2L))) # Upper in 2
-      # trafo_lwr <- layer_add(list(tf_stride_cols(y_pred, 1L),
-      #                             tf_stride_cols(y_pred, 3L))) # Lower in 3
-      # trafo_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 4L),
-      #                                             1e-8, Inf)) # Prime in 4
-      # 
-      # ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
-      # ll_left <- tf$math$log(tf$clip_by_value(tfd_cdf(bd, trafo), 1e-16, 1))
-      # ll_right <- tf$math$log(tf$clip_by_value(1 - tfd_cdf(bd, trafo_lwr), 1e-16, 1))
-      # ll_int <- tf$math$log(tf$clip_by_value(tfd_cdf(bd, trafo) - tfd_cdf(bd, trafo_lwr), 1e-16, 1))
-      # 
-      # neglogLik <- - (cleft * ll_left + exact * ll_exact + cright * ll_right +
-      #                   cint * ll_int)
-      
-      return(crp_scores)
+      # block wise (per ID) pinball loss
+      p_grid <- tf$linspace(0.01, 0.99, M_crps)
+      pin_ball <- tf$cast(tf$math$less(y_true, quant),tf$float32)
+      pin_ball <- tf$subtract(pin_ball, p_grid)
+      pin_ball <- tf$math$multiply(pin_ball, tf$subtract(quant, y_true))
+    
+      scle <- tf$cast(tf$divide(2L, M_crps), tf$float32)
+      crps <- tf$math$multiply(scle, tf$reduce_sum(pin_ball)) # scalar
+
+      return(crps)
     })
 }
