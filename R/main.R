@@ -84,6 +84,7 @@ deeptrafo <- function(
     order = get_order(response_type, data[[all.vars(fml)[1]]]),
     addconst_interaction = 0,
     latent_distr = "logistic",
+    crps = FALSE,
     monitor_metrics = NULL,
     trafo_options = trafo_control(
       order_bsp = order, response_type = response_type),
@@ -161,7 +162,11 @@ deeptrafo <- function(
   # define how to get a trafo model from predictor
   from_pred_to_trafo_fun <- from_preds_to_trafo(
     atm_toplayer = trafo_options$atm_toplayer, const_ia = addconst_interaction)
-
+  
+  supp_y <- as.integer(trafo_options$supp())
+  y_grid <- tf$linspace(supp_y[1], supp_y[2], 5L)
+  y_grid <- tf$tile(tf$expand_dims(y_grid, axis=1L), c(1L, 16L))
+  browser()
   atm_lag_processor <- atm_lag_processor_factory(rvar)
 
   trafo_processor <- list(
@@ -196,12 +201,17 @@ deeptrafo <- function(
   snwb[[which(names(list_of_formulas) == "yterms")]] <- function(...)
     return(NULL)
 
+  browser()
   args <- c(list(
     y = y, family = latent_distr, data = data, list_of_formulas = list_of_formulas,
     subnetwork_builder = snwb, from_preds_to_output = from_pred_to_trafo_fun,
     loss = tloss, monitor_metrics = monitor_metrics,
     additional_processor = additional_processor), dots)
 
+  if (crps) {
+    args$y <- data[[rvar]]
+    args$loss
+  }
   ret <- suppressWarnings(do.call("deepregression", args))
 
   ret$init_params$is_atm <- is_atm
@@ -242,6 +252,7 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
       # potentially access all pp entries
       pp_in <- pp_lay <- pp[[h1pred]]
       pp_y <- pp[[yterms]]
+      browser()
 
 
       # generate pp parts
@@ -415,6 +426,7 @@ from_preds_to_trafo <- function(
     # make inputs more readable
     # aTtheta <- tf_stride_cols(list_pred_param$h1pred, 1L)
     # aPrimeTtheta <- tf_stride_cols(list_pred_param$h1pred, 2L)
+    browser()
     h1pred_ncol <- list_pred_param$h1pred$shape[[2]]
     shift_pred <- list_pred_param$h2
 
@@ -464,6 +476,7 @@ nll <- function(base_distribution) {
 
   return(
     function(y_true, y_pred) {
+      browser()
 
       cleft <- tf_stride_cols(y_true, 1L)
       exact <- tf_stride_cols(y_true, 2L)
@@ -489,4 +502,65 @@ nll <- function(base_distribution) {
     }
   )
 
+}
+
+#' Continuous ranked probability score objective
+#'
+#' @param base_distribution Target distribution, character or
+#'     \code{tfd_distribution}. If character, can be either "logistic",
+#'     "normal", "gumbel", "gompertz".
+#'
+#' @return A function for computing the continuous ranked probability scores of a
+#'     neural network transformation model with continuous response.
+#'
+#' @import deepregression
+#' @import tfprobability
+#' @import keras
+#' @import tensorflow
+#'
+crps <- function(base_distribution) {
+  
+  if (is.character(base_distribution)) {
+    bd <- get_bd(base_distribution)
+  } else {
+    bd <- base_distribution
+  }
+  
+  return(
+    function(y_true, y_pred) {
+      browser()
+      
+      y_grid <- tf$linspace(supp_y[1], supp_y[2], grid_gran)
+      
+      # F_Z
+      #bd <- tfd_normal(0,1)
+      
+      # f_Y|X = x
+      res <- eval_density(self, x, y_grid, bd, train = TRUE)
+      y_pred <- res$y_pred
+      
+      # F_Y|X = x
+      cumulative_df <- eval_cdf(res$densities, y_grid)
+      
+      crp_scores <- calc_crps(y_true, cumulative_df, y_grid)
+      
+      # loss <- tf$reduce_mean(crp_scores)
+      # 
+      # trafo <- layer_add(list(tf_stride_cols(y_pred, 1L), # Shift in 1
+      #                         tf_stride_cols(y_pred, 2L))) # Upper in 2
+      # trafo_lwr <- layer_add(list(tf_stride_cols(y_pred, 1L),
+      #                             tf_stride_cols(y_pred, 3L))) # Lower in 3
+      # trafo_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 4L),
+      #                                             1e-8, Inf)) # Prime in 4
+      # 
+      # ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
+      # ll_left <- tf$math$log(tf$clip_by_value(tfd_cdf(bd, trafo), 1e-16, 1))
+      # ll_right <- tf$math$log(tf$clip_by_value(1 - tfd_cdf(bd, trafo_lwr), 1e-16, 1))
+      # ll_int <- tf$math$log(tf$clip_by_value(tfd_cdf(bd, trafo) - tfd_cdf(bd, trafo_lwr), 1e-16, 1))
+      # 
+      # neglogLik <- - (cleft * ll_left + exact * ll_exact + cright * ll_right +
+      #                   cint * ll_int)
+      
+      return(crp_scores)
+    })
 }
