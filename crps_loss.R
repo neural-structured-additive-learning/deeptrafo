@@ -26,7 +26,7 @@ devtools::load_all("/Users/flipst3r/RStHomeDir/GitHub/deeptrafo")
 
 BostonHousing2$y_grid <- BostonHousing2$cmedv
 
-grid_size <- 50L
+grid_size <- 30L
 n_size <- nrow(BostonHousing2)
 BostonHousing2 <- BostonHousing2 %>% tidyr::uncount(grid_size)
 #BostonHousing2 <- data.table::rbindlist(replicate(n = grid_size, expr = BostonHousing2, simplify = FALSE))
@@ -36,10 +36,11 @@ BostonHousing2$ID <- rep(1:n_size, each = grid_size)
 # BostonHousing2 <- list(y_grid = list(rnorm(4), rnorm(4)), lon = list(rnorm(4), rnorm(4)),
 #                        age = list(rnorm(4), rnorm(4)), crim = list(rnorm(4), rnorm(4)))
 
-fml <- y_grid|lon ~ 0 + age + nn(crim)
+fml <- y_grid|lon ~ 0 + age + crim + lon + lat + ptratio
 m <- deeptrafo(fml, BostonHousing2, latent_distr = "normal", monitor_metric = NULL,
+               optimizer = optimizer_adam(learning_rate = 0.0001),
                return_data = TRUE, list_of_deep_models = list(nn = nn), crps = TRUE,
-               trafo_options = trafo_control(support = c(0, 50)))
+               trafo_options = trafo_control(support = c(5, 50)))
 
 # n <- nrow(BostonHousing2)
 # not_found <- TRUE
@@ -59,9 +60,9 @@ m <- deeptrafo(fml, BostonHousing2, latent_distr = "normal", monitor_metric = NU
 
 
 # Fit
-m %>% fit(epochs = 1,
-          batch_size = 32*grid_size, 
-          shuffle = FALSE,
+m %>% fit(epochs = 20,
+          batch_size = 64*grid_size, 
+          #shuffle = FALSE,
           validation_data = NULL,
           validation_split = list())
 

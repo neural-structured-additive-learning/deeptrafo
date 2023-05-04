@@ -523,23 +523,28 @@ crps <- function(base_distribution) {
   return(
     function(y_true, y_pred) {
 
-      browser()
+      #browser()
       # h_hat = h_1_hat + h_2_hat
       h_hat <- layer_add(list(tf_stride_cols(y_pred, 1L),
                               tf_stride_cols(y_pred, 2L)))
-      # h'
-      h_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 4L),
-                                              1e-8, Inf))
-      
-      # rescaling needed?
-      h_norm <- tf$norm(tf$add(h_hat, h_prime))
+      h_norm <- tf$norm(h_hat)
       h_hat <- tf$divide(h_hat, h_norm)
+      
+      # h'
+      h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L),1e-8, Inf)
+      h_norm <- tf$norm(h_prime)
       h_prime <- tf$divide(h_prime, h_norm)
+      h_prime <- tf$math$log(h_prime)
       
       # dont forget to add penalty to the loss
       
       # f_Y|X = x
       f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
+      par(mfrow = c(1,2))
+      plot(f_y_dens$numpy()[1:grid_size])
+      plot(f_y_dens$numpy()[(grid_size + 1):(grid_size * 2)])
+      #Sys.sleep(1)
+      #browser()
       
       grid_size <- as.integer(grid_size)
       batch_size <- as.integer(f_y_dens$shape[1])
@@ -591,7 +596,8 @@ crps <- function(base_distribution) {
       crps <- tf$multiply(crps, scle)
       
       #browser()
-      crps <- tf$reshape(tf$`repeat`(crps, grid_size), c(batch_size, 1L))
+      #crps <- tf$reshape(tf$`repeat`(crps, grid_size), c(batch_size, 1L))
+      crps <- tf$reduce_mean(crps)
       
 
       # 
