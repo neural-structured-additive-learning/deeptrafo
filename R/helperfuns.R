@@ -661,18 +661,17 @@ comp_cdf <- function(x, y) {
     integ <- tfp$math$trapz(tf$gather(y, 0L:k), tf$gather(x, 0L:k))
     integrals <- tf$concat(list(integrals, tf$reshape(integ, 1L)), axis = 0L)
   }
-  return(integrals)
+  #browser()
+  return(tf$concat(list(tf$reshape(0, 1L), integrals), axis = 0L))
 }
 
-lin_interpol <- function(x_eval, x, y) {
+lin_interpol <- function(p_val, x, y) {
   
   # linear univariate interpolation of a quantile function
   
-  # x_eval: scalar prob to be evaluated
+  # p_val: scalar prob to be evaluated
   # x: tensor of CDF values
   # y: tensor of quantiles belonging to x
-  
-  p_val <- tf$reshape(x_eval, 1L)
   
   tf$assert_equal(x$shape, y$shape)
   tf$assert_less(x, 1 + 1e-3)
@@ -690,20 +689,21 @@ lin_interpol <- function(x_eval, x, y) {
   
   relevant_interval <- tf$searchsorted(x, p_val, side = 'right')
   
-  if(relevant_interval$numpy() == 0) {
-    relevant_interval <- tf$reshape(1L, 1L)
-  }
-  
-  if(relevant_interval$numpy() == x$shape[1]) {
-    relevant_interval <- tf$subtract(x$shape[1], 1L)$numpy()
-  }
+  relevant_interval <- tf$where(relevant_interval == 0,
+                                1L, relevant_interval)
+  relevant_interval <- tf$where(relevant_interval == as.integer(x$shape[1]),
+                                tf$subtract(x$shape[1], 1L), relevant_interval)
   
   slopes <- tf$math$divide(y_grid_diff, F_y_hat_diff)
   q <- tf$add(tf$gather(y, relevant_interval - 1L),
               tf$multiply(tf$gather(slopes, relevant_interval - 1L),
                           p_val - tf$gather(x, relevant_interval - 1L)))
-  tf$reshape(q, 1L)
+  
+  return(q)
 }
+x <- tf$constant(c(0, 0.01, 0.8, 1))
+y <- tf$constant(c(-1.1, 0, 1, 1.8))
+p_val <- tf$constant(c(0.01, 0.95, 0.96, 0.97, 0.98))
 
 eval_density <- function(self, data_x, y_grid, F_Z, train = T) {
   
