@@ -102,13 +102,6 @@ deeptrafo <- function(
 
   # Name of the response variable
   rvar <- all.vars(formula)[1]
-  
-  grid_size <- 10L
-  n_size <- nrow(data)
-  #data <- data %>% tidyr::uncount(grid_size)
-  data <- data.table::rbindlist(replicate(n = grid_size, expr = data, simplify = FALSE))
-  data$y_grid <- rep(make_grid(data[[rvar]], n = grid_size)$y, each = n_size)
-  data$ID <- rep(1:n_size, each = grid_size)
 
   # Placeholder Intercept
   int <- 1
@@ -214,8 +207,9 @@ deeptrafo <- function(
     additional_processor = additional_processor), dots)
 
   if (crps) {
-    args$y <- cbind(args$y, data[["cmedv"]])
+    args$y <- cbind(args$y, data[["cmedv"]], data[["ID"]], data[["y_grid"]])
   }
+  #browser()
   
   ret <- suppressWarnings(do.call("deepregression", args))
 
@@ -528,7 +522,8 @@ crps <- function(base_distribution) {
   
   return(
     function(y_true, y_pred) {
-      
+
+      browser()
       # h_hat = h_1_hat + h_2_hat
       h_hat <- layer_add(list(tf_stride_cols(y_pred, 1L),
                               tf_stride_cols(y_pred, 2L)))
@@ -537,34 +532,118 @@ crps <- function(base_distribution) {
                                               1e-8, Inf))
       
       # rescaling needed?
-      # h_norm <- tf$norm(tf$add(h_hat, h_prime))
-      # h_hat <- tf$divide(h_hat, h_norm)
-      # h_prime <- tf$divide(h_prime, h_norm)
+      h_norm <- tf$norm(tf$add(h_hat, h_prime))
+      h_hat <- tf$divide(h_hat, h_norm)
+      h_prime <- tf$divide(h_prime, h_norm)
       
       # dont forget to add penalty to the loss
       
       # f_Y|X = x
       f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
-      browser()
       
-      # F_Y|X = x
-      # y_grid needs to be taken from "data"
-      # 1-D integration should be done block wise (per ID)
-      scale_dens <- tfp$math$trapz(f_y_dens, y_grid)
-      f_y <- tf$divide(f_y_dens, scale_dens)
-      F_y_hat <- tfp$math$trapz(f_y_dens, y_grid)
-
-      # 1-D interpolation should be done block wise (per ID)
-      quant <- lin_interpol(F_y_hat, y_grid)
+      grid_size <- as.integer(grid_size)
+      batch_size <- as.integer(f_y_dens$shape[1])
       
-      # block wise (per ID) pinball loss
+      n_ID <- tf$cast(tf$divide(batch_size, grid_size), dtype = tf$int64)
+      #if (n_ID < 32)  browser()
+      
+      y_grid <- tf$reshape(tf_stride_cols(y_true, 7L), c(n_ID, grid_size))
+      f_y_hat <- tf$reshape(f_y_dens, c(n_ID, grid_size))
+      F_y_hat <- tf$map_fn(
+        function(x) {
+          scale_dens <- tfp$math$trapz(x[[1]], x[[2]])
+          f_y_dens_ID <- tf$divide(x[[1]], scale_dens)
+          comp_cdf(x[[2]], f_y_dens_ID)
+        },
+        list(f_y_hat, y_grid),
+        dtype=tf$float32
+      )
+      #browser()
+      #F_y_hat <- tf$reshape(F_y_hat, c(-1L))
+      # #IDs <- tf$unique(tf$squeeze(tf_stride_cols(y_true, 6L), 1L))
+      # 
+      M_crps <- 20L
       p_grid <- tf$linspace(0.01, 0.99, M_crps)
-      pin_ball <- tf$cast(tf$math$less(y_true, quant),tf$float32)
-      pin_ball <- tf$subtract(pin_ball, p_grid)
-      pin_ball <- tf$math$multiply(pin_ball, tf$subtract(quant, y_true))
-    
+      
+      quantile_hat <- tf$map_fn(
+        function(x) {
+          lin_interpol(p_grid, x[[1]], x[[2]])
+        },
+        list(F_y_hat, y_grid),
+        dtype=tf$float32
+      )
+      
+      #browser()
+      y_obs <- tf_stride_cols(y_true, 5L)
+      y_obs <- tf$gather(y_obs, seq(1L, batch_size, grid_size))
+      y_obs <- tf$`repeat`(y_obs, M_crps)
+      
+      quantile_hat <- tf$reshape(quantile_hat, -1L)
+
+      pin_ball <- tf$cast(tf$math$less(y_obs, quantile_hat),tf$float32)
+      pin_ball <- tf$subtract(pin_ball, tf$tile(p_grid, 
+                                                list(n_ID)))
+      pin_ball <- tf$math$multiply(pin_ball, tf$subtract(quantile_hat, y_obs))
+      
+      crps <- tf$reduce_sum(tf$reshape(pin_ball, c(n_ID, M_crps)), axis = 1L)
+      
       scle <- tf$cast(tf$divide(2L, M_crps), tf$float32)
-      crps <- tf$math$multiply(scle, tf$reduce_sum(pin_ball)) # scalar
+      crps <- tf$multiply(crps, scle)
+      
+      #browser()
+      crps <- tf$reshape(tf$`repeat`(crps, grid_size), c(batch_size, 1L))
+      
+
+      # 
+      # for (i in IDs$y$numpy()) {
+      #   
+      #   logical_idx <- tf$where(tf$squeeze(tf_stride_cols(y_true, 6L), 1L) == as.integer(i))
+      #   
+      #   f_y_dens_ID <- tf$reshape(tf$gather(f_y_dens, logical_idx), -1L)
+      #   y_grid_ID <- tf$reshape(tf$gather(tf_stride_cols(y_true, 7L), logical_idx), -1L)
+      #   
+      #   scale_dens <- tfp$math$trapz(f_y_dens_ID, y_grid_ID)
+      #   f_y_dens_ID <- tf$divide(f_y_dens_ID, scale_dens)
+      #   F_y_hat_ID <- comp_cdf(y_grid_ID, f_y_dens_ID)
+      #   
+      #   for (k in 1L:M_crps) {
+      #     
+      #     # find quantile through linear interpolation of quantile function
+      #     quant <- lin_interpol(p_grid[k], F_y_hat_ID, y_grid_ID)
+      #     
+      #     # pinball loss
+      #     pin_ball <- tf$cast(tf$math$less(y_obs, quant),tf$float32)
+      #     pin_ball <- tf$subtract(pin_ball, p_grid[k])
+      #     pin_ball <- tf$math$multiply(pin_ball, tf$subtract(quant, y_obs))
+      #     
+      #     pin_ball_loss <- tf$concat(list(pin_ball_loss, 
+      #                                     tf$reshape(pin_ball, 1L)), axis = 0L)
+      #   }
+      #   
+      #   scle <- tf$cast(tf$divide(2L, M_crps), tf$float32)
+      #   crps <- tf$math$multiply(scle, tf$reduce_sum(pin_ball_loss))
+      #   crp_scores <- tf$concat(list(crp_scores, 
+      #                                tf$reshape(crps, 1L)), axis = 0L)
+      # }
+      # 
+      # # F_Y|X = x
+      # # y_grid needs to be taken from "data"
+      # # 1-D integration should be done block wise (per ID)
+      # scale_dens <- tfp$math$trapz(f_y_dens, y_grid)
+      # f_y <- tf$divide(f_y_dens, scale_dens)
+      # F_y_hat <- tfp$math$trapz(f_y_dens, y_grid)
+      # 
+      # # 1-D interpolation should be done block wise (per ID)
+      # quant <- lin_interpol(F_y_hat, y_grid)
+      # 
+      # # block wise (per ID) pinball loss
+      # p_grid <- tf$linspace(0.01, 0.99, M_crps)
+      # pin_ball <- tf$cast(tf$math$less(y_true, quant),tf$float32)
+      # pin_ball <- tf$subtract(pin_ball, p_grid)
+      # pin_ball <- tf$math$multiply(pin_ball, tf$subtract(quant, y_true))
+      # 
+      # scle <- tf$cast(tf$divide(2L, M_crps), tf$float32)
+      # crps <- tf$math$multiply(scle, tf$reduce_sum(pin_ball)) # scalar
 
       return(crps)
     })
