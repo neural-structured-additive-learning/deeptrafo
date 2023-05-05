@@ -89,6 +89,7 @@ deeptrafo <- function(
     trafo_options = trafo_control(
       order_bsp = order, response_type = response_type),
     return_data = FALSE,
+    grid_size = NULL,
     ...
 )
 {
@@ -105,6 +106,14 @@ deeptrafo <- function(
 
   # Placeholder Intercept
   int <- 1
+  
+  if (crps) {
+    n_size <- nrow(data)
+    data <- data %>% tidyr::uncount(grid_size)
+    sup_y <- trafo_options$supp() # make_grid() has no support argument
+    data$y_grid <- rep(seq(sup_y[1], sup_y[2], length.out = grid_size), n_size)
+    data$ID <- rep(1:n_size, each = grid_size) 
+  }
 
   # Set up formulas for basis
   if (ninteracting > 1L) {
@@ -128,6 +137,10 @@ deeptrafo <- function(
     h2 = if (nterms >= 1L) formula(fml, lhs = 0, rhs = 1L) else NULL,
     shared = if (nterms == 2L) formula(fml, lhs = 0, rhs = 2L) else NULL
   )
+  
+  if (crps) {
+    list_of_formulas$yterms <- as.formula("~ -1 + bsfun(y_grid) + bsfunl(y_grid) + bspfun(y_grid)")
+  }
 
   # Remove NULL formulae
   list_of_formulas[sapply(list_of_formulas, is.null)] <- NULL
@@ -189,7 +202,7 @@ deeptrafo <- function(
   # tloss <- get_loss(response_type, latent_distr)
   tloss <- nll(latent_distr)
   if (crps) {
-    tloss <- crps(latent_distr)
+    tloss <- crps_loss(latent_distr, grid_size)
   }
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
@@ -207,9 +220,8 @@ deeptrafo <- function(
     additional_processor = additional_processor), dots)
 
   if (crps) {
-    args$y <- cbind(args$y, data[["cmedv"]], data[["ID"]], data[["y_grid"]])
+    args$y <- cbind(args$y, data[[rvar]], data[["ID"]], data[["y_grid"]])
   }
-  #browser()
   
   ret <- suppressWarnings(do.call("deepregression", args))
 
@@ -223,6 +235,9 @@ deeptrafo <- function(
   ret$init_params$prepare_y_valdata <- response
   ret$init_params$data <- if (return_data) data else NULL
   ret$init_params$call <- call
+  ret$init_params$crps <- crps
+  ret$init_params$grid_size <- grid_size
+  ret$init_params$pls_eval <- pls_eval(latent_distr, grid_size)
 
   class(ret) <- c("deeptrafo", "deepregression")
   ret
@@ -471,7 +486,7 @@ nll <- function(base_distribution) {
 
   return(
     function(y_true, y_pred) {
-
+      
       cleft <- tf_stride_cols(y_true, 1L)
       exact <- tf_stride_cols(y_true, 2L)
       cright <- tf_stride_cols(y_true, 3L)
@@ -512,7 +527,7 @@ nll <- function(base_distribution) {
 #' @import keras
 #' @import tensorflow
 #'
-crps <- function(base_distribution) {
+crps_loss <- function(base_distribution, grid_size) {
   
   if (is.character(base_distribution)) {
     bd <- get_bd(base_distribution)
@@ -525,9 +540,11 @@ crps <- function(base_distribution) {
       
       grid_size <- as.integer(grid_size)
       
-      # for batch learning and validation, make sure the full grid of a obs is supplied
+      # for batch learning and validation, make sure the full grid for the distribution is supplied
       count_entries <- tf$unique_with_counts(tf$reshape(tf_stride_cols(y_true, 6L), -1L))
       bool_mask <- tf$`repeat`(tf$equal(count_entries$count, grid_size), count_entries$count)
+      
+      ## Check if non-complete distributions are also disregarded within the vector and not only at the end
       
       # discard obs where only a part of the distribution is supplied
       y_true <- tf$boolean_mask(y_true, bool_mask)
@@ -555,6 +572,7 @@ crps <- function(base_distribution) {
       
       # f_Y|X = x
       f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
+      
       par(mfrow = c(1,2))
       plot(f_y_dens$numpy()[1:grid_size])
       plot(f_y_dens$numpy()[(grid_size + 1):(grid_size * 2)])
@@ -604,5 +622,87 @@ crps <- function(base_distribution) {
       crps <- tf$reduce_mean(crps)
 
       return(crps)
+    })
+}
+
+#' Approximated predictive log scores
+#'
+#' @param base_distribution Target distribution, character or
+#'     \code{tfd_distribution}. If character, can be either "logistic",
+#'     "normal", "gumbel", "gompertz".
+#'
+#' @return A function for computing predicitve log scores of a model learned by
+#' CRPS.
+#'
+#' @import deepregression
+#' @import tfprobability
+#' @import keras
+#' @import tensorflow
+#'
+pls_eval <- function(base_distribution, grid_size) {
+  
+  if (is.character(base_distribution)) {
+    bd <- get_bd(base_distribution)
+  } else {
+    bd <- base_distribution
+  }
+  
+  return(
+    function(y_true, y_pred) {
+      
+      grid_size <- as.integer(grid_size)
+      
+      # for batch learning and validation, make sure the full grid for the distribution is supplied
+      count_entries <- tf$unique_with_counts(tf$reshape(tf_stride_cols(y_true, 6L), -1L))
+      bool_mask <- tf$`repeat`(tf$equal(count_entries$count, grid_size), count_entries$count)
+      
+      ## Check if non-complete distributions are also disregarded within the vector and not only at the end
+      
+      # discard obs where only a part of the distribution is supplied
+      y_true <- tf$boolean_mask(y_true, bool_mask)
+      y_pred <- tf$boolean_mask(y_pred, bool_mask)
+      
+      batch_size <- as.integer(y_true$shape[1])
+      n_ID <- tf$cast(tf$divide(batch_size, grid_size), dtype = tf$int64)
+      
+      # h_hat = h_1_hat + h_2_hat
+      h_hat <- layer_add(list(tf_stride_cols(y_pred, 1L),
+                              tf_stride_cols(y_pred, 2L)))
+      
+      # discuss: norm h_hat
+      h_hat <- tf$reshape(h_hat, c(n_ID, grid_size))
+      h_hat <- tf$map_fn(function(x) {
+        tf$divide(x[[1]], tf$norm(x[[1]]))
+      }, list(h_hat), dtype=tf$float32)
+      h_hat <- tf$reshape(h_hat, c(y_pred$shape[1], 1L))
+      
+      # h_prime_hat
+      h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L),1e-8, Inf)
+      h_prime <- tf$math$log(h_prime)
+      
+      # dont forget to add penalty to the loss
+      
+      # f_Y|X = x
+      f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
+  
+      y_grid <- tf$reshape(tf_stride_cols(y_true, 7L), c(n_ID, grid_size))
+      f_y_hat <- tf$reshape(f_y_dens, c(n_ID, grid_size))
+      
+      y_obs <- tf_stride_cols(y_true, 5L)
+      y_obs <- tf$gather(y_obs, seq(1L, batch_size, grid_size))
+      
+      n_ID <- as.integer(n_ID)
+      log_scores <- vector("list", length = n_ID)
+      
+      # PLS
+      for (i in 0:(n_ID - 1)) {
+        y_ob <- tf$gather(y_obs, as.integer(i))
+        y_gr <- tf$gather(y_grid, as.integer(i))
+        idx <- tf$argmin(tf$abs(tf$subtract(y_gr, y_ob)))
+        f_dens_val <- tf$gather(tf$gather(f_y_hat, i), idx)
+        log_scores[[i + 1]] <- tf$math$log(f_dens_val)$numpy()
+      }
+      
+      return(mean(do.call("c", log_scores), na.rm = T))
     })
 }

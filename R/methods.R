@@ -243,6 +243,7 @@ predict.deeptrafo <- function(
   rname <- object$init_params$response_varname
   rtype <- object$init_params$response_type
   order <- object$init_params$trafo_options$order_bsp
+  crps <- object$init_params$trafo_options$crps
   fam <- object$init_params$family
   discrete <- as.numeric(rtype %in% c("count", "ordered"))
   bd <- get_bd(fam)
@@ -253,7 +254,7 @@ predict.deeptrafo <- function(
 
   # Predict over grid of responses, if response not contained in newdata
   if (!is.null(newdata)) {
-    if (is.null(newdata[[rname]])) {
+    if (is.null(newdata[[rname]]) && !crps) {
       ygrd <- if (is.null(q)) {
         make_grid(object$init_params$response, n = K)[[1]]
       } else q
@@ -344,6 +345,16 @@ predict.deeptrafo <- function(
         cleft * tfd_cdf(bd, ytransf) + cright * tfd_survival_function(bd, ytransflower)
 
     } else {
+      
+      if (object$init_params$crps) {
+        
+        n_obs <- length(ytransf)/object$init_params$grid_size
+        ytransf <- tapply(ytransf, rep(1:n_obs, 
+                                       each = object$init_params$grid_size),
+                          function(x) x/sum(x^2))
+        ytransf <- c(do.call("cbind", ytransf))
+        
+      }
 
       pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
 
@@ -460,6 +471,20 @@ logLik.deeptrafo <- function(
                                newdata = newdata, ... = ...)
   }
 
+  if (!is.null(newdata) && object$init_params$crps) {
+    
+    ## CRPS Evaluation
+    # order must by the one as in the end of main.R
+    y <- cbind(y, newdata[[object$init_params$response_varname]], 
+               newdata$ID, newdata$y_grid)
+    
+    cpr_score <- -1*convert_fun(object$model$loss(y, y_pred)$numpy())
+    
+    log_score <- object$init_params$pls_eval(y, y_pred)
+    
+    return(c("crps" = cpr_score, "pls" = log_score))
+  }
+  
   convert_fun(object$model$loss(y, y_pred)$numpy())
 
 }
