@@ -20,18 +20,19 @@ devtools::load_all("/Users/flipst3r/RStHomeDir/GitHub/deeptrafo")
 
 BostonHousing2_train <- BostonHousing2[1:400, ]
 BostonHousing2_test <- BostonHousing2[401:nrow(BostonHousing2), ]
-grid_size <- 30L
+grid_size <- 10L
 
-fml <- cmedv ~ age + crim + lon + lat + ptratio + nn(nox)
+fml <- cmedv|lstat + rm + ptratio + lon + b ~ lstat + rm + ptratio + lon + nn(b)
 mm <- deeptrafo(fml, BostonHousing2_train, latent_distr = "normal", monitor_metric = NULL,
                crps = TRUE,
                grid_size = grid_size,
-               optimizer = optimizer_adam(learning_rate = 0.01),
+               batch_size = 32*grid_size,
+               optimizer = optimizer_adam(learning_rate = 0.005, clipnorm = 2.0),
                return_data = TRUE, list_of_deep_models = list(nn = nn), 
                trafo_options = trafo_control(support = c(5, 50)))
 
-mm %>% fit(epochs = 100L,
-          batch_size = 64*grid_size, # grid_size x batch_size
+mm %>% fit(epochs = 200L,
+          batch_size = 32*grid_size, # grid_size x batch_size
           callbacks = list(callback_early_stopping(patience = 5, 
                                                    monitor = "val_loss",
                                                    restore_best_weights = T),
@@ -49,12 +50,10 @@ pp <- predict(mm, type = "pdf", newdata = BostonHousing2_test)
 logLik(mm, newdata = BostonHousing2_test)
 
 plot(BostonHousing2_test$y_grid[1:30], pp[1:30])
+
 # compare run-time
-# abandon eager execution and see if it still works
+# abandon eager execution and see if works on graph
 # compare course/evolution of logLik/CRPS for training and validation on Boston Housing
-# see how model behaves if something is put into the interaction term
-# move everything inside main.R
-# add a penalty to the loss
-# evaluate both fits with CRPS and predictive log-scores
-# plot actual densities and compare visually
+# add a penalty to the loss, already done at layer level?
+
 

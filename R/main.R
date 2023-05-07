@@ -90,6 +90,7 @@ deeptrafo <- function(
       order_bsp = order, response_type = response_type),
     return_data = FALSE,
     grid_size = NULL,
+    batch_size = NULL,
     ...
 )
 {
@@ -202,7 +203,7 @@ deeptrafo <- function(
   # tloss <- get_loss(response_type, latent_distr)
   tloss <- nll(latent_distr)
   if (crps) {
-    tloss <- crps_loss(latent_distr, grid_size)
+    tloss <- crps_loss(latent_distr, grid_size, batch_size)
   }
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
@@ -507,7 +508,7 @@ nll <- function(base_distribution) {
       neglogLik <- - (cleft * ll_left + exact * ll_exact + cright * ll_right +
                         cint * ll_int)
 
-      return(neglogLik)
+      return(trafo)
     }
   )
 
@@ -527,7 +528,7 @@ nll <- function(base_distribution) {
 #' @import keras
 #' @import tensorflow
 #'
-crps_loss <- function(base_distribution, grid_size) {
+crps_loss <- function(base_distribution, grid_size, batch_size) {
   
   if (is.character(base_distribution)) {
     bd <- get_bd(base_distribution)
@@ -541,7 +542,8 @@ crps_loss <- function(base_distribution, grid_size) {
       grid_size <- as.integer(grid_size)
       
       # for batch learning and validation, make sure the full grid for the distribution is supplied
-      count_entries <- tf$unique_with_counts(tf$reshape(tf_stride_cols(y_true, 6L), -1L))
+      count_entries <- tf$raw_ops$UniqueWithCountsV2(x = tf_stride_cols(y_true, 6L), axis = list(0L))
+      
       bool_mask <- tf$`repeat`(tf$equal(count_entries$count, grid_size), count_entries$count)
       
       ## Check if non-complete distributions are also disregarded within the vector and not only at the end
@@ -550,7 +552,7 @@ crps_loss <- function(base_distribution, grid_size) {
       y_true <- tf$boolean_mask(y_true, bool_mask)
       y_pred <- tf$boolean_mask(y_pred, bool_mask)
       
-      batch_size <- as.integer(y_true$shape[1])
+      batch_size <- as.integer(y_true$shape[1]) # does not work on graph
       n_ID <- tf$cast(tf$divide(batch_size, grid_size), dtype = tf$int64)
 
       # h_hat = h_1_hat + h_2_hat
@@ -562,20 +564,22 @@ crps_loss <- function(base_distribution, grid_size) {
       h_hat <- tf$map_fn(function(x) {
         tf$divide(x[[1]], tf$norm(x[[1]]))
         }, list(h_hat), dtype=tf$float32)
-      h_hat <- tf$reshape(h_hat, c(y_pred$shape[1], 1L))
+      
+      h_hat <- tf$reshape(h_hat, list(tf$constant(as.integer(y_pred$shape[1])), 1L))
+      
+      #h_hat <- tf$reshape(h_hat, c(y_pred$shape[1], 1L))
 
       # h_prime_hat
       h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L),1e-8, Inf)
-      h_prime <- tf$math$log(h_prime)
+      #h_prime <- tf$math$log(h_prime)
       
       # dont forget to add penalty to the loss
       
       # f_Y|X = x
-      f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
+      #f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
+      f_y_dens <- tf$multiply(tfd_prob(bd, h_hat), h_prime)
       
-      par(mfrow = c(1,2))
-      plot(f_y_dens$numpy()[1:grid_size])
-      plot(f_y_dens$numpy()[(grid_size + 1):(grid_size * 2)])
+      if (c_fun(tf$math$is_nan(f_y_dens))) browser()
       
       y_grid <- tf$reshape(tf_stride_cols(y_true, 7L), c(n_ID, grid_size))
       f_y_hat <- tf$reshape(f_y_dens, c(n_ID, grid_size))
@@ -590,8 +594,13 @@ crps_loss <- function(base_distribution, grid_size) {
         list(f_y_hat, y_grid),
         dtype=tf$float32
       )
+      
+      # par(mfrow = c(3,3))
+      # for (i in 1:9) {
+      #   plot(y_grid[i]$numpy(), F_y_hat[i]$numpy())
+      # }
 
-      M_crps <- 20L
+      M_crps <- 8L
       p_grid <- tf$linspace(0.01, 0.99, M_crps)
       
       # interpolation of quantile function
@@ -604,22 +613,34 @@ crps_loss <- function(base_distribution, grid_size) {
       )
       
       y_obs <- tf_stride_cols(y_true, 5L)
-      y_obs <- tf$gather(y_obs, seq(1L, batch_size, grid_size))
+      
+      y_obs <- tf$strided_slice(y_obs,
+                                begin=list(0L, 0L), 
+                                end=list(as.integer(batch_size), 1L), 
+                                strides=list(as.integer(grid_size), 1L))
+      
       y_obs <- tf$`repeat`(y_obs, M_crps)
       
-      quantile_hat <- tf$reshape(quantile_hat, -1L)
+      dim_out <- M_crps*n_ID
+      quantile_hat <- tf$reshape(quantile_hat, c(dim_out, 1L))
 
       # quantile loss
+      y_obs <- tf$reshape(y_obs, c(dim_out, 1L))
       pin_ball <- tf$cast(tf$math$less(y_obs, quantile_hat),tf$float32)
-      pin_ball <- tf$subtract(pin_ball, tf$tile(p_grid, 
-                                                list(n_ID)))
+      
+      p_grid <- tf$tile(p_grid, list(n_ID))
+      p_grid <- tf$reshape(p_grid, c(dim_out, 1L))
+      pin_ball <- tf$subtract(pin_ball, p_grid)
       pin_ball <- tf$math$multiply(pin_ball, tf$subtract(quantile_hat, y_obs))
       
       # approximate crps
       crps <- tf$reduce_sum(tf$reshape(pin_ball, c(n_ID, M_crps)), axis = 1L)
       scle <- tf$cast(tf$divide(2L, M_crps), tf$float32)
       crps <- tf$multiply(crps, scle)
-      crps <- tf$reduce_mean(crps)
+      tf$print(crps)
+      #crps <- tf$tile(crps, list(grid_size))
+      #crps <- tf$reshape(crps, list(n_ID*grid_size, 1L))
+      #browser()
 
       return(crps)
     })
@@ -677,7 +698,7 @@ pls_eval <- function(base_distribution, grid_size) {
       h_hat <- tf$reshape(h_hat, c(y_pred$shape[1], 1L))
       
       # h_prime_hat
-      h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L),1e-8, Inf)
+      h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L), 1e-8, Inf)
       h_prime <- tf$math$log(h_prime)
       
       # dont forget to add penalty to the loss
