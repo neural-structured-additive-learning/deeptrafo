@@ -20,25 +20,25 @@ devtools::load_all("/Users/flipst3r/RStHomeDir/GitHub/deeptrafo")
 
 BostonHousing2_train <- BostonHousing2[1:400, ]
 BostonHousing2_test <- BostonHousing2[401:nrow(BostonHousing2), ]
-grid_size <- 10L
+grid_size <- 8L # for evaluation of the density/cdf inside loss
 
 fml <- cmedv|lstat + rm + ptratio + lon + b ~ lstat + rm + ptratio + lon + nn(b)
 mm <- deeptrafo(fml, BostonHousing2_train, latent_distr = "normal", monitor_metric = NULL,
                crps = TRUE,
                grid_size = grid_size,
                batch_size = 32*grid_size,
-               optimizer = optimizer_adam(learning_rate = 0.005, clipnorm = 2.0),
+               optimizer = optimizer_adam(learning_rate = 0.005),#, clipnorm = 2.0),
                return_data = TRUE, list_of_deep_models = list(nn = nn), 
                trafo_options = trafo_control(support = c(5, 50)))
 
-mm %>% fit(epochs = 200L,
-          batch_size = 32*grid_size, # grid_size x batch_size
+mm %>% fit(epochs = 20L,
+          batch_size = 32*grid_size, # grid_size x batch_size since the entire distribution for each observation is pushed through the net
           callbacks = list(callback_early_stopping(patience = 5, 
                                                    monitor = "val_loss",
                                                    restore_best_weights = T),
                            callback_reduce_lr_on_plateau(patience = 2, factor = 0.5)),
           validation_split = 0.2,
-          shuffle = FALSE)
+          shuffle = FALSE) # shuffle FALSE is crucial
 
 n_size <- nrow(BostonHousing2_test)
 BostonHousing2_test <- BostonHousing2_test %>% tidyr::uncount(grid_size)

@@ -546,41 +546,40 @@ crps_loss <- function(base_distribution, grid_size, batch_size) {
       
       bool_mask <- tf$`repeat`(tf$equal(count_entries$count, grid_size), count_entries$count)
       
-      ## Check if non-complete distributions are also disregarded within the vector and not only at the end
-      
       # discard obs where only a part of the distribution is supplied
       y_true <- tf$boolean_mask(y_true, bool_mask)
       y_pred <- tf$boolean_mask(y_pred, bool_mask)
       
-      batch_size <- as.integer(y_true$shape[1]) # does not work on graph
+      batch_size <- as.integer(y_true$shape[1]) # does not work on graph but in eager
       n_ID <- tf$cast(tf$divide(batch_size, grid_size), dtype = tf$int64)
 
       # h_hat = h_1_hat + h_2_hat
       h_hat <- layer_add(list(tf_stride_cols(y_pred, 1L),
                               tf_stride_cols(y_pred, 2L)))
       
-      # discuss: norm h_hat
+      # discuss: should we norm the network output h_hat?
       h_hat <- tf$reshape(h_hat, c(n_ID, grid_size))
       h_hat <- tf$map_fn(function(x) {
         tf$divide(x[[1]], tf$norm(x[[1]]))
         }, list(h_hat), dtype=tf$float32)
       
       h_hat <- tf$reshape(h_hat, list(tf$constant(as.integer(y_pred$shape[1])), 1L))
+    
+      if (tf$reduce_all(tf$math$is_nan(h_hat))$numpy()) browser()
       
-      #h_hat <- tf$reshape(h_hat, c(y_pred$shape[1], 1L))
-
       # h_prime_hat
       h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L),1e-8, Inf)
+      
+      # either compute density on the exp(log()) level or directly
       #h_prime <- tf$math$log(h_prime)
       
-      # dont forget to add penalty to the loss
+      # dont forget to add penalty to the loss or is this done layer-wise already?
       
       # f_Y|X = x
       #f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
       f_y_dens <- tf$multiply(tfd_prob(bd, h_hat), h_prime)
       
-      if (c_fun(tf$math$is_nan(f_y_dens))) browser()
-      
+      # grid for density/cdf/quantile evaluation
       y_grid <- tf$reshape(tf_stride_cols(y_true, 7L), c(n_ID, grid_size))
       f_y_hat <- tf$reshape(f_y_dens, c(n_ID, grid_size))
       
@@ -600,7 +599,8 @@ crps_loss <- function(base_distribution, grid_size, batch_size) {
       #   plot(y_grid[i]$numpy(), F_y_hat[i]$numpy())
       # }
 
-      M_crps <- 8L
+      # as in "CRPS learning" https://arxiv.org/abs/2102.00968
+      M_crps <- 5L
       p_grid <- tf$linspace(0.01, 0.99, M_crps)
       
       # interpolation of quantile function
@@ -637,10 +637,9 @@ crps_loss <- function(base_distribution, grid_size, batch_size) {
       crps <- tf$reduce_sum(tf$reshape(pin_ball, c(n_ID, M_crps)), axis = 1L)
       scle <- tf$cast(tf$divide(2L, M_crps), tf$float32)
       crps <- tf$multiply(crps, scle)
-      tf$print(crps)
+
       #crps <- tf$tile(crps, list(grid_size))
       #crps <- tf$reshape(crps, list(n_ID*grid_size, 1L))
-      #browser()
 
       return(crps)
     })
