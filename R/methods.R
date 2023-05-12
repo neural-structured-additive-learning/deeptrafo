@@ -243,7 +243,7 @@ predict.deeptrafo <- function(
   rname <- object$init_params$response_varname
   rtype <- object$init_params$response_type
   order <- object$init_params$trafo_options$order_bsp
-  crps <- object$init_params$trafo_options$crps
+  crps <- object$init_params$crps
   fam <- object$init_params$family
   discrete <- as.numeric(rtype %in% c("count", "ordered"))
   bd <- get_bd(fam)
@@ -251,7 +251,7 @@ predict.deeptrafo <- function(
   if (object$init_params$is_atm && !is.null(newdata)) {
     lags <- fm_to_lag(object$init_params$lag_formula)
   }
-
+  
   # Predict over grid of responses, if response not contained in newdata
   if (!is.null(newdata)) {
     if (is.null(newdata[[rname]]) && !crps) {
@@ -353,6 +353,11 @@ predict.deeptrafo <- function(
                                        each = object$init_params$grid_size),
                           function(x) x/sum(x^2))
         ytransf <- c(do.call("cbind", ytransf))
+        
+        yprimeTrans <- tapply(yprimeTrans, rep(1:n_obs, 
+                                       each = object$init_params$grid_size),
+                          function(x) x/sum(x^2))
+        yprimeTrans <- c(do.call("cbind", yprimeTrans))
         
       }
 

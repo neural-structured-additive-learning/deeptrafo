@@ -564,11 +564,19 @@ crps_loss <- function(base_distribution, grid_size, batch_size) {
         }, list(h_hat), dtype=tf$float32)
       
       h_hat <- tf$reshape(h_hat, list(tf$constant(as.integer(y_pred$shape[1])), 1L))
-    
-      if (tf$reduce_all(tf$math$is_nan(h_hat))$numpy()) browser()
       
       # h_prime_hat
       h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L),1e-8, Inf)
+      #browser()
+      
+      h_prime <- tf$reshape(h_prime, c(n_ID, grid_size))
+      h_prime <- tf$map_fn(function(x) {
+        tf$divide(x[[1]], tf$norm(x[[1]]))
+      }, list(h_prime), dtype=tf$float32)
+      
+      h_prime <- tf$reshape(h_prime, list(tf$constant(as.integer(y_pred$shape[1])), 1L))
+    
+      #if (tf$reduce_all(tf$math$is_nan(h_prime))$numpy()) browser()
       
       # either compute density on the exp(log()) level or directly
       #h_prime <- tf$math$log(h_prime)
@@ -600,7 +608,7 @@ crps_loss <- function(base_distribution, grid_size, batch_size) {
       # }
 
       # as in "CRPS learning" https://arxiv.org/abs/2102.00968
-      M_crps <- 5L
+      M_crps <- 10L
       p_grid <- tf$linspace(0.01, 0.99, M_crps)
       
       # interpolation of quantile function
