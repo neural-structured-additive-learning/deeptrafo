@@ -275,11 +275,11 @@ predict.deeptrafo <- function(
     }
   }
 
-  if (object$init_params$is_atm && !is.null(newdata)) {
-    lags <- fm_to_lag(object$init_params$lag_formula)
-    newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags,
-                           pred_grid = pred_grid)$data
-  }
+  # if (object$init_params$is_atm && !is.null(newdata)) {
+  #   lags <- fm_to_lag(object$init_params$lag_formula)
+  #   newdata <- create_lags(rvar = rname, d_list = newdata, lags = lags,
+  #                          pred_grid = pred_grid)$data
+  # }
 
   # Compute predictions from fitted values
   mod_output <- fitted.deeptrafo(object, newdata, batch_size = batch_size,
@@ -346,20 +346,20 @@ predict.deeptrafo <- function(
 
     } else {
       
-      if (object$init_params$crps) {
-        
-        n_obs <- length(ytransf)/object$init_params$grid_size
-        ytransf <- tapply(ytransf, rep(1:n_obs, 
-                                       each = object$init_params$grid_size),
-                          function(x) x/sum(x^2))
-        ytransf <- c(do.call("cbind", ytransf))
-        
-        yprimeTrans <- tapply(yprimeTrans, rep(1:n_obs, 
-                                       each = object$init_params$grid_size),
-                          function(x) x/sum(x^2))
-        yprimeTrans <- c(do.call("cbind", yprimeTrans))
-        
-      }
+      # if (object$init_params$crps) {
+      #   
+      #   n_obs <- length(ytransf)/object$init_params$grid_size
+      #   ytransf <- tapply(ytransf, rep(1:n_obs, 
+      #                                  each = object$init_params$grid_size),
+      #                     function(x) x/sum(x^2))
+      #   ytransf <- c(do.call("cbind", ytransf))
+      #   
+      #   yprimeTrans <- tapply(yprimeTrans, rep(1:n_obs, 
+      #                                  each = object$init_params$grid_size),
+      #                     function(x) x/sum(x^2))
+      #   yprimeTrans <- c(do.call("cbind", yprimeTrans))
+      #   
+      # }
 
       pdf <- as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans)
 
@@ -393,6 +393,7 @@ fitted.deeptrafo <- function(
     call_create_lags = TRUE, # in predict() already called once
     ...)
 {
+  
   l_fm <- object$init_params$lag_formula
   if ((object$init_params$is_atm && !is.null(newdata)) && call_create_lags) {
     lags <- fm_to_lag(l_fm)

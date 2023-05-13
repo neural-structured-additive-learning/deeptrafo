@@ -495,6 +495,7 @@ nll <- function(base_distribution) {
 
       trafo <- layer_add(list(tf_stride_cols(y_pred, 1L), # Shift in 1
                               tf_stride_cols(y_pred, 2L))) # Upper in 2
+      
       trafo_lwr <- layer_add(list(tf_stride_cols(y_pred, 1L),
                                   tf_stride_cols(y_pred, 3L))) # Lower in 3
       trafo_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 4L),
@@ -508,7 +509,7 @@ nll <- function(base_distribution) {
       neglogLik <- - (cleft * ll_left + exact * ll_exact + cright * ll_right +
                         cint * ll_int)
 
-      return(trafo)
+      return(neglogLik)
     }
   )
 
@@ -557,35 +558,34 @@ crps_loss <- function(base_distribution, grid_size, batch_size) {
       h_hat <- layer_add(list(tf_stride_cols(y_pred, 1L),
                               tf_stride_cols(y_pred, 2L)))
       
-      # discuss: should we norm the network output h_hat?
-      h_hat <- tf$reshape(h_hat, c(n_ID, grid_size))
-      h_hat <- tf$map_fn(function(x) {
-        tf$divide(x[[1]], tf$norm(x[[1]]))
-        }, list(h_hat), dtype=tf$float32)
-      
-      h_hat <- tf$reshape(h_hat, list(tf$constant(as.integer(y_pred$shape[1])), 1L))
-      
       # h_prime_hat
       h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L),1e-8, Inf)
-      #browser()
       
-      h_prime <- tf$reshape(h_prime, c(n_ID, grid_size))
-      h_prime <- tf$map_fn(function(x) {
-        tf$divide(x[[1]], tf$norm(x[[1]]))
-      }, list(h_prime), dtype=tf$float32)
+      # discuss: should we norm the network output h_hat and h_prime_hat?
+      # h_hat <- tf$reshape(h_hat, c(n_ID, grid_size))
+      # h_hat <- tf$map_fn(function(x) {
+      #   tf$divide(x[[1]], tf$norm(x[[1]]))
+      #   }, list(h_hat), dtype=tf$float32)
+      # 
+      # h_hat <- tf$reshape(h_hat, list(tf$constant(as.integer(y_pred$shape[1])), 1L))
       
-      h_prime <- tf$reshape(h_prime, list(tf$constant(as.integer(y_pred$shape[1])), 1L))
+      # h_prime <- tf$reshape(h_prime, c(n_ID, grid_size))
+      # h_prime <- tf$map_fn(function(x) {
+      #   tf$divide(x[[1]], tf$norm(x[[1]]))
+      # }, list(h_prime), dtype=tf$float32)
+      # 
+      # h_prime <- tf$reshape(h_prime, list(tf$constant(as.integer(y_pred$shape[1])), 1L))
     
-      #if (tf$reduce_all(tf$math$is_nan(h_prime))$numpy()) browser()
-      
       # either compute density on the exp(log()) level or directly
       #h_prime <- tf$math$log(h_prime)
       
-      # dont forget to add penalty to the loss or is this done layer-wise already?
-      
       # f_Y|X = x
       #f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
-      f_y_dens <- tf$multiply(tfd_prob(bd, h_hat), h_prime)
+      #f_y_dens <- tf$multiply(tfd_prob(bd, h_hat), h_prime)
+      
+      f_y_dens <-  tf$multiply(tfd_prob(bd, h_hat), h_prime)
+      
+      # dont forget to add penalty to the loss or is this done layer-wise already?
       
       # grid for density/cdf/quantile evaluation
       y_grid <- tf$reshape(tf_stride_cols(y_true, 7L), c(n_ID, grid_size))
