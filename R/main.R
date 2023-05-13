@@ -107,14 +107,6 @@ deeptrafo <- function(
 
   # Placeholder Intercept
   int <- 1
-  
-  if (crps) {
-    n_size <- nrow(data)
-    data <- data %>% tidyr::uncount(grid_size)
-    sup_y <- trafo_options$supp() # make_grid() has no support argument
-    data$y_grid <- rep(seq(sup_y[1], sup_y[2], length.out = grid_size), n_size)
-    data$ID <- rep(1:n_size, each = grid_size) 
-  }
 
   # Set up formulas for basis
   if (ninteracting > 1L) {
@@ -138,7 +130,7 @@ deeptrafo <- function(
     h2 = if (nterms >= 1L) formula(fml, lhs = 0, rhs = 1L) else NULL,
     shared = if (nterms == 2L) formula(fml, lhs = 0, rhs = 2L) else NULL
   )
-  
+
   if (crps) {
     list_of_formulas$yterms <- as.formula("~ -1 + bsfun(y_grid) + bsfunl(y_grid) + bspfun(y_grid)")
   }
@@ -154,17 +146,18 @@ deeptrafo <- function(
   ftms <- attr(tms <- terms(list_of_formulas$h2), "term.labels")
   is_atm <- any(atps <- grepl("atplag", ftms))
   tlag_formula <- NULL
+  
   if (is_atm) {
     # extract from lag formula the variables as simple sum and
     # layers for additional transformation
     tlag_formula <- paste0(grep("atplag", ftms, value = TRUE), collapse = "+")
-    lags <- create_lags(rvar = rvar, d_list = data, atplags = tlag_formula)
-    data <- lags$data
+    # lags <- create_lags(rvar = rvar, d_list = data, atplags = tlag_formula)
+    #data <- lags$data
 
-    resp <- data[[rvar]] # creating lags reduces data set size
-    y <- response(resp)
+    #resp <- data[[rvar]] # creating lags reduces data set size
+    #y <- response(resp)
 
-    tlag_formula <- lags$fm
+    #tlag_formula <- lags$fm
     list_of_formulas$yterms <- as.formula(
       paste0(form2text(list_of_formulas$yterms), " + ", tlag_formula))
     if (length(ftms) > length(which(atps)))
@@ -238,7 +231,6 @@ deeptrafo <- function(
   ret$init_params$call <- call
   ret$init_params$crps <- crps
   ret$init_params$grid_size <- grid_size
-  ret$init_params$pls_eval <- pls_eval(latent_distr, grid_size)
 
   class(ret) <- c("deeptrafo", "deepregression")
   ret
@@ -525,7 +517,6 @@ nll <- function(base_distribution) {
 #'     neural network transformation model with continuous response.
 #'
 #' @import deepregression
-#' @import tfprobability
 #' @import keras
 #' @import tensorflow
 #'
@@ -560,6 +551,7 @@ crps_loss <- function(base_distribution, grid_size, batch_size) {
       
       # h_prime_hat
       h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L),1e-8, Inf)
+      
       
       # discuss: should we norm the network output h_hat and h_prime_hat?
       # h_hat <- tf$reshape(h_hat, c(n_ID, grid_size))
@@ -659,8 +651,7 @@ crps_loss <- function(base_distribution, grid_size, batch_size) {
 #'     \code{tfd_distribution}. If character, can be either "logistic",
 #'     "normal", "gumbel", "gompertz".
 #'
-#' @return A function for computing predicitve log scores of a model learned by
-#' CRPS.
+#' @return A function for computing predictive log scores of a model.
 #'
 #' @import deepregression
 #' @import tfprobability
@@ -697,21 +688,15 @@ pls_eval <- function(base_distribution, grid_size) {
       h_hat <- layer_add(list(tf_stride_cols(y_pred, 1L),
                               tf_stride_cols(y_pred, 2L)))
       
-      # discuss: norm h_hat
-      h_hat <- tf$reshape(h_hat, c(n_ID, grid_size))
-      h_hat <- tf$map_fn(function(x) {
-        tf$divide(x[[1]], tf$norm(x[[1]]))
-      }, list(h_hat), dtype=tf$float32)
-      h_hat <- tf$reshape(h_hat, c(y_pred$shape[1], 1L))
-      
       # h_prime_hat
       h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L), 1e-8, Inf)
-      h_prime <- tf$math$log(h_prime)
+      #h_prime <- tf$math$log(h_prime)
       
       # dont forget to add penalty to the loss
       
       # f_Y|X = x
-      f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
+      #f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
+      f_y_dens <-  tf$multiply(tfd_prob(bd, h_hat), h_prime)
   
       y_grid <- tf$reshape(tf_stride_cols(y_true, 7L), c(n_ID, grid_size))
       f_y_hat <- tf$reshape(f_y_dens, c(n_ID, grid_size))

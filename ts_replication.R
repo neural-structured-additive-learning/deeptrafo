@@ -1,89 +1,120 @@
 rm(list = ls())
+reticulate::use_condaenv("/Users/flipst3r/opt/anaconda3/envs/r-reticulate", required = TRUE)
 
 library(data.table)
 library(ggridges)
-
-#packageurl <- "http://cran.r-project.org/src/contrib/Archive/ggplot2/ggplot2_3.3.5.tar.gz"
-#install.packages(packageurl, repos=NULL, type="source")
 library(ggplot2)
-
 library(ggrepel)
 library(ggjoy)
 library(tsdl) # available from GitHub (FinYang/tsdl)
-reticulate::use_condaenv("/Users/flipst3r/opt/anaconda3/envs/r-reticulate", required = TRUE)
-
-d <- subset(tsdl, "Meteorology")
 devtools::load_all("/Users/flipst3r/RStHomeDir/GitHub/deeptrafo")
 
 tf$config$run_functions_eagerly(TRUE) # does not construct a static comp graph to be executed later
 tf$data$experimental$enable_debug_mode()
 
+## -----------------------------------------------------------------------------
+
+d <- subset(tsdl, "Meteorology")
 nm <- "Mean maximum temperature in Melbourne: degrees C. Jan 71 – Dec 90."
 temp_idx <- sapply(d, attr, "description") == nm
-y <- d_ts <- d[temp_idx][[1]]
+d_ts <- d[temp_idx][[1]]
 
-n_gr <- 50
+## -----------------------------------------------------------------------------
+
+n_gr <- 20
 min_supp <- 10
 max_supp <- 30
-M <- 6L # order bsp
-ep <- 10
+M <- 6L
+ep <- 1
 p <- 3
 gr <- seq(min_supp ,max_supp , length.out = n_gr)
 time_var <- seq(as.Date("1971-01-01"), as.Date("1990-12-01"), by = "month")
 d_ts <- data.table(time = time_var, y = as.numeric(d_ts))
 d_ts[, month := factor(month(time))]
-#d_ts[, paste0("y_lag_", 1:p) := shift(y, n = 1:p, type = "lag", fill = NA)]
-#d_ts <- na.omit(d_ts)
-len_y <- nrow(d_ts)
 
+d_crps <- deeptrafo:::prep_atpm_crps(d_ts, min_supp, max_supp, n_gr, c(1:p))
+d_atpm <- deeptrafo:::prep_atpm_logLik(d_ts, min_supp, max_supp, c(1:p))
 
-## ----formula-interface_ATM----------------------------------------------------
+time_train <- seq(as.Date("1971-01-01"), as.Date("1987-12-01"), by = "month")
+time_validation <- seq(as.Date("1988-01-01"), as.Date("1989-12-01"), by = "month")
+time_test <- seq(as.Date("1990-01-01"), as.Date("1990-12-01"), by = "month")
+
+## ----------------------------FORMULA------------------------------------------
+
 lags <- c(paste0("y_lag_", 1:p, collapse = "+"))
-atplags <- c("atplag(1:p)")
+atplags <- paste0("atplag(", paste0("y_lag_", 1:p), ")", collapse = "+")
 #(fm_atm <- as.formula(paste0("y |", lags, "~ 0 + month +", atplags)))
 (fm_atp <- as.formula(paste0("y ~ 0 + month +", atplags)))
-#(fm_colr <- as.formula(paste0("y ~ 0 + month + ", lags)))
+(fm_colr <- as.formula(paste0("y ~ 0 + month + ", lags)))
 
+## ----------------------------FITTING-----------------------------------------
 
-## ----fitting-ATMs-------------------------------------------------------------
+# d_atpm_train <- d_atpm[d_atpm$time %in% time_train,]
+# d_atpm_val <- as.data.frame(d_atpm[d_atpm$time %in% time_validation,])
+# d_atpm_test <- as.data.frame(d_atpm[d_atpm$time %in% time_test,])
+# 
+# learn_trafo <- \(fm) ColrNN(fm, data = d_atpm, trafo_options = trafo_control(
+#   order_bsp = M, support = c(min_supp, max_supp)), tf_seed = 1,
+#   optimizer = optimizer_adam(learning_rate = 0.01))
+# 
+# mods_loglik <- lapply(list(fm_atp, fm_colr), learn_trafo)
+# 
+# fit_fun <- \(m) m |> fit(epochs = ep,
+#                          callbacks = list(
+#                            callback_early_stopping(patience = 5, monitor = "val_loss"),
+#                            callback_reduce_lr_on_plateau(patience = 3, factor = 0.5, monitor = "val_loss")),
+#                          batch_size = 16,
+#                          validation_data = list(d_atpm_val, d_atpm_val$y),
+#                          )
+# 
+# lapply(mods_loglik, \(m) {
+#   mhist <- fit_fun(m)
+#   # plot(mhist)
+# })
+# 
+# logLik(mods_loglik[[1]], newdata = d_atpm_test, convert_fun = function(x) mean(x, na.rm = T))
+# logLik(mods_loglik[[2]], newdata = d_atpm_test, convert_fun = function(x) mean(x, na.rm = T))
 
-m_trafo <- ColrNN(fm, data = d_ts, trafo_options = trafo_control(
-  order_bsp = M, support = c(min_supp, max_supp)), tf_seed = 1,
+## ----fitting-CRPS-------------------------------------------------------------
+
+d_crps_train <- as.data.frame(d_crps[d_crps$time %in% time_train,])
+d_crps_val <- as.data.frame(d_crps[d_crps$time %in% time_validation,])
+d_crps_test <- as.data.frame(d_crps[d_crps$time %in% time_test,])
+
+learn_crps <- \(fm) deeptrafo(fm, data = d_crps_train, trafo_options = trafo_control(
+  order_bsp = M, support = c(min_supp, max_supp)), 
+  tf_seed = 1, crps = TRUE, grid_size = n_gr,
+  #batch_size = 16*grid_size, # only needed in graph execution but not in eager
+  addconst_interaction = 0,
   optimizer = optimizer_adam(learning_rate = 0.01))
 
-mods <- lapply(list(fm_atp), mod_fun)
+mods_cprs <- lapply(list(fm_atp, fm_colr), learn_crps)
 
 fit_fun <- \(m) m |> fit(epochs = ep,
                          callbacks = list(
                            callback_early_stopping(patience = 5, monitor = "val_loss"),
                            callback_reduce_lr_on_plateau(patience = 3, factor = 0.5, monitor = "val_loss")),
-                         batch_size = 16, validation_split = 0.2, verbose = TRUE)
+                         batch_size = nrow(d_crps_train), 
+                         validation_data = list(d_crps_val, cbind(d_crps_val$y, d_crps_val$ID, d_crps_val$y_grid)),
+                         shuffle = FALSE) # shuffle FALSE is crucial
 
-lapply(mods, \(m) {
+lapply(mods_cprs, \(m) {
   mhist <- fit_fun(m)
   # plot(mhist)
 })
 
-## ----fitting-CRPS-------------------------------------------------------------
+logLik(mods_cprs[[1]], newdata = d_crps_test, criteria = "crps")
 
-m_crps <- deeptrafo(fm_atp, data = d_ts,
-                    crps = TRUE,
-                    grid_size = n_gr,
-                    addconst_interaction = 0,
-                    tf_seed = 1,
-                    trafo_options = trafo_control(
-                                    order_bsp = M, support = c(min_supp, max_supp)),
-                    optimizer = optimizer_adam(learning_rate = 0.01))
+d_crps_logLik <- d_crps_test[, .SD[1], by = ID]
+d_crps_logLik$y_grid <- d_crps_logLik$y
+logLik(mods_cprs[[1]], newdata = d_crps_logLik, criteria = "logLik")
 
-m_crps %>% fit(epochs = ep,
-               callbacks = list(
-                 callback_early_stopping(patience = 5, monitor = "val_loss"),
-                 callback_reduce_lr_on_plateau(patience = 3, factor = 0.5, monitor = "val_loss")),
-               batch_size = 16*n_gr, validation_split = 0.2, shuffle = FALSE) # shuffle FALSE is crucial
 
-## ----in-sample-logLiks-ATM----------------------------------------------------
+logLik(mods_cprs[[2]], newdata = d_crps_test, criteria = "crps")
 
-structure(unlist(lapply(mods, logLik, newdata = d_ts)), names = c(paste0("AT(", p, ")")))
+d_crps_logLik <- d_crps_test[, .SD[1], by = ID]
+d_crps_logLik$y_grid <- d_crps_logLik$y
+logLik(mods_cprs[[2]], newdata = d_crps_logLik, criteria = "logLik")
 
 ## ----in_sample_cond_densities_ATMs--------------------------------------------
 # In-sample densities

@@ -710,6 +710,36 @@ lin_interpol <- function(p_val, x, y) {
   
   return(q)
 }
-x <- tf$constant(c(0, 0.01, 0.8, 1))
-y <- tf$constant(c(-1.1, 0, 1, 1.8))
-p_val <- tf$constant(c(0.01, 0.95, 0.96, 0.97, 0.98))
+
+prep_atpm_logLik <- function(dd, ymin, ymax, lags) {
+  
+  ## prepare data for ATM/ATP models learned by LogLik
+  # dd: data.table
+  # ymin: minimum value of response on grid (need to match values of trafo_options = trafo_control())
+  # ymax: maximum value of response
+  
+  lags_nms <- paste0("y_lag_", lags)
+  dd[, (lags_nms):= shift(y, n = lags, type = "lag", fill = NA)]
+  dd <- na.omit(dd)
+  
+  return(dd)
+}
+
+prep_atpm_crps <- function(dd, ymin, ymax, grid_size, lags) {
+  
+  ## prepare data for ATM/ATP models learned by CRPS
+  # dd: data.table
+  # ymin: minimum value of response on grid (need to match values of trafo_options = trafo_control())
+  # ymax: maximum value of response
+  
+  lags_nms <- paste0("y_lag_", lags)
+  dd[, (lags_nms):= shift(y, n = lags, type = "lag", fill = NA)]
+  dd <- na.omit(dd)
+  
+  n_size <- nrow(dd)
+  dd <- dd %>% tidyr::uncount(grid_size)
+  dd$y_grid <- rep(seq(ymin, ymax, length.out = grid_size), n_size)
+  dd$ID <- rep(1:n_size, each = grid_size)
+  
+  return(dd)
+}

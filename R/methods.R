@@ -416,6 +416,9 @@ fitted.deeptrafo <- function(
                               gamdata = object$init_params$gamdata$data_trafos)
 
     } else {
+      
+      # subsetting doesnt work in prepare_newdata with data.table
+      if (inherits(newdata,"data.table")) newdata <- as.data.frame(newdata)
 
       newdata <- prepare_newdata(object$init_params$parsed_formulas_contents, newdata,
                                  gamdata = object$init_params$gamdata$data_trafos)
@@ -457,16 +460,17 @@ logLik.deeptrafo <- function(
     object,
     newdata = NULL,
     convert_fun = function(x, ...) - sum(x, ...),
+    criteria = NULL,
     ...
 )
 {
 
-  if (object$init_params$is_atm && !is.null(newdata)) {
-    lags <- fm_to_lag(object$init_params$lag_formula)
-    newdata <- create_lags(rvar = object$init_params$response_varname,
-                           d_list = newdata,
-                           lags = lags)$data
-  }
+  # if (object$init_params$is_atm && !is.null(newdata)) {
+  #   lags <- fm_to_lag(object$init_params$lag_formula)
+  #   newdata <- create_lags(rvar = object$init_params$response_varname,
+  #                          d_list = newdata,
+  #                          lags = lags)$data
+  # }
 
   if (is.null(newdata)) {
     y <- object$init_params$y
@@ -479,16 +483,41 @@ logLik.deeptrafo <- function(
 
   if (!is.null(newdata) && object$init_params$crps) {
     
-    ## CRPS Evaluation
-    # order must by the one as in the end of main.R
-    y <- cbind(y, newdata[[object$init_params$response_varname]], 
-               newdata$ID, newdata$y_grid)
+    if (criteria == "crps") {
+      
+      ## CRPS Evaluation
+      
+      # order of cols in y must be the one of main.R
+      y <- cbind(y, newdata[[object$init_params$response_varname]], 
+                 newdata$ID, newdata$y_grid)
+      
+      crpscore <- -1*convert_fun(object$model$loss(y, y_pred)$numpy())
+      ids <- y[,6] # identifier of distribution
+      n_id <- sum(table(ids) == max(table(ids))) # when the entire dist is not provided
+      
+      return(c("crps" = crpscore/n_id))
+      
+    } else {
+      
+      ## Log scores
+      stopifnot(criteria == "logLik")
+      
+      w_eta <- y_pred[, 1, drop = FALSE]
+      aTtheta <- y_pred[, 2, drop = FALSE]
+      alTtheta <- y_pred[, 3, drop = FALSE]
+      apTtheta <- y_pred[, 4, drop = FALSE]
+      
+      ytransf <- w_eta + aTtheta
+      yprimeTrans <- apTtheta
+      
+      bd <- get_bd(object$init_params$family)
+      log_score <- log(as.matrix(tfd_prob(bd, ytransf)) * as.matrix(yprimeTrans))
+      
+      return(c("pls" = c(log_score)))
+      
+    }
     
-    cpr_score <- -1*convert_fun(object$model$loss(y, y_pred)$numpy())
-    
-    log_score <- object$init_params$pls_eval(y, y_pred)
-    
-    return(c("crps" = cpr_score, "pls" = log_score))
+
   }
   
   convert_fun(object$model$loss(y, y_pred)$numpy())
