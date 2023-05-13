@@ -95,7 +95,7 @@ fit_fun <- \(m) m |> fit(epochs = ep,
                            callback_early_stopping(patience = 5, monitor = "val_loss"),
                            callback_reduce_lr_on_plateau(patience = 3, factor = 0.5, monitor = "val_loss")),
                          batch_size = nrow(d_crps_train), 
-                         validation_data = list(d_crps_val, cbind(d_crps_val$y, d_crps_val$ID, d_crps_val$y_grid)),
+                         validation_data = list(d_crps_val, d_crps_val$y_grid),
                          shuffle = FALSE) # shuffle FALSE is crucial
 
 lapply(mods_cprs, \(m) {
