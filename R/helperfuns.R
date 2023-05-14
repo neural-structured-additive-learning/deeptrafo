@@ -645,14 +645,14 @@ tfd_gompertz <- function(loc, scale,
 #' @importFrom graphics matplot
 #' @importFrom stats fitted formula predict rmultinom
 
-# CRPS learning ------------------------------------------------
+# ----------------CRPS learning ------------------------------------------------
 
 comp_cdf <- function(x, y) {
   
   # 1-d integration of a density with trapez rule
   
   # x: quantile vector on grid
-  # y: densities values belonging to x
+  # y: pdf values belonging to x
   
   number_points <- as.integer(y$shape[1])
   integrals <- tf$constant(0, dtype = tf$float32, shape = c(number_points, 1L))
@@ -663,7 +663,8 @@ comp_cdf <- function(x, y) {
     xx <- tf$reshape(tf$gather(x, 0L:k), list(k + 1L))
     
     integ <- tfp$math$trapz(yy, xx)
-    integrals <- tf$tensor_scatter_nd_update(integrals, list(c(k, 0L)), tf$reshape(integ, list(1L)))
+    integrals <- tf$tensor_scatter_nd_update(integrals, list(c(k, 0L)),
+                                             tf$reshape(integ, list(1L)))
   }
   
   tf$assert_less(integrals, 1 + 1e3)
@@ -711,12 +712,11 @@ lin_interpol <- function(p_val, x, y) {
   return(q)
 }
 
-prep_atpm_logLik <- function(dd, ymin, ymax, lags) {
+prep_atpm_logLik <- function(dd, lags) {
   
   ## prepare data for ATM/ATP models learned by LogLik
   # dd: data.table
-  # ymin: minimum value of response on grid (need to match values of trafo_options = trafo_control())
-  # ymax: maximum value of response
+  # lags: numeric vector of possibly non-consecutive lags
   
   lags_nms <- paste0("y_lag_", lags)
   dd[, (lags_nms):= shift(y, n = lags, type = "lag", fill = NA)]
@@ -731,6 +731,7 @@ prep_atpm_crps <- function(dd, ymin, ymax, grid_size, lags) {
   # dd: data.table
   # ymin: minimum value of response on grid (need to match values of trafo_options = trafo_control())
   # ymax: maximum value of response
+  # lags: numeric vector of possibly non-consecutive lags
   
   lags_nms <- paste0("y_lag_", lags)
   dd[, (lags_nms):= shift(y, n = lags, type = "lag", fill = NA)]

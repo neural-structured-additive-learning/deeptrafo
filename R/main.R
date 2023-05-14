@@ -231,6 +231,10 @@ deeptrafo <- function(
   ret$init_params$call <- call
   ret$init_params$crps <- crps
   ret$init_params$grid_size <- grid_size
+  
+  if (crps) {
+    ret$init_params$prepare_y_valdata <- \(y) cbind(response(y[,1]), y[,1], y[,2], y[,3])
+  }
 
   class(ret) <- c("deeptrafo", "deepregression")
   ret
@@ -552,7 +556,6 @@ crps_loss <- function(base_distribution, grid_size, batch_size) {
       # h_prime_hat
       h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L),1e-8, Inf)
       
-      
       # discuss: should we norm the network output h_hat and h_prime_hat?
       # h_hat <- tf$reshape(h_hat, c(n_ID, grid_size))
       # h_hat <- tf$map_fn(function(x) {
@@ -642,80 +645,5 @@ crps_loss <- function(base_distribution, grid_size, batch_size) {
       #crps <- tf$reshape(crps, list(n_ID*grid_size, 1L))
 
       return(crps)
-    })
-}
-
-#' Approximated predictive log scores
-#'
-#' @param base_distribution Target distribution, character or
-#'     \code{tfd_distribution}. If character, can be either "logistic",
-#'     "normal", "gumbel", "gompertz".
-#'
-#' @return A function for computing predictive log scores of a model.
-#'
-#' @import deepregression
-#' @import tfprobability
-#' @import keras
-#' @import tensorflow
-#'
-pls_eval <- function(base_distribution, grid_size) {
-  
-  if (is.character(base_distribution)) {
-    bd <- get_bd(base_distribution)
-  } else {
-    bd <- base_distribution
-  }
-  
-  return(
-    function(y_true, y_pred) {
-      
-      grid_size <- as.integer(grid_size)
-      
-      # for batch learning and validation, make sure the full grid for the distribution is supplied
-      count_entries <- tf$unique_with_counts(tf$reshape(tf_stride_cols(y_true, 6L), -1L))
-      bool_mask <- tf$`repeat`(tf$equal(count_entries$count, grid_size), count_entries$count)
-      
-      ## Check if non-complete distributions are also disregarded within the vector and not only at the end
-      
-      # discard obs where only a part of the distribution is supplied
-      y_true <- tf$boolean_mask(y_true, bool_mask)
-      y_pred <- tf$boolean_mask(y_pred, bool_mask)
-      
-      batch_size <- as.integer(y_true$shape[1])
-      n_ID <- tf$cast(tf$divide(batch_size, grid_size), dtype = tf$int64)
-      
-      # h_hat = h_1_hat + h_2_hat
-      h_hat <- layer_add(list(tf_stride_cols(y_pred, 1L),
-                              tf_stride_cols(y_pred, 2L)))
-      
-      # h_prime_hat
-      h_prime <- tf$clip_by_value(tf_stride_cols(y_pred, 4L), 1e-8, Inf)
-      #h_prime <- tf$math$log(h_prime)
-      
-      # dont forget to add penalty to the loss
-      
-      # f_Y|X = x
-      #f_y_dens <- tf$exp(tfd_log_prob(bd, h_hat) + h_prime)
-      f_y_dens <-  tf$multiply(tfd_prob(bd, h_hat), h_prime)
-  
-      y_grid <- tf$reshape(tf_stride_cols(y_true, 7L), c(n_ID, grid_size))
-      f_y_hat <- tf$reshape(f_y_dens, c(n_ID, grid_size))
-      
-      y_obs <- tf_stride_cols(y_true, 5L)
-      y_obs <- tf$gather(y_obs, seq(1L, batch_size, grid_size))
-      
-      n_ID <- as.integer(n_ID)
-      log_scores <- vector("list", length = n_ID)
-      
-      # PLS
-      for (i in 0:(n_ID - 1)) {
-        y_ob <- tf$gather(y_obs, as.integer(i))
-        y_gr <- tf$gather(y_grid, as.integer(i))
-        idx <- tf$argmin(tf$abs(tf$subtract(y_gr, y_ob)))
-        f_dens_val <- tf$gather(tf$gather(f_y_hat, i), idx)
-        log_scores[[i + 1]] <- tf$math$log(f_dens_val)$numpy()
-      }
-      
-      return(mean(do.call("c", log_scores), na.rm = T))
     })
 }
