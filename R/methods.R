@@ -480,6 +480,23 @@ logLik.deeptrafo <- function(
     y_pred <- fitted.deeptrafo(object, call_create_lags = FALSE,
                                newdata = newdata, ... = ...)
   }
+  
+  if (!object$init_params$crps && criteria == "crps") {
+    
+    bd <- get_bd(object$init_params$family)
+    crps_for_logLik <- crps_loss(bd, grid_size)
+    
+    # order of cols in y must be the one of main.R
+    y <- cbind(y, newdata[[object$init_params$response_varname]], 
+               newdata$ID, newdata$y_grid)
+    
+    crpscore <- crps_for_logLik(y, y_pred)$numpy()
+    ids <- y[,6] # identifier of distribution
+    n_id <- sum(table(ids) == max(table(ids))) # when the entire dist is not provided
+    
+    return(c("crps" = crpscore))
+    
+  }
 
   if (!is.null(newdata) && object$init_params$crps) {
     

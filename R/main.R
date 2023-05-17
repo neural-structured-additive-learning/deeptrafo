@@ -524,7 +524,7 @@ nll <- function(base_distribution) {
 #' @import keras
 #' @import tensorflow
 #'
-crps_loss <- function(base_distribution, grid_size, batch_size) {
+crps_loss <- function(base_distribution, grid_size, batch_size = NULL) {
   
   if (is.character(base_distribution)) {
     bd <- get_bd(base_distribution)

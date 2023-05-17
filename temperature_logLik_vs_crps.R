@@ -1,7 +1,22 @@
 rm(list = ls())
-reticulate::use_condaenv("/Users/flipst3r/opt/anaconda3/envs/r-reticulate", required = TRUE)
+
+if (version$os != "darwin20") {
+  
+  if (grepl("scstepha", getwd())) {
+    
+    reticulate::use_virtualenv("/cluster/home/scstepha/nsgaSA", required = TRUE)
+  } else {
+    
+    reticulate::use_virtualenv("/cluster/home/phibauma/nsgaSA", required = TRUE)
+  }
+  
+} else {
+  reticulate::use_condaenv("/Users/flipst3r/opt/anaconda3/envs/r-reticulate", required = TRUE)
+}
+
 devtools::load_all("/Users/flipst3r/RStHomeDir/GitHub/deeptrafo")
 
+#library(deeptrafo)
 library(data.table)
 library(ggridges)
 library(ggplot2)
@@ -24,22 +39,22 @@ d_ts[, month := factor(month(time))]
 
 ## -----------------------------------------------------------------------------
 
-n_gr <- 50
+grid_size <- n_gr <- 50
 min_supp <- 10
 max_supp <- 30
 M <- 6L
-ep <- 2L
-bs <- 16L
-lr <- 1e-1
+ep <- 10L
+bs <- 64L
+lr <- 1e-2
 p <- 3 # lags
 
 ### different data prep for logLik vs CRPS
 
 # whole distribution on grid evaluation
-d_crps <- prep_atpm_crps(d_ts, min_supp, max_supp, n_gr, c(1:p))
+d_crps <- deeptrafo:::prep_atpm_crps(d_ts, min_supp, max_supp, n_gr, c(1:p))
 
 # point evaluation
-d_loglik <- prep_atpm_logLik(d_ts, c(1:p))
+d_loglik <- deeptrafo:::prep_atpm_logLik(d_ts, c(1:p))
 
 time_train <- seq(as.Date("1971-01-01"), as.Date("1986-12-01"), by = "month")
 time_validation <- seq(as.Date("1987-01-01"), as.Date("1989-12-01"), by = "month")
@@ -51,11 +66,16 @@ lags <- c(paste0("y_lag_", 1:p, collapse = "+"))
 atplags <- paste0("atplag(", paste0("y_lag_", 1:p), ")", collapse = "+")
 fm_atp <- as.formula(paste0("y ~ 0 + month +", atplags))
 
-## ----------------------------LOGLIK------------------------------------------
-
 d_loglik_train <- as.data.frame(d_loglik[d_loglik$time %in% time_train,])
 d_loglik_val <- as.data.frame(d_loglik[d_loglik$time %in% time_validation,])
 d_loglik_test <- as.data.frame(d_loglik[d_loglik$time %in% time_test,])
+
+d_crps_train <- as.data.frame(d_crps[d_crps$time %in% time_train,])
+d_crps_val <- as.data.frame(d_crps[d_crps$time %in% time_validation,])
+d_crps_test <- d_crps[d_crps$time %in% time_test,]
+
+## ----------------------------LOGLIK------------------------------------------
+
 
 ## Validation
 
@@ -80,20 +100,26 @@ m_loglik <- ColrNN(fm_atp, data = rbind(d_loglik_train, d_loglik_val),
                    tf_seed = 1, 
                    optimizer = optimizer_adam(learning_rate = lr))
 
-hist_loglik <- m_loglik |> fit(epochs = ep,
+hist_loglik <- m_loglik |> fit(epochs = min_epochs,
                                callbacks = list(),
                                batch_size = bs,
                                validation_data = NULL,
                                validation_split = NULL)
 
 # pls
-pls_loglik <- logLik(m_loglik, newdata = d_loglik_test, convert_fun = \(x) -x) # larger is better
+pls_loglikmodel <- logLik(m_loglik, 
+                         newdata = d_loglik_test,
+                         convert_fun = \(x) mean(-x, na.rm = T), # larger is better
+                         criteria = "logLik")
+
+crps_loglikmodel <- logLik(m_loglik, 
+                           newdata = d_crps_test,
+                           convert_fun = \(x) x, # smaller is better
+                           criteria = "crps")
+
+crpsmodel <- c("crps_logLik" = crps_loglikmodel, "pls_loglik" = pls_loglikmodel)
 
 ## ----------------------------CRPS---------------------------------------------
-
-d_crps_train <- as.data.frame(d_crps[d_crps$time %in% time_train,])
-d_crps_val <- as.data.frame(d_crps[d_crps$time %in% time_validation,])
-d_crps_test <- d_crps[d_crps$time %in% time_test,]
 
 ## Validation
 
@@ -113,7 +139,7 @@ hist_crps <- m_crps |> fit(epochs = ep,
                            validation_data = list(d_crps_val, cbind(d_crps_val$y, d_crps_val$ID, d_crps_val$y_grid)),
                            shuffle = FALSE) # shuffle FALSE is crucial
 
-min_epochs <- which.min(hist_loglik$metrics$val_loss)
+min_epochs <- which.min(hist_crps$metrics$val_loss)
 
 ## Test
 
@@ -125,20 +151,21 @@ m_crps <- ColrNN(fm_atp, data = rbind(d_crps_train, d_crps_val),
                  #batch_size = bs*n_gr, # only needed in graph execution but not in eager
                  optimizer = optimizer_adam(learning_rate = lr))
 
-hist_crps <- m_crps |> fit(epochs = ep,
+hist_crps <- m_crps |> fit(epochs = min_epochs,
                            callbacks = list(),
                            batch_size = bs*n_gr,
                            validation_data = NULL,
                            validation_split = NULL,
                            shuffle = FALSE) # shuffle FALSE is crucial
 
-logLik(m_crps, newdata = d_crps_test, criteria = "crps")
+crps_crpsmodel <- logLik(m_crps, newdata = d_crps_test, criteria = "crps")
 
 d_crps_logLik <- d_crps_test[, .SD[1], by = ID]
 d_crps_logLik$y_grid <- d_crps_logLik$y
-pls_crps <- logLik(m_crps, newdata = d_crps_logLik, criteria = "logLik") # larger is better
+pls_crpsmodel <- logLik(m_crps, newdata = d_crps_logLik, criteria = "logLik") # larger is better
+loglikmodel <- c("crps_logLik" = crps_crpsmodel, "pls_loglik" = pls_crpsmodel)
 
-saveRDS(c("crps" = pls_crps, "logLik" = pls_loglik), file = "pls_temp.RDS")
+saveRDS(c(crpsmodel, loglikmodel), file = "pls_temp.RDS")
 
 ## -------------------- out-of-sample densities --------------------------------
 
@@ -154,7 +181,7 @@ d_density <- d_crps_test |>
   tidyr::gather("method", "y_density", logLik_pdf, crps_pdf) |> as.data.table()
 
 Sys.setlocale("LC_ALL", "en_GB.UTF-8")
-(g_dens <- ggplot() +
+g_dens <- ggplot() +
   geom_path(data = d_density, aes(x = y, y = time, group = method),
             colour="red", size=1.5, alpha = 0.2) +
   geom_point(data = d_density, aes(x = y, y = time, group = method),
@@ -178,6 +205,6 @@ Sys.setlocale("LC_ALL", "en_GB.UTF-8")
         panel.border = element_blank(),
         text = element_text(size=12),
         legend.position = "none",
-        rect = element_rect(fill = "transparent")))
+        rect = element_rect(fill = "transparent"))
 
-ggsave("temp_crps_vs_loglik.pdf")
+ggsave("temp_crps_vs_loglik.pdf", plot = g_dens)
