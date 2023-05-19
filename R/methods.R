@@ -508,11 +508,12 @@ logLik.deeptrafo <- function(
       y <- cbind(y, newdata[[object$init_params$response_varname]], 
                  newdata$ID, newdata$y_grid)
       
-      crpscore <- -1*convert_fun(object$model$loss(y, y_pred)$numpy())
+      crpscore <- object$model$loss(y, y_pred)$numpy()
+      
       ids <- y[,6] # identifier of distribution
       n_id <- sum(table(ids) == max(table(ids))) # when the entire dist is not provided
       
-      return(c("crps" = crpscore/n_id))
+      return(c("crps" = c(crpscore)))
       
     } else {
       
@@ -537,7 +538,7 @@ logLik.deeptrafo <- function(
 
   }
   
-  convert_fun(object$model$loss(y, y_pred)$numpy())
+  c("pls" = -c(object$model$loss(y, y_pred)$numpy()))
 
 }
 

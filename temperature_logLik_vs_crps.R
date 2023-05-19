@@ -39,13 +39,13 @@ d_ts[, month := factor(month(time))]
 
 ## -----------------------------------------------------------------------------
 
-grid_size <- n_gr <- 50
-min_supp <- 10
-max_supp <- 30
-M <- 6L
+grid_size <- n_gr <- 30
+min_supp <- -30
+max_supp <- 90
+M <- 5L
 ep <- 10L
 bs <- 64L
-lr <- 1e-2
+lr <- 3e-1
 p <- 3 # lags
 
 ### different data prep for logLik vs CRPS
@@ -76,7 +76,6 @@ d_crps_test <- d_crps[d_crps$time %in% time_test,]
 
 ## ----------------------------LOGLIK------------------------------------------
 
-
 ## Validation
 
 m_loglik <- ColrNN(fm_atp, data = d_loglik_train,
@@ -95,21 +94,21 @@ min_epochs <- which.min(hist_loglik$metrics$val_loss)
 
 ## Test
 
-m_loglik <- ColrNN(fm_atp, data = rbind(d_loglik_train, d_loglik_val),
-                   trafo_options = trafo_control(order_bsp = M, support = c(min_supp, max_supp)),
-                   tf_seed = 1, 
-                   optimizer = optimizer_adam(learning_rate = lr))
-
-hist_loglik <- m_loglik |> fit(epochs = min_epochs,
-                               callbacks = list(),
-                               batch_size = bs,
-                               validation_data = NULL,
-                               validation_split = NULL)
+# m_loglik <- ColrNN(fm_atp, data = rbind(d_loglik_train, d_loglik_val),
+#                    trafo_options = trafo_control(order_bsp = M, support = c(min_supp, max_supp)),
+#                    tf_seed = 1, 
+#                    optimizer = optimizer_adam(learning_rate = lr))
+# 
+# hist_loglik <- m_loglik |> fit(epochs = min_epochs,
+#                                callbacks = list(),
+#                                batch_size = bs,
+#                                validation_data = NULL,
+#                                validation_split = NULL)
 
 # pls
 pls_loglikmodel <- logLik(m_loglik, 
                          newdata = d_loglik_test,
-                         convert_fun = \(x) mean(-x, na.rm = T), # larger is better
+                         convert_fun = \(x) c(-x), # larger is better
                          criteria = "logLik")
 
 crps_loglikmodel <- logLik(m_loglik, 
@@ -117,7 +116,7 @@ crps_loglikmodel <- logLik(m_loglik,
                            convert_fun = \(x) x, # smaller is better
                            criteria = "crps")
 
-crpsmodel <- c("crps_logLik" = crps_loglikmodel, "pls_loglik" = pls_loglikmodel)
+loglikmodel <- list("pls" = pls_loglikmodel, "crps" = crps_loglikmodel)
 
 ## ----------------------------CRPS---------------------------------------------
 
@@ -143,29 +142,30 @@ min_epochs <- which.min(hist_crps$metrics$val_loss)
 
 ## Test
 
-m_crps <- ColrNN(fm_atp, data = rbind(d_crps_train, d_crps_val),
-                 trafo_options = trafo_control(order_bsp = M, support = c(min_supp, max_supp)),
-                 tf_seed = 1,
-                 crps = TRUE,
-                 grid_size = n_gr,
-                 #batch_size = bs*n_gr, # only needed in graph execution but not in eager
-                 optimizer = optimizer_adam(learning_rate = lr))
-
-hist_crps <- m_crps |> fit(epochs = min_epochs,
-                           callbacks = list(),
-                           batch_size = bs*n_gr,
-                           validation_data = NULL,
-                           validation_split = NULL,
-                           shuffle = FALSE) # shuffle FALSE is crucial
+# m_crps <- ColrNN(fm_atp, data = rbind(d_crps_train, d_crps_val),
+#                  trafo_options = trafo_control(order_bsp = M, support = c(min_supp, max_supp)),
+#                  tf_seed = 1,
+#                  crps = TRUE,
+#                  grid_size = n_gr,
+#                  #batch_size = bs*n_gr, # only needed in graph execution but not in eager
+#                  optimizer = optimizer_adam(learning_rate = lr))
+# 
+# hist_crps <- m_crps |> fit(epochs = min_epochs,
+#                            callbacks = list(),
+#                            batch_size = bs*n_gr,
+#                            validation_data = NULL,
+#                            validation_split = NULL,
+#                            shuffle = FALSE) # shuffle FALSE is crucial
 
 crps_crpsmodel <- logLik(m_crps, newdata = d_crps_test, criteria = "crps")
 
 d_crps_logLik <- d_crps_test[, .SD[1], by = ID]
 d_crps_logLik$y_grid <- d_crps_logLik$y
 pls_crpsmodel <- logLik(m_crps, newdata = d_crps_logLik, criteria = "logLik") # larger is better
-loglikmodel <- c("crps_logLik" = crps_crpsmodel, "pls_loglik" = pls_crpsmodel)
+crpsmodel <- list("pls" = pls_crpsmodel, "crps" = crps_crpsmodel)
 
-saveRDS(c(crpsmodel, loglikmodel), file = "pls_temp.RDS")
+res <- list("crpsmodel" = crpsmodel, "loglikmodel" = loglikmodel)
+saveRDS(res, file = "scores.RDS")
 
 ## -------------------- out-of-sample densities --------------------------------
 
@@ -179,6 +179,15 @@ d_crps_test$crps_pdf <- c(predict(m_crps, newdata = d_crps_test, type = "pdf"))
 
 d_density <- d_crps_test |>
   tidyr::gather("method", "y_density", logLik_pdf, crps_pdf) |> as.data.table()
+
+check_dens <- function(idd) {
+  d_crps <- d_density[ID == idd & method == "crps_pdf"]
+  d_ll <- d_density[ID == idd & method == "logLik_pdf"]
+  c1 <- cumtrapz(d_crps$y_grid, d_crps$y_density)
+  c2 <- cumtrapz(d_ll$y_grid, d_ll$y_density)
+  list("crps" = c1[n_gr], "logLik" = c2[n_gr])
+}
+sapply(unique(d_density$ID), \(idd) check_dens(idd))
 
 Sys.setlocale("LC_ALL", "en_GB.UTF-8")
 g_dens <- ggplot() +
