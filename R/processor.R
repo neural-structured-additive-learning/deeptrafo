@@ -1,4 +1,4 @@
-ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
+ia_processor <- function(term, data, output_dim = NULL, param_nr, controls, ...) {
 
   name <- makelayername(term, param_nr)
   term <- gsub("ia\\((.*)\\)","\\1",term)
@@ -85,13 +85,13 @@ ia_processor <- function(term, data, output_dim = NULL, param_nr, controls){
 }
 
 basis_processor_lower <- function(term, data, output_dim = NULL, param_nr,
-                                  controls) {
+                                  controls, ...) {
   basis_processor(term = term, data = data, output_dim = output_dim,
                   param_nr = param_nr, controls = controls, lower = TRUE)
 }
 
 basis_processor <- function(term, data, output_dim = NULL, param_nr, controls,
-                            lower = FALSE){
+                            lower = FALSE, ...) {
 
   ybfun <- if (lower) controls$y_basis_fun_lower else controls$y_basis_fun
 
@@ -115,7 +115,7 @@ basis_processor <- function(term, data, output_dim = NULL, param_nr, controls,
   )
 }
 
-basisprime_processor <- function(term, data, output_dim = NULL, param_nr, controls){
+basisprime_processor <- function(term, data, output_dim = NULL, param_nr, controls, ...) {
 
   name <- makelayername(term, param_nr)
   bfy <- controls$y_basis_fun_prime(data[[extractvar(term)]])
@@ -136,10 +136,10 @@ basisprime_processor <- function(term, data, output_dim = NULL, param_nr, contro
   )
 }
 
-atm_lag_processor_factory <- function(rvar){
+atm_lag_processor_factory <- function(rvar) {
 
     atm_lag_processor <- function(term, data, output_dim = NULL, param_nr = 4,
-                                  controls = NULL) {
+                                  controls = NULL, ...) {
 
       name <- makelayername(term, param_nr)
       layer <- eval_bsp_tf(
