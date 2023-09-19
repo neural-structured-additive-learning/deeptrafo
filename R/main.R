@@ -29,6 +29,7 @@
 #' @param return_data Include full data in the returned object. Defaults to
 #'     \code{FALSE}. Set to \code{TRUE} if inteded to use
 #'     \code{\link[stats]{simulate}} afterwards.
+#' @param engine Ignored; for compatibility with package \code{deepregression}.
 #'
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
 #'
@@ -88,6 +89,7 @@ deeptrafo <- function(
     trafo_options = trafo_control(
       order_bsp = order, response_type = response_type),
     return_data = FALSE,
+    engine = "tf",
     ...
 )
 {
@@ -200,7 +202,7 @@ deeptrafo <- function(
     y = y, family = latent_distr, data = data, list_of_formulas = list_of_formulas,
     subnetwork_builder = snwb, from_preds_to_output = from_pred_to_trafo_fun,
     loss = tloss, monitor_metrics = monitor_metrics,
-    additional_processor = additional_processor), dots)
+    additional_processor = additional_processor, engine = engine), dots)
 
   ret <- suppressWarnings(do.call("deepregression", args))
 
@@ -406,7 +408,7 @@ atm_init <- function(atmnr, h1nr)
 #'
 from_preds_to_trafo <- function(
     atm_toplayer = function(x) layer_dense(x, units = 1L, name = "atm_toplayer"),
-    const_ia = NULL
+    const_ia = NULL, ...
 )
 {
 

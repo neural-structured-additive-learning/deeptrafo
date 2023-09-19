@@ -143,12 +143,12 @@ test_that("deep ensemble with count outcome", {
 test_that("ensembles with callbacks, custom optimizers work", {
   df <- dgp_cont()
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1),
-                       n_ensemble = 3, seed = rep(1, 3), tf_seed = 1)
+                       n_ensemble = 3, seed = rep(1, 3), tf_seeds = rep(1, 3))
   cfb <- unname(c(unlist(coef(ens))))
   expect_equal(cfb, rep(cfb[1], 3))
   expect_equal(ll <- unname(unlist(logLik(ens))), unname(rep(ll[1], 5)))
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1),
-                       n_ensemble = 3, seed = rep(1, 3), tf_seed = 1,
+                       n_ensemble = 3, seed = rep(1, 3), tf_seeds = rep(1, 3),
                        callbacks = list(callback_early_stopping()),
                        validation_split = 0.05)
   expect_length(ens$ensemble_results[[2]]$metrics$loss, 2)
@@ -159,28 +159,31 @@ test_that("reinit works as expected", {
 
   ### No special args
   ens <- trafoensemble(y ~ 1, data = df, n_ensemble = 3, seed = c(2, 10, 20),
+                       tf_seeds = c(2, 10, 20),
                        epochs = 3, validation_split = 0.1)
   expect_false(any(ens$ensemble_results[[1]]$metrics$loss ==
                      ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom optimizer
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = c(2, 10, 20), epochs = 3,
+                       n_ensemble = 3, seed = c(2, 10, 20), tf_seeds = c(2, 10, 20),
+                       epochs = 3,
                        validation_split = 0.1)
   expect_false(any(ens$ensemble_results[[1]]$metrics$loss ==
                      ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom callback
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = c(2, 10, 20), epochs = 3,
-                       callbacks = callback_early_stopping(patience = 0),
+                       n_ensemble = 3, seed = c(2, 10, 20), tf_seeds = c(2, 10, 20),
+                       epochs = 3, callbacks = callback_early_stopping(patience = 0),
                        validation_split = 0.1)
   expect_false(any(ens$ensemble_results[[1]]$metrics$loss ==
                      ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom neural network
   ens <- trafoensemble(y ~ nn(x), data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = c(2, 10, 20), epochs = 3,
+                       n_ensemble = 3, seed = c(2, 10, 20), tf_seeds = c(2, 10, 20),
+                       epochs = 3,
                        callbacks = callback_early_stopping(patience = 0),
                        validation_split = 0.1, list_of_deep_models = list(
                          nn = \(x) x %>% layer_dense(1, activation = "relu")))
@@ -189,32 +192,70 @@ test_that("reinit works as expected", {
 
   ### No special args + seed
   ens <- trafoensemble(y ~ 1, data = df, n_ensemble = 3, seed = rep(1, 3),
-                       epochs = 3, validation_split = 0.1)
+                       tf_seeds = rep(1, 3), epochs = 3, validation_split = 0.1)
   expect_true(all(ens$ensemble_results[[1]]$metrics$loss ==
                     ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom optimizer + seed
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = rep(1, 3), epochs = 3,
-                       validation_split = 0.1)
+                       n_ensemble = 3, seed = rep(1, 3), tf_seeds = rep(1, 3),
+                       epochs = 3, validation_split = 0.1)
   expect_true(all(ens$ensemble_results[[1]]$metrics$loss ==
                     ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom callback + seed
   ens <- trafoensemble(y ~ 1, data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = rep(1, 3), epochs = 3,
-                       callbacks = callback_early_stopping(patience = 0),
+                       n_ensemble = 3, seed = rep(1, 3), tf_seeds = rep(1, 3),
+                       epochs = 3, callbacks = callback_early_stopping(patience = 0),
                        validation_split = 0.1)
   expect_true(all(ens$ensemble_results[[1]]$metrics$loss ==
                     ens$ensemble_results[[2]]$metrics$loss))
 
   ### Custom neural network + seed
   ens <- trafoensemble(y ~ nn(x), data = df, optimizer = optimizer_adam(1e-4),
-                       n_ensemble = 3, seed = rep(1, 3), epochs = 3,
-                       callbacks = callback_early_stopping(patience = 0),
+                       n_ensemble = 3, seed = rep(1, 3), tf_seeds = rep(1, 3),
+                       epochs = 3, callbacks = callback_early_stopping(patience = 0),
                        validation_split = 0.1, list_of_deep_models = list(
                          nn = \(x) x %>% layer_dense(1, activation = "relu")))
   expect_true(all(ens$ensemble_results[[1]]$metrics$loss ==
                     ens$ensemble_results[[2]]$metrics$loss))
+
+})
+
+test_that("weighted transformation ensemble", {
+
+  set.seed(123)
+
+  dgp <- function(n = 1e2) {
+    x = runif(n)
+    y = sin(x * pi * 3) + rnorm(n, sd = 0.1)
+    data.frame(y = y, x = x)
+  }
+
+  ### Generate train, validation, test data
+  train_data <- dgp()
+  validation_data <- dgp()
+  test_data <- dgp()
+
+  ### Train ensemble with early stopping (separate validation split)
+  ens <- trafoensemble(
+    y ~ x, data = train_data, epochs = 10, n_ensemble = 3, verbose = FALSE,
+    validation_split = 0.1, optimizer = optimizer_adam(learning_rate = 0.1),
+    callbacks = list(callback_early_stopping(patience = 50))
+  )
+
+  ### Compute the optimal weights on the validation data (weights = NULL; default)
+  tuned <- weighted_logLik(ens, newdata = validation_data)
+
+  expect_true(all(tuned$weights <= 1))
+  expect_true(all(tuned$weights >= 0))
+  expect_length(tuned$weights, 3L)
+  expect_lt(tuned$ensemble, tuned$mean)
+
+  ### Use optimal weights and make test predictions (weights = tuned$weights)
+  test_nll <- weighted_logLik(ens, weights = tuned$weights, newdata = test_data)
+
+  expect_equal(tuned$weights, test_nll$weights)
+  expect_lt(test_nll$ensemble, test_nll$mean)
 
 })
