@@ -15,6 +15,8 @@ from_preds_to_trafo(
 
 \item{const_ia}{See \code{addconst_interaction} in \code{\link[deeptrafo]{deeptrafo}}
 or \code{\link[deepregression]{deepregression}}.}
+
+\item{...}{For compatibility with 'deepregression'}
 }
 \value{
 A function of \code{list_pred_param} returning a list of output tensors

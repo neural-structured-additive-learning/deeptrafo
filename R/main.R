@@ -410,6 +410,7 @@ atm_init <- function(atmnr, h1nr)
 #' @param atm_toplayer Function to be applied on top of the transformed lags.
 #' @param const_ia See \code{addconst_interaction} in \code{\link[deeptrafo]{deeptrafo}}
 #'     or \code{\link[deepregression]{deepregression}}.
+#' @param ... For compatibility with 'deepregression'
 #' @return A function of \code{list_pred_param} returning a list of output tensors
 #' that is passed to \code{model_fun} of \code{deepregression}
 #'
