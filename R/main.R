@@ -30,6 +30,13 @@
 #'     \code{FALSE}. Set to \code{TRUE} if inteded to use
 #'     \code{\link[stats]{simulate}} afterwards.
 #' @param engine Ignored; for compatibility with package \code{deepregression}.
+#' @param loss Character; specifies the loss function used. The default is
+#'  \code{"nll"}, an internal function which takes \code{latent_distr} as an
+#'  argument and returns a function with arguments \code{y_true} and
+#'  \code{y_pred} to be given to the underlying 'keras' model. Custom loss
+#'  functions can be supplied with the same structure, either as a character
+#'  or function.
+#' @param loss_args Further additional arguments to \code{loss}.
 #'
 #' @return An object of class \code{c("deeptrafo", "deepregression")}
 #'
@@ -85,6 +92,8 @@ deeptrafo <- function(
     order = get_order(response_type, data[[all.vars(fml)[1]]]),
     addconst_interaction = 0,
     latent_distr = "logistic",
+    loss = "nll",
+    loss_args = NULL,
     monitor_metrics = NULL,
     trafo_options = trafo_control(
       order_bsp = order, response_type = response_type),
@@ -188,7 +197,7 @@ deeptrafo <- function(
 
   # Loss function
   # tloss <- get_loss(response_type, latent_distr)
-  tloss <- nll(latent_distr)
+  tloss <- do.call(loss, c(list(latent_distr = latent_distr), loss_args))
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
@@ -444,7 +453,7 @@ from_preds_to_trafo <- function(
 
 #' Generic negative log-likelihood for transformation models
 #'
-#' @param base_distribution Target distribution, character or
+#' @param latent_distr Target distribution, character or
 #'     \code{tfd_distribution}. If character, can be either "logistic",
 #'     "normal", "gumbel", "gompertz".
 #'
@@ -456,12 +465,12 @@ from_preds_to_trafo <- function(
 #' @import keras
 #' @import tensorflow
 #'
-nll <- function(base_distribution) {
+nll <- function(latent_distr) {
 
-  if (is.character(base_distribution)) {
-    bd <- get_bd(base_distribution)
+  if (is.character(latent_distr)) {
+    bd <- get_bd(latent_distr)
   } else {
-    bd <- base_distribution
+    bd <- latent_distr
   }
 
   return(

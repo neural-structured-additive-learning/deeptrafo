@@ -4,10 +4,10 @@
 \alias{nll}
 \title{Generic negative log-likelihood for transformation models}
 \usage{
-nll(base_distribution)
+nll(latent_distr)
 }
 \arguments{
-\item{base_distribution}{Target distribution, character or
+\item{latent_distr}{Target distribution, character or
 \code{tfd_distribution}. If character, can be either "logistic",
 "normal", "gumbel", "gompertz".}
 }

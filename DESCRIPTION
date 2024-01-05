@@ -1,6 +1,6 @@
 Package: deeptrafo
 Title: Fitting Deep Conditional Transformation Models
-Version: 0.1-3
+Version: 0.1-2
 Authors@R: c(
     person("Lucas", "Kook", , "lucasheinrich.kook@gmail.com", role = c("aut", "cre")),
     person("Philipp", "Baumann", , "baumann@kof.ethz.ch", role = c("aut")),
@@ -38,4 +38,4 @@ Imports:
     reticulate
 License: GPL-3
 Encoding: UTF-8
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3

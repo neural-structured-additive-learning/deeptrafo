@@ -11,9 +11,12 @@ deeptrafo(
   order = get_order(response_type, data[[all.vars(fml)[1]]]),
   addconst_interaction = 0,
   latent_distr = "logistic",
+  loss = "nll",
+  loss_args = NULL,
   monitor_metrics = NULL,
   trafo_options = trafo_control(order_bsp = order, response_type = response_type),
   return_data = FALSE,
+  engine = "tf",
   ...
 )
 }
@@ -46,6 +49,15 @@ term.}
 transformation models. If character, can be \code{"normal"}, \code{"logistic"},
 \code{"gumbel"} or \code{"gompertz"}.}
 
+\item{loss}{Character; specifies the loss function used. The default is
+\code{"nll"}, an internal function which takes \code{latent_distr} as an
+argument and returns a function with arguments \code{y_true} and
+\code{y_pred} to be given to the underlying 'keras' model. Custom loss
+functions can be supplied with the same structure, either as a character
+or function.}
+
+\item{loss_args}{Further additional arguments to \code{loss}.}
+
 \item{monitor_metrics}{See \code{\link[deepregression]{deepregression}}}
 
 \item{trafo_options}{Options for transformation models such as the basis
@@ -54,6 +66,8 @@ function used, see \code{\link[deeptrafo]{trafo_control}} for more details.}
 \item{return_data}{Include full data in the returned object. Defaults to
 \code{FALSE}. Set to \code{TRUE} if inteded to use
 \code{\link[stats]{simulate}} afterwards.}
+
+\item{engine}{Ignored; for compatibility with package \code{deepregression}.}
 
 \item{...}{Additional arguments passed to \code{deepregression}}
 }

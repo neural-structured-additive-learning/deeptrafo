@@ -6,7 +6,8 @@
 \usage{
 from_preds_to_trafo(
   atm_toplayer = function(x) layer_dense(x, units = 1L, name = "atm_toplayer"),
-  const_ia = NULL
+  const_ia = NULL,
+  ...
 )
 }
 \arguments{
