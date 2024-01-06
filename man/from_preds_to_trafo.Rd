@@ -6,7 +6,8 @@
 \usage{
 from_preds_to_trafo(
   atm_toplayer = function(x) layer_dense(x, units = 1L, name = "atm_toplayer"),
-  const_ia = NULL
+  const_ia = NULL,
+  ...
 )
 }
 \arguments{
@@ -14,6 +15,8 @@ from_preds_to_trafo(
 
 \item{const_ia}{See \code{addconst_interaction} in \code{\link[deeptrafo]{deeptrafo}}
 or \code{\link[deepregression]{deepregression}}.}
+
+\item{...}{For compatibility with 'deepregression'}
 }
 \value{
 A function of \code{list_pred_param} returning a list of output tensors

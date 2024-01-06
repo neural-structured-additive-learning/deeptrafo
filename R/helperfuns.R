@@ -530,14 +530,14 @@ secondOrderPenBSP <- function(order_bsp, order_diff = 2)
 calculate_log_score <- function(x, output)
 {
 
-  if(is.character(x$init_params$base_distribution) &
-     x$init_params$base_distribution=="normal"){
+  if(is.character(x$init_params$latent_distr) &
+     x$init_params$latent_distr=="normal"){
     bd <- tfd_normal(loc = 0, scale = 1)
-  }else if((is.character(x$init_params$base_distribution) &
-            x$init_params$base_distribution=="logistic")){
+  }else if((is.character(x$init_params$latent_distr) &
+            x$init_params$latent_distr=="logistic")){
     bd <- tfd_logistic(loc = 0, scale = 1)
   }else{
-    bd <- x$init_params$base_distribution
+    bd <- x$init_params$latent_distr
   }
   return(
     as.matrix(bd %>% tfd_log_prob(output[,2,drop=F] + output[,1,drop=F])) +

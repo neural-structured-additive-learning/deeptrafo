@@ -40,6 +40,7 @@ dctm <- function(
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
+  ret$init_params$call <- match.call()
   class(ret) <- c("dctm", class(ret))
 
   ret
@@ -92,6 +93,7 @@ ontram <- function(
               monitor_metrics = monitor_metrics, trafo_options = trafo_options,
               ... = ...)
 
+  ret$init_params$call <- match.call()
   class(ret) <- c("ontram", class(ret))
 
   ret
@@ -132,6 +134,7 @@ ColrNN <- function(
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
+  ret$init_params$call <- match.call()
   class(ret) <- c("ColrNN", class(ret))
 
   ret
@@ -172,6 +175,7 @@ CoxphNN <- function(
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
+  ret$init_params$call <- match.call()
   class(ret) <- c("CoxphNN", class(ret))
 
   ret
@@ -212,6 +216,7 @@ LehmanNN <- function(
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
+  ret$init_params$call <- match.call()
   class(ret) <- c("LehmanNN", class(ret))
 
   ret
@@ -252,6 +257,7 @@ BoxCoxNN <- function(
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
+  ret$init_params$call <- match.call()
   class(ret) <- c("BoxCoxNN", class(ret))
 
   ret
@@ -293,6 +299,7 @@ PolrNN <- function(
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
+  ret$init_params$call <- match.call()
   class(ret) <- c("PolrNN", class(ret))
 
   ret
@@ -347,6 +354,7 @@ LmNN <- function(
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
+  ret$init_params$call <- match.call()
   class(ret) <- c("LmNN", class(ret))
 
   ret
@@ -415,6 +423,7 @@ SurvregNN <- function(
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
+  ret$init_params$call <- match.call()
   class(ret) <- c("SurvregNN", class(ret))
 
   ret
@@ -472,6 +481,7 @@ cotramNN <- function(
                    monitor_metrics = monitor_metrics, trafo_options = trafo_options,
                    ... = ...)
 
+  ret$init_params$call <- match.call()
   class(ret) <- c("cotramNN", class(ret))
 
   ret
