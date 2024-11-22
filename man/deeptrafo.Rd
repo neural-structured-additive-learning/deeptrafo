@@ -90,30 +90,38 @@ wine$z <- rnorm(nrow(wine))
 wine$x <- rnorm(nrow(wine))
 
 nn <- \(x) x |>
-    layer_dense(input_shape = 1L, units = 2L, activation = "relu") |>
-    layer_dense(1L)
+  layer_dense(input_shape = 1L, units = 2L, activation = "relu") |>
+  layer_dense(1L)
 
 fml <- rating ~ 0 + temp + contact + s(z, df = 3) + nn(x)
 if (reticulate::py_module_available("tensorflow") &
-    reticulate::py_module_available("keras") &
-    reticulate::py_module_available("tensorflow_probability")) {
-m <- deeptrafo(fml, wine, latent_distr = "logistic", monitor_metric = NULL,
-    return_data = TRUE, list_of_deep_models = list(nn = nn))
+  reticulate::py_module_available("keras") &
+  reticulate::py_module_available("tensorflow_probability")) {
+  m <- deeptrafo(fml, wine,
+    latent_distr = "logistic", monitor_metric = NULL,
+    return_data = TRUE, list_of_deep_models = list(nn = nn)
+  )
 
-print(m)
+  print(m)
 
-    m \%>\% fit(epochs = 10, batch_size = nrow(wine))
-    coef(m, which_param = "interacting")
-    coef(m, which_param = "shifting")
-    fitted(m)
-    predict(m, type = "pdf")
-    predict(m, type = "pdf", newdata = wine[, -2])
-    logLik(m)
-    logLik(m, newdata = wine[1:10, ])
-    plot(m)
-    mcv <- cv(m, cv_folds = 3)
-    ens <- ensemble(m, n_ensemble = 3)
-    coef(ens)
+  m \%>\% fit(epochs = 10, batch_size = nrow(wine))
+  coef(m, which_param = "interacting")
+  coef(m, which_param = "shifting")
+  fitted(m)
+  predict(m, type = "pdf")
+  predict(m, type = "pdf", newdata = wine[, -2])
+  logLik(m)
+  logLik(m, newdata = wine[1:10, ])
+  plot(m)
+  mcv <- cv(m, cv_folds = 3)
+  ens <- ensemble(m, n_ensemble = 3)
+  coef(ens)
 }
 
+}
+\references{
+Kook, L., Baumann, P. F., Dürr, O., Sick, B., & Rügamer, D.
+(2024). Estimating conditional distributions with neural networks using R
+package deeptrafo. Journal of Statistical Software.
+\doi{10.18637/jss.v111.i10}.
 }

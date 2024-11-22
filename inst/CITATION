@@ -1,0 +1,22 @@
+bibentry(bibtype = "Article",
+  title        = "Estimating Conditional Distributions with Neural Networks Using {R} Package {deeptrafo}",
+  author       = c(person(given = "Lucas",
+                          family = "Kook",
+                          email = "lucas.kook@wu.ac.at"),
+                   person(given = c("Philipp", "F.", "M."),
+                          family = "Baumann"),
+                   person(given = "Oliver",
+                          family = "D\\\"urr"),
+                   person(given = "Beate",
+                          family = "Sick"),
+                   person(given = "David",
+                          family = "R\\\"ugamer")),
+  journal      = "Journal of Statistical Software",
+  year         = "2024",
+  volume       = "111",
+  number       = "10",
+  pages        = "1--36",
+  doi          = "10.18637/jss.v111.i10",
+  header       = "To cite deeptrafo in publications use:"
+)
+

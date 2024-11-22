@@ -46,31 +46,38 @@
 #' wine$x <- rnorm(nrow(wine))
 #'
 #' nn <- \(x) x |>
-#'     layer_dense(input_shape = 1L, units = 2L, activation = "relu") |>
-#'     layer_dense(1L)
+#'   layer_dense(input_shape = 1L, units = 2L, activation = "relu") |>
+#'   layer_dense(1L)
 #'
 #' fml <- rating ~ 0 + temp + contact + s(z, df = 3) + nn(x)
 #' if (reticulate::py_module_available("tensorflow") &
-#'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
-#' m <- deeptrafo(fml, wine, latent_distr = "logistic", monitor_metric = NULL,
-#'     return_data = TRUE, list_of_deep_models = list(nn = nn))
+#'   reticulate::py_module_available("keras") &
+#'   reticulate::py_module_available("tensorflow_probability")) {
+#'   m <- deeptrafo(fml, wine,
+#'     latent_distr = "logistic", monitor_metric = NULL,
+#'     return_data = TRUE, list_of_deep_models = list(nn = nn)
+#'   )
 #'
-#' print(m)
+#'   print(m)
 #'
-#'     m %>% fit(epochs = 10, batch_size = nrow(wine))
-#'     coef(m, which_param = "interacting")
-#'     coef(m, which_param = "shifting")
-#'     fitted(m)
-#'     predict(m, type = "pdf")
-#'     predict(m, type = "pdf", newdata = wine[, -2])
-#'     logLik(m)
-#'     logLik(m, newdata = wine[1:10, ])
-#'     plot(m)
-#'     mcv <- cv(m, cv_folds = 3)
-#'     ens <- ensemble(m, n_ensemble = 3)
-#'     coef(ens)
+#'   m %>% fit(epochs = 10, batch_size = nrow(wine))
+#'   coef(m, which_param = "interacting")
+#'   coef(m, which_param = "shifting")
+#'   fitted(m)
+#'   predict(m, type = "pdf")
+#'   predict(m, type = "pdf", newdata = wine[, -2])
+#'   logLik(m)
+#'   logLik(m, newdata = wine[1:10, ])
+#'   plot(m)
+#'   mcv <- cv(m, cv_folds = 3)
+#'   ens <- ensemble(m, n_ensemble = 3)
+#'   coef(ens)
 #' }
+#'
+#' @references Kook, L., Baumann, P. F., Dürr, O., Sick, B., & Rügamer, D.
+#' (2024). Estimating conditional distributions with neural networks using R
+#' package deeptrafo. Journal of Statistical Software.
+#' \doi{10.18637/jss.v111.i10}.
 #'
 #' @importFrom mlt R
 #' @importFrom Formula as.Formula
@@ -96,13 +103,11 @@ deeptrafo <- function(
     loss_args = NULL,
     monitor_metrics = NULL,
     trafo_options = trafo_control(
-      order_bsp = order, response_type = response_type),
+      order_bsp = order, response_type = response_type
+    ),
     return_data = FALSE,
     engine = "tf",
-    ...
-)
-{
-
+    ...) {
   call <- match.call()
 
   # How many terms are in the formula
@@ -122,18 +127,20 @@ deeptrafo <- function(
     h1_form <- paste0(
       "~ 0 + ", paste(paste0("ia(", c(int, trimws(
         strsplit(form2text(interacting), "+", fixed = TRUE)[[1]]
-      )), ")"), collapse=" + ")
+      )), ")"), collapse = " + ")
     )
   } else {
     h1_form <- paste0(
-      "~ -1 + ", paste(paste0("ia(", int, ")"), collapse=" + ")
+      "~ -1 + ", paste(paste0("ia(", int, ")"), collapse = " + ")
     )
   }
 
   # List of formulas
   list_of_formulas <- list(
-    yterms = as.formula(paste0("~ -1 + bsfun(", rvar, ") + bsfunl(", rvar,
-                               ") + bspfun(", rvar, ")")),
+    yterms = as.formula(paste0(
+      "~ -1 + bsfun(", rvar, ") + bsfunl(", rvar,
+      ") + bspfun(", rvar, ")"
+    )),
     h1pred = as.formula(h1_form),
     h2 = if (nterms >= 1L) formula(fml, lhs = 0, rhs = 1L) else NULL,
     shared = if (nterms == 2L) formula(fml, lhs = 0, rhs = 2L) else NULL
@@ -162,35 +169,35 @@ deeptrafo <- function(
 
     tlag_formula <- lags$fm
     list_of_formulas$yterms <- as.formula(
-      paste0(form2text(list_of_formulas$yterms), " + ", tlag_formula))
-    if (length(ftms) > length(which(atps)))
+      paste0(form2text(list_of_formulas$yterms), " + ", tlag_formula)
+    )
+    if (length(ftms) > length(which(atps))) {
       list_of_formulas$h2 <- drop.terms(tms, which(atps))
-    else
+    } else {
       list_of_formulas$h2 <- ~1
+    }
   }
 
   # define how to get a trafo model from predictor
   from_pred_to_trafo_fun <- from_preds_to_trafo(
-    atm_toplayer = trafo_options$atm_toplayer, const_ia = addconst_interaction)
+    atm_toplayer = trafo_options$atm_toplayer, const_ia = addconst_interaction
+  )
 
   atm_lag_processor <- atm_lag_processor_factory(rvar)
 
   trafo_processor <- list(
     bsfun = basis_processor, bsfunl = basis_processor_lower,
     bspfun = basisprime_processor, ia = ia_processor,
-    atplag = atm_lag_processor)
+    atplag = atm_lag_processor
+  )
 
   dots <- list(...)
 
   if (is.null(dots$additional_processor)) {
-
     additional_processor <- trafo_processor
-
-  } else{
-
+  } else {
     additional_processor <- c(list(...)$additional_processor, trafo_processor)
     dots$additional_processor <- NULL
-
   }
 
   attr(additional_processor, "controls") <- trafo_options
@@ -201,17 +208,21 @@ deeptrafo <- function(
 
   snwb <- list(subnetwork_init)[rep(1, length(list_of_formulas))]
   snwb[[which(names(list_of_formulas) == "h1pred")]] <-
-    h1_init(yterms = which(names(list_of_formulas) == "yterms"),
-            h1pred = which(names(list_of_formulas) == "h1pred"),
-            add_const_positiv = addconst_interaction)
-  snwb[[which(names(list_of_formulas) == "yterms")]] <- function(...)
+    h1_init(
+      yterms = which(names(list_of_formulas) == "yterms"),
+      h1pred = which(names(list_of_formulas) == "h1pred"),
+      add_const_positiv = addconst_interaction
+    )
+  snwb[[which(names(list_of_formulas) == "yterms")]] <- function(...) {
     return(NULL)
+  }
 
   args <- c(list(
     y = y, family = latent_distr, data = data, list_of_formulas = list_of_formulas,
     subnetwork_builder = snwb, from_preds_to_output = from_pred_to_trafo_fun,
     loss = tloss, monitor_metrics = monitor_metrics,
-    additional_processor = additional_processor, engine = engine), dots)
+    additional_processor = additional_processor, engine = engine
+  ), dots)
 
   ret <- suppressWarnings(do.call("deepregression", args))
 
@@ -228,7 +239,6 @@ deeptrafo <- function(
 
   class(ret) <- c("deeptrafo", "deepregression")
   ret
-
 }
 
 #' Initializes the Processed Additive Predictor for TM's Interaction
@@ -240,13 +250,11 @@ deeptrafo <- function(
 #'
 #' @return returns a subnetwork_init function with pre-defined arguments
 #'
-h1_init <- function(yterms, h1pred, add_const_positiv = 0)
-{
+h1_init <- function(yterms, h1pred, add_const_positiv = 0) {
   return(
     function(pp, deep_top, orthog_fun, split_fun, shared_layers,
              param_nr, selectfun_in, selectfun_lay, gaminputs,
-             summary_layer = NULL){
-
+             summary_layer = NULL) {
       # instead of passing the respective pp,
       # subsetting is done within subnetwork_init
       # to allow other subnetwork_builder to
@@ -263,16 +271,13 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
       inputs_y <- makeInputs(pp_y, param_nr = 1)
       org_inputs_for_concat <- list()
 
-      if(sum(has_gaminp)){
-
-        for(i in 1:sum(has_gaminp)){
-
+      if (sum(has_gaminp)) {
+        for (i in 1:sum(has_gaminp)) {
           # concatenate inputs or replace?
           concat <- gaminput_comb[[i]]
           nr <- which(has_gaminp)[i]
 
-          if(!is.null(concat) && concat){
-
+          if (!is.null(concat) && concat) {
             org_inputs_for_concat <- c(
               org_inputs_for_concat,
               inputs[[nr]]
@@ -280,68 +285,66 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
             inputs[[nr]] <- layer_concatenate_identity(
               list(gaminputs[[gaminput_nrs[[nr]]]], inputs[[nr]])
             )
-
           } else {
-
             inputs[[nr]] <- gaminputs[[gaminput_nrs[[nr]]]]
-
           }
-
         }
 
         inputs_to_replace <- which(has_gaminp)[gaminput_comb]
         keep_inputs_in_return <- setdiff(1:length(inputs), (which(has_gaminp)[!gaminput_comb]))
-
       } else {
-
-        inputs_to_replace <-  c()
+        inputs_to_replace <- c()
         keep_inputs_in_return <- 1:length(inputs)
-
       }
 
       layer_matching <- 1:length(pp_in)
       names(layer_matching) <- layer_matching
 
-      if(!is.null(shared_layers)) {
-
+      if (!is.null(shared_layers)) {
         names_terms <- get_names_pfc(pp_in)
 
-        for(group in shared_layers) {
-
+        for (group in shared_layers) {
           layer_ref_nr <- which(names_terms == group[1])
           layer_opts <- get("layer_args", environment(pp_lay[[layer_ref_nr]]$layer))
-          layer_opts$name <- paste0("shared_",
-                                    makelayername(paste(group, collapse="_"),
-                                                  param_nr))
-          layer_ref <- do.call(get("layer_class", environment(pp_lay[[layer_ref_nr]]$layer)),
-                               layer_opts)
+          layer_opts$name <- paste0(
+            "shared_",
+            makelayername(
+              paste(group, collapse = "_"),
+              param_nr
+            )
+          )
+          layer_ref <- do.call(
+            get("layer_class", environment(pp_lay[[layer_ref_nr]]$layer)),
+            layer_opts
+          )
 
           terms_replace_layer <- which(names_terms %in% group)
           layer_matching[terms_replace_layer] <- layer_ref_nr
 
-          for(i in terms_replace_layer) pp_lay[[i]]$layer <- layer_ref
-
+          for (i in terms_replace_layer) pp_lay[[i]]$layer <- layer_ref
         }
       }
 
-      if(all(sapply(pp_in, function(x) is.null(x$right_from_oz)))){ # if there is no term to orthogonalize
+      if (all(sapply(pp_in, function(x) is.null(x$right_from_oz)))) { # if there is no term to orthogonalize
 
-        outputs <- lapply(1:length(pp_y), function(j) layer_add_identity(
-          lapply(1:length(pp_in), function(i) pp_lay[[layer_matching[i]]]$layer(
-            pp_y[[j]]$layer(inputs_y[[j]]),
-            tf$add(inputs[[i]], add_const_positiv)
+        outputs <- lapply(1:length(pp_y), function(j) {
+          layer_add_identity(
+            lapply(1:length(pp_in), function(i) {
+              pp_lay[[layer_matching[i]]]$layer(
+                pp_y[[j]]$layer(inputs_y[[j]]),
+                tf$add(inputs[[i]], add_const_positiv)
+              )
+            })
           )
-          )
-        ))
+        })
         outputs <- layer_concatenate_identity(outputs)
 
         # replace original inputs
-        if (length(org_inputs_for_concat) > 0)
+        if (length(org_inputs_for_concat) > 0) {
           inputs[inputs_to_replace] <- org_inputs_for_concat
-        return(list(c(inputs_y,inputs[keep_inputs_in_return]), outputs))
-
+        }
+        return(list(c(inputs_y, inputs[keep_inputs_in_return]), outputs))
       } else {
-
         ## define the different types of elements
         stop("Not implemented yet.")
         # outputs_w_oz <- unique(unlist(sapply(pp_in, "[[", "right_from_oz")))
@@ -377,13 +380,9 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
         # if(length(org_inputs_for_concat)>0)
         #   inputs[inputs_to_replace] <- org_inputs_for_concat
         # return(list(inputs[keep_inputs_in_return], outputs))
-
       }
-
-
     }
   )
-
 }
 
 #' Initializes the Processed Additive Predictor for ATMs
@@ -391,18 +390,18 @@ h1_init <- function(yterms, h1pred, add_const_positiv = 0)
 #' @param atmnr,h1nr positions of the atm and h1 formula
 #' @return returns a subnetwork_init function with pre-defined arguments
 #'
-atm_init <- function(atmnr, h1nr)
-{
+atm_init <- function(atmnr, h1nr) {
   return(
     function(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr,
-             gaminputs)
+             gaminputs) {
       subnetwork_init(pp, deep_top, orthog_fun, split_fun, shared_layers, param_nr,
-                      # pp_input_subset = atmnr,
-                      # pp_layer_subset = h1nr,
-                      gaminputs = gaminputs,
-                      summary_layer = layer_concatenate_identity)
+        # pp_input_subset = atmnr,
+        # pp_layer_subset = h1nr,
+        gaminputs = gaminputs,
+        summary_layer = layer_concatenate_identity
+      )
+    }
   )
-
 }
 
 #' @title Define Predictor of Transformation Model
@@ -418,12 +417,8 @@ atm_init <- function(atmnr, h1nr)
 #'
 from_preds_to_trafo <- function(
     atm_toplayer = function(x) layer_dense(x, units = 1L, name = "atm_toplayer"),
-    const_ia = NULL, ...
-)
-{
-
-  return(function(list_pred_param, ...){
-
+    const_ia = NULL, ...) {
+  return(function(list_pred_param, ...) {
     # make inputs more readable
     # aTtheta <- tf_stride_cols(list_pred_param$h1pred, 1L)
     # aPrimeTtheta <- tf_stride_cols(list_pred_param$h1pred, 2L)
@@ -431,13 +426,11 @@ from_preds_to_trafo <- function(
     shift_pred <- list_pred_param$h2
 
     if (h1pred_ncol > 3) {
-
       lag_pred <- tf_stride_cols(list_pred_param$h1pred, 4, h1pred_ncol) %>%
         atm_toplayer()
 
       # overwrite the shift_pred by adding lags
       shift_pred <- layer_add(list(shift_pred, lag_pred))
-
     }
 
     # return transformation
@@ -447,9 +440,7 @@ from_preds_to_trafo <- function(
     ))
 
     return(trafo)
-
   })
-
 }
 
 #' Generic negative log-likelihood for transformation models
@@ -467,7 +458,6 @@ from_preds_to_trafo <- function(
 #' @import tensorflow
 #'
 nll <- function(latent_distr) {
-
   if (is.character(latent_distr)) {
     bd <- get_bd(latent_distr)
   } else {
@@ -476,29 +466,33 @@ nll <- function(latent_distr) {
 
   return(
     function(y_true, y_pred) {
-
       cleft <- tf_stride_cols(y_true, 1L)
       exact <- tf_stride_cols(y_true, 2L)
       cright <- tf_stride_cols(y_true, 3L)
       cint <- tf_stride_cols(y_true, 4L)
 
-      trafo <- layer_add(list(tf_stride_cols(y_pred, 1L), # Shift in 1
-                              tf_stride_cols(y_pred, 2L))) # Upper in 2
-      trafo_lwr <- layer_add(list(tf_stride_cols(y_pred, 1L),
-                                  tf_stride_cols(y_pred, 3L))) # Lower in 3
-      trafo_prime <- tf$math$log(tf$clip_by_value(tf_stride_cols(y_pred, 4L),
-                                                  1e-8, Inf)) # Prime in 4
+      trafo <- layer_add(list(
+        tf_stride_cols(y_pred, 1L), # Shift in 1
+        tf_stride_cols(y_pred, 2L)
+      )) # Upper in 2
+      trafo_lwr <- layer_add(list(
+        tf_stride_cols(y_pred, 1L),
+        tf_stride_cols(y_pred, 3L)
+      )) # Lower in 3
+      trafo_prime <- tf$math$log(tf$clip_by_value(
+        tf_stride_cols(y_pred, 4L),
+        1e-8, Inf
+      )) # Prime in 4
 
       ll_exact <- tfd_log_prob(bd, trafo) + trafo_prime
       ll_left <- tf$math$log(tf$clip_by_value(tfd_cdf(bd, trafo), 1e-16, 1))
       ll_right <- tf$math$log(tf$clip_by_value(1 - tfd_cdf(bd, trafo_lwr), 1e-16, 1))
       ll_int <- tf$math$log(tf$clip_by_value(tfd_cdf(bd, trafo) - tfd_cdf(bd, trafo_lwr), 1e-16, 1))
 
-      neglogLik <- - (cleft * ll_left + exact * ll_exact + cright * ll_right +
-                        cint * ll_int)
+      neglogLik <- -(cleft * ll_left + exact * ll_exact + cright * ll_right +
+        cint * ll_int)
 
       return(neglogLik)
     }
   )
-
 }

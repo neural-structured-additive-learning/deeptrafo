@@ -1,6 +1,6 @@
 Package: deeptrafo
 Title: Fitting Deep Conditional Transformation Models
-Version: 0.1-2
+Version: 1.0-0
 Authors@R: c(
     person("Lucas", "Kook", , "lucasheinrich.kook@gmail.com", role = c("aut", "cre")),
     person("Philipp", "Baumann", , "baumann@kof.ethz.ch", role = c("aut")),
@@ -12,7 +12,8 @@ Description: Allows for the specification of deep conditional transformation
     Kook et al (2022) <doi:10.1016/j.patcog.2021.108263>. Extensions such as
     autoregressive DCTMs (Ruegamer et al, 2022, <doi:10.48550/arXiv.2110.08248>)
     and transformation ensembles (Kook et al, 2022, <doi:10.48550/arXiv.2205.12729>)
-    are implemented.
+    are implemented. The software package is described in Kook et al (2022,
+    <doi:10.18637/jss.v111.i10>).
 Depends: 
     R (>= 4.0.0), 
     tensorflow (>= 2.2.0), 
@@ -38,4 +39,4 @@ Imports:
     reticulate
 License: GPL-3
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1

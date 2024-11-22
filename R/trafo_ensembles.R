@@ -98,6 +98,7 @@ trafoensemble <- function(
 
 }
 
+#' @exportS3Method reinit_weights deeptrafo
 reinit_weights.deeptrafo <- function(object, seed) {
   layers <- object$model$layers
   lapply(seq_along(layers), function(x) {
