@@ -40,3 +40,5 @@ Imports:
 License: GPL-3
 Encoding: UTF-8
 RoxygenNote: 7.3.1
+URL: https://github.com/neural-structured-additive-learning/deeptrafo
+BugReports: https://github.com/neural-structured-additive-learning/deeptrafo/issues
