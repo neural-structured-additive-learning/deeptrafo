@@ -229,15 +229,6 @@ LehmanNN <- function(
 #'
 #' @return See return statement of \code{\link[deeptrafo]{deeptrafo}}
 #'
-#' @examples
-#' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
-#'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
-#'     m <- BoxCoxNN(y ~ x, data = df)
-#'     coef(m)
-#' }
-#'
 #' @export
 #'
 BoxCoxNN <- function(
