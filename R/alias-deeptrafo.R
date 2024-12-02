@@ -15,7 +15,8 @@
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
 #' if (reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     reticulate::py_module_available("tensorflow_probability") &
+#'     .Platform$OS.type != "windows") {
 #'    m <- dctm(response = ~ y, shift = ~ 0 + x, data = df)
 #'    coef(m)
 #' }
@@ -67,7 +68,8 @@ dctm <- function(
 #' df <- data.frame(y = ordered(sample.int(6, 50, TRUE)), x = rnorm(50))
 #' if (reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     reticulate::py_module_available("tensorflow_probability") &
+#'     .Platform$OS.type != "windows") {
 #'     m <- ontram(response = ~ y, shift = ~ x, data = df)
 #'    coef(m)
 #' }
@@ -110,7 +112,8 @@ ontram <- function(
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
 #' if (reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     reticulate::py_module_available("tensorflow_probability") &
+#'     .Platform$OS.type != "windows") {
 #'     m <- ColrNN(y ~ x, data = df)
 #'     coef(m)
 #' }
@@ -151,7 +154,8 @@ ColrNN <- function(
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
 #' if (reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     reticulate::py_module_available("tensorflow_probability") &
+#'     .Platform$OS.type != "windows") {
 #'     m <- CoxphNN(y ~ x, data = df)
 #'     coef(m)
 #' }
@@ -192,7 +196,8 @@ CoxphNN <- function(
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
 #' if (reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     reticulate::py_module_available("tensorflow_probability") &
+#'     .Platform$OS.type != "windows") {
 #'     m <- LehmanNN(y ~ 0 + x, data = df)
 #'     coef(m)
 #' }
@@ -233,7 +238,8 @@ LehmanNN <- function(
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
 #' if (reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     reticulate::py_module_available("tensorflow_probability") &
+#'     .Platform$OS.type != "windows") {
 #'     m <- BoxCoxNN(y ~ x, data = df)
 #'     coef(m)
 #' }
@@ -275,7 +281,8 @@ BoxCoxNN <- function(
 #'      x = rnorm(50))
 #' if (reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     reticulate::py_module_available("tensorflow_probability") &
+#'     .Platform$OS.type != "windows") {
 #'     m <- PolrNN(y ~ x, data = df)
 #'     coef(m)
 #' }
@@ -317,7 +324,8 @@ PolrNN <- function(
 #' df <- data.frame(y = 10 + rnorm(50), x = rnorm(50))
 #' if (reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     reticulate::py_module_available("tensorflow_probability") &
+#'     .Platform$OS.type != "windows") {
 #'     m <- LmNN(y ~ 0 + x, data = df)
 #' \donttest{
 #'     optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
@@ -372,7 +380,8 @@ LmNN <- function(
 #' df <- data.frame(y = abs(1 + rnorm(50)), x = rnorm(50))
 #' if (reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     reticulate::py_module_available("tensorflow_probability") &
+#'     .Platform$OS.type != "windows") {
 #'     m <- SurvregNN(y ~ 0 + x, data = df)
 #' \donttest{
 #'     optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
@@ -441,7 +450,8 @@ SurvregNN <- function(
 #' df <- data.frame(y = as.integer(abs(1 + rnorm(50, sd = 10))), x = rnorm(50))
 #' if (reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
-#'     reticulate::py_module_available("tensorflow_probability")) {
+#'     reticulate::py_module_available("tensorflow_probability") &
+#'     .Platform$OS.type != "windows") {
 #'     m <- cotramNN(y ~ 0 + x, data = df, order = 6)
 #' \donttest{
 #'     optimizer <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)
