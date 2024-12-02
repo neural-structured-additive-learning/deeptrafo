@@ -11,3 +11,4 @@ inst/demos
 README.md
 inst/python/layers/__pycache__
 inst/python/distributions/__pycache__
+^Makefile$
