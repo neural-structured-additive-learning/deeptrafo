@@ -85,18 +85,21 @@ Deep Conditional Transformation Models
     and add the suffix "NN" to the function name.
 }
 \examples{
-data("wine", package = "ordinal")
-wine$z <- rnorm(nrow(wine))
-wine$x <- rnorm(nrow(wine))
-
-nn <- \(x) x |>
-  layer_dense(input_shape = 1L, units = 2L, activation = "relu") |>
-  layer_dense(1L)
-
-fml <- rating ~ 0 + temp + contact + s(z, df = 3) + nn(x)
-if (reticulate::py_module_available("tensorflow") &
+if (reticulate::py_available() &
+  reticulate::py_module_available("tensorflow") &
   reticulate::py_module_available("keras") &
-  reticulate::py_module_available("tensorflow_probability")) {
+  reticulate::py_module_available("tensorflow_probability") &
+  .Platform$OS.type != "windows") {
+  data("wine", package = "ordinal")
+  wine$z <- rnorm(nrow(wine))
+  wine$x <- rnorm(nrow(wine))
+
+  nn <- \(x) x |>
+    layer_dense(input_shape = 1L, units = 2L, activation = "relu") |>
+    layer_dense(1L)
+
+  fml <- rating ~ 0 + temp + contact + s(z, df = 3) + nn(x)
+
   m <- deeptrafo(fml, wine,
     latent_distr = "logistic", monitor_metric = NULL,
     return_data = TRUE, list_of_deep_models = list(nn = nn)

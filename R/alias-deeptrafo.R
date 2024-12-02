@@ -13,7 +13,8 @@
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
+#' if (reticulate::py_available() &
+#'     reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
 #'     reticulate::py_module_available("tensorflow_probability") &
 #'     .Platform$OS.type != "windows") {
@@ -66,7 +67,8 @@ dctm <- function(
 #'
 #' @examples
 #' df <- data.frame(y = ordered(sample.int(6, 50, TRUE)), x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
+#' if (reticulate::py_available() &
+#'     reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
 #'     reticulate::py_module_available("tensorflow_probability") &
 #'     .Platform$OS.type != "windows") {
@@ -110,7 +112,8 @@ ontram <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
+#' if (reticulate::py_available() &
+#'     reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
 #'     reticulate::py_module_available("tensorflow_probability") &
 #'     .Platform$OS.type != "windows") {
@@ -152,7 +155,8 @@ ColrNN <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
+#' if (reticulate::py_available() &
+#'     reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
 #'     reticulate::py_module_available("tensorflow_probability") &
 #'     .Platform$OS.type != "windows") {
@@ -194,7 +198,8 @@ CoxphNN <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
+#' if (reticulate::py_available() &
+#'     reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
 #'     reticulate::py_module_available("tensorflow_probability") &
 #'     .Platform$OS.type != "windows") {
@@ -236,7 +241,8 @@ LehmanNN <- function(
 #'
 #' @examples
 #' df <- data.frame(y = rnorm(50), x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
+#' if (reticulate::py_available() &
+#'     reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
 #'     reticulate::py_module_available("tensorflow_probability") &
 #'     .Platform$OS.type != "windows") {
@@ -279,7 +285,8 @@ BoxCoxNN <- function(
 #' @examples
 #' df <- data.frame(y = ordered(sample.int(5, 50, replace = TRUE)),
 #'      x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
+#' if (reticulate::py_available() &
+#'     reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
 #'     reticulate::py_module_available("tensorflow_probability") &
 #'     .Platform$OS.type != "windows") {
@@ -322,7 +329,8 @@ PolrNN <- function(
 #' @examples
 #' set.seed(1)
 #' df <- data.frame(y = 10 + rnorm(50), x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
+#' if (reticulate::py_available() &
+#'     reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
 #'     reticulate::py_module_available("tensorflow_probability") &
 #'     .Platform$OS.type != "windows") {
@@ -378,7 +386,8 @@ LmNN <- function(
 #' @examples
 #' set.seed(1)
 #' df <- data.frame(y = abs(1 + rnorm(50)), x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
+#' if (reticulate::py_available() &
+#'     reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
 #'     reticulate::py_module_available("tensorflow_probability") &
 #'     .Platform$OS.type != "windows") {
@@ -448,7 +457,8 @@ SurvregNN <- function(
 #' @examples
 #' set.seed(1)
 #' df <- data.frame(y = as.integer(abs(1 + rnorm(50, sd = 10))), x = rnorm(50))
-#' if (reticulate::py_module_available("tensorflow") &
+#' if (reticulate::py_available() &
+#'     reticulate::py_module_available("tensorflow") &
 #'     reticulate::py_module_available("keras") &
 #'     reticulate::py_module_available("tensorflow_probability") &
 #'     .Platform$OS.type != "windows") {

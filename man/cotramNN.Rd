@@ -57,9 +57,11 @@ Deep distribution-free count regression
 \examples{
 set.seed(1)
 df <- data.frame(y = as.integer(abs(1 + rnorm(50, sd = 10))), x = rnorm(50))
-if (reticulate::py_module_available("tensorflow") &
+if (reticulate::py_available() &
+    reticulate::py_module_available("tensorflow") &
     reticulate::py_module_available("keras") &
-    reticulate::py_module_available("tensorflow_probability")) {
+    reticulate::py_module_available("tensorflow_probability") &
+    .Platform$OS.type != "windows") {
     m <- cotramNN(y ~ 0 + x, data = df, order = 6)
 \donttest{
     optimizer <- optimizer_adam(learning_rate = 0.1, decay = 4e-4)

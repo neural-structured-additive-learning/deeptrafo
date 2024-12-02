@@ -61,9 +61,11 @@ Deep (proportional odds) logistic regression
 \examples{
 df <- data.frame(y = ordered(sample.int(5, 50, replace = TRUE)),
      x = rnorm(50))
-if (reticulate::py_module_available("tensorflow") &
+if (reticulate::py_available() &
+    reticulate::py_module_available("tensorflow") &
     reticulate::py_module_available("keras") &
-    reticulate::py_module_available("tensorflow_probability")) {
+    reticulate::py_module_available("tensorflow_probability") &
+    .Platform$OS.type != "windows") {
     m <- PolrNN(y ~ x, data = df)
     coef(m)
 }

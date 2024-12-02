@@ -61,9 +61,11 @@ Deep parametric survival regression
 \examples{
 set.seed(1)
 df <- data.frame(y = abs(1 + rnorm(50)), x = rnorm(50))
-if (reticulate::py_module_available("tensorflow") &
+if (reticulate::py_available() &
+    reticulate::py_module_available("tensorflow") &
     reticulate::py_module_available("keras") &
-    reticulate::py_module_available("tensorflow_probability")) {
+    reticulate::py_module_available("tensorflow_probability") &
+    .Platform$OS.type != "windows") {
     m <- SurvregNN(y ~ 0 + x, data = df)
 \donttest{
     optimizer <- optimizer_adam(learning_rate = 0.01, decay = 4e-4)
