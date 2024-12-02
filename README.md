@@ -93,21 +93,22 @@ unlist(logLik(ens))
 
 # How to cite `deeptrafo`
 
-For methodology please cite an appropriate selection of:
-
-1. Deep conditional transformation models
+When using the software, please cite
 
 ```
-@inproceedings{sick2020deep,
-doi = {10.1109/icpr48806.2021.9413177},
-year = {2021},
-publisher = {{IEEE}},
-author = {Beate Sick and Torsten Hothorn and Oliver D\"urr},
-title = {Deep transformation models: Tackling complex regression problems with
-neural network based transformation models},
-booktitle = {2020 25th International Conference on Pattern Recognition ({ICPR})}
+@Article{kook2024deeptrafo,
+  title = {Estimating Conditional Distributions with Neural Networks Using {R} Package {deeptrafo}},
+  author = {Lucas Kook and Philipp F. M. Baumann and Oliver D\"urr and Beate Sick and David R\"ugamer},
+  journal = {Journal of Statistical Software},
+  year = {2024},
+  volume = {111},
+  number = {10},
+  pages = {1--36},
+  doi = {10.18637/jss.v111.i10},
 }
 ```
+
+For methodology please cite an appropriate selection of:
 
 ```
 @InProceedings{baumann2020deep,
@@ -161,14 +162,3 @@ booktitle = {2020 25th International Conference on Pattern Recognition ({ICPR})}
 }
 ```
 
-When using the software, please cite
-
-```
-@article{kook2022estimating,
-  title={Estimating Conditional Distributions with Neural Networks using R package deeptrafo},
-  author={Kook, Lucas and Baumann, Philipp F. M. and D{\"u}rr, Oliver and Sick, Beate and R{\"u}gamer, David},
-  journal={arXiv preprint arXiv:2211.13665},
-  year={2022},
-  doi={10.48550/arXiv.2211.13665}
-}
-```

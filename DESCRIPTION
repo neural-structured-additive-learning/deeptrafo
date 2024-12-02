@@ -10,9 +10,9 @@ Description: Allows for the specification of deep conditional transformation
     models (DCTMs) and ordinal neural network transformation models, as 
     described in Baumann et al (2021) <doi:10.1007/978-3-030-86523-8_1> and 
     Kook et al (2022) <doi:10.1016/j.patcog.2021.108263>. Extensions such as
-    autoregressive DCTMs (Ruegamer et al, 2022, <doi:10.48550/arXiv.2110.08248>)
+    autoregressive DCTMs (Ruegamer et al, 2023, <doi:10.1007/s11222-023-10212-8>)
     and transformation ensembles (Kook et al, 2022, <doi:10.48550/arXiv.2205.12729>)
-    are implemented. The software package is described in Kook et al (2022,
+    are implemented. The software package is described in Kook et al (2024,
     <doi:10.18637/jss.v111.i10>).
 Depends: 
     R (>= 4.0.0), 
