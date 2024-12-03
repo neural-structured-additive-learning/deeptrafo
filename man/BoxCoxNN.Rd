@@ -59,11 +59,11 @@ See return statement of \code{\link[deeptrafo]{deeptrafo}}
 BoxCox-type neural network transformation models
 }
 \examples{
-if (reticulate::py_available() &
-    reticulate::py_module_available("tensorflow") &
-    reticulate::py_module_available("keras") &
-    reticulate::py_module_available("tensorflow_probability") &
-    .Platform$OS.type != "windows") {
+if (.Platform$OS.type != "windows" &&
+    reticulate::py_available() &&
+    reticulate::py_module_available("tensorflow") &&
+    reticulate::py_module_available("keras") &&
+    reticulate::py_module_available("tensorflow_probability")) {
     df <- data.frame(y = rnorm(50), x = rnorm(50))
     m <- BoxCoxNN(y ~ x, data = df)
     coef(m)

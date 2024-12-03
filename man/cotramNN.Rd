@@ -55,11 +55,11 @@ See return statement of \code{\link[deeptrafo]{deeptrafo}}
 Deep distribution-free count regression
 }
 \examples{
-if (reticulate::py_available() &
-    reticulate::py_module_available("tensorflow") &
-    reticulate::py_module_available("keras") &
-    reticulate::py_module_available("tensorflow_probability") &
-    .Platform$OS.type != "windows") {
+if (.Platform$OS.type != "windows" &&
+    reticulate::py_available() &&
+    reticulate::py_module_available("tensorflow") &&
+    reticulate::py_module_available("keras") &&
+    reticulate::py_module_available("tensorflow_probability")) {
     set.seed(1)
     df <- data.frame(y = as.integer(abs(1 + rnorm(50, sd = 10))), x = rnorm(50))
     m <- cotramNN(y ~ 0 + x, data = df, order = 6)

@@ -59,11 +59,11 @@ See return statement of \code{\link[deeptrafo]{deeptrafo}}
 Deep parametric survival regression
 }
 \examples{
-if (reticulate::py_available() &
-    reticulate::py_module_available("tensorflow") &
-    reticulate::py_module_available("keras") &
-    reticulate::py_module_available("tensorflow_probability") &
-    .Platform$OS.type != "windows") {
+if (.Platform$OS.type != "windows" &&
+    reticulate::py_available() &&
+    reticulate::py_module_available("tensorflow") &&
+    reticulate::py_module_available("keras") &&
+    reticulate::py_module_available("tensorflow_probability")) {
     set.seed(1)
     df <- data.frame(y = abs(1 + rnorm(50)), x = rnorm(50))
     m <- SurvregNN(y ~ 0 + x, data = df)

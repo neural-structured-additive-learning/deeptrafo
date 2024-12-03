@@ -1,10 +1,10 @@
 context("Test deeptrafo residuals")
 
-if (reticulate::py_available() &
-  reticulate::py_module_available("tensorflow") &
-  reticulate::py_module_available("keras") &
-  reticulate::py_module_available("tensorflow_probability") &
-  .Platform$OS.type != "windows") {
+if (.Platform$OS.type != "windows" &&
+  reticulate::py_available() &&
+  reticulate::py_module_available("tensorflow") &&
+  reticulate::py_module_available("keras") &&
+  reticulate::py_module_available("tensorflow_probability")) {
   if (FALSE) {
     test_that("residuals coincide with tram (ordinal)", {
       library("tram")

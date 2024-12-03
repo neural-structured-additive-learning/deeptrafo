@@ -1,10 +1,10 @@
 context("Test deep ensembles")
 
-if (reticulate::py_available() &
-  reticulate::py_module_available("tensorflow") &
-  reticulate::py_module_available("keras") &
-  reticulate::py_module_available("tensorflow_probability") &
-  .Platform$OS.type != "windows") {
+if (.Platform$OS.type != "windows" &&
+  reticulate::py_available() &&
+  reticulate::py_module_available("tensorflow") &&
+  reticulate::py_module_available("keras") &&
+  reticulate::py_module_available("tensorflow_probability")) {
   # FUNs --------------------------------------------------------------------
 
   check_ensemble <- function(formula = y ~ 1,
