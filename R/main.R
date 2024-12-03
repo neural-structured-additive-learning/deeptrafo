@@ -111,6 +111,18 @@ deeptrafo <- function(
     return_data = FALSE,
     engine = "tf",
     ...) {
+  if (!reticulate::py_available()) {
+    message(
+      "No Python Environemt available. Use `check_and_install()` ",
+      "to install recommended environment."
+    )
+    invisible(return(NULL))
+  }
+  if (!reticulate::py_module_available("tensorflow")) {
+    message("Tensorflow not available. Use `install_tensorflow()`.")
+    invisible(return(NULL))
+  }
+
   call <- match.call()
 
   # How many terms are in the formula

@@ -77,8 +77,8 @@ the predictions. Defaults to \code{NULL}. If overwritten, \code{K} is
 ignored.}
 
 \item{pred_grid}{Logical; set TRUE, if user provides a predefined grid for an
-atp/atm model through newdata which holds two attributes. The first 
-attribute, rname, should hold the column name (string) of the response 
+atp/atm model through newdata which holds two attributes. The first
+attribute, rname, should hold the column name (string) of the response
 variable while the second attribute, y, should hold the grid name.}
 
 \item{convert_fun}{Function; applied to the log-likelihood values of all

@@ -38,62 +38,64 @@ trafo_control <- function(order_bsp = 10L,
                           order_bsp_penalty = 2,
                           tf_bsps = FALSE,
                           response_type = c("continuous", "ordered", "survival", "count"),
-                          atm_toplayer = function(x) layer_dense(x, units = 1L,
-                                                                 name = "atm_toplayer",
-                                                                 use_bias = FALSE),
+                          atm_toplayer = function(x) {
+                            layer_dense(x,
+                              units = 1L,
+                              name = "atm_toplayer",
+                              use_bias = FALSE
+                            )
+                          },
                           basis = c("bernstein", "ordered", "shiftscale")) {
+  if (!reticulate::py_available()) {
+    message(
+      "No Python Environemt available. Use `check_and_install()` ",
+      "to install recommended environment."
+    )
+    invisible(return(NULL))
+  }
+  if (!reticulate::py_module_available("tensorflow")) {
+    message("Tensorflow not available. Use `install_tensorflow()`.")
+    invisible(return(NULL))
+  }
 
   response_type <- match.arg(response_type)
 
   trafo <- if (is.function(basis)) {
-
     basis
-
   } else {
     basis <- match.arg(basis)
 
-    switch (
-      basis,
+    switch(basis,
       "bernstein" = mono_trafo_multi,
       "ordered" = mono_trafo_multi,
       "shiftscale" = shift_scale_trafo_multi
     )
-
   }
 
 
   # define support (either function or dummy function outputting the supplied range)
   if (!is.function(support)) {
-
     supp <- function(x) support
-
   } else {
-
     supp <- support
-
   }
 
   if (response_type == "survival") {
-
     supp <- function(x) support(x[, 1])
-
   }
 
   # define bsp functions
   if (tf_bsps & is.null(y_basis_fun) & is.null(y_basis_fun_prime)) {
-
-    if (is.function(supp))
+    if (is.function(supp)) {
       stop("Support must be given if TensorFlow Bernstein Basis Polynomials are used.")
+    }
 
     eval_bsp <- eval_bsp_tf(order_bsp, supp)
     eval_bsp_prime <- eval_bsp_prime_tf(order_bsp, supp)
-
   }
 
   if (is.null(y_basis_fun)) {
-
-    y_basis_fun <- switch(
-      response_type,
+    y_basis_fun <- switch(response_type,
       "continuous" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
         eval_bsp(y, order = orderbsp, supp = suppy)
       },
@@ -107,13 +109,10 @@ trafo_control <- function(order_bsp = 10L,
         eval_ord_upr(y)
       }
     )
-
   }
 
   if (is.null(y_basis_fun_lower)) {
-
-    y_basis_fun_lower <- switch(
-      response_type,
+    y_basis_fun_lower <- switch(response_type,
       "continuous" = function(y, orderbsp = order_bsp, suppy = supp(y)) {
         ret <- eval_bsp(y, order = orderbsp, supp = suppy)
         ret[] <- 1e-8
@@ -129,13 +128,10 @@ trafo_control <- function(order_bsp = 10L,
         eval_ord_lwr(y)
       }
     )
-
   }
 
   if (is.null(y_basis_fun_prime)) {
-
-    y_basis_fun_prime <- switch(
-      response_type,
+    y_basis_fun_prime <- switch(response_type,
       "continuous" = function(y, orderbsp = order_bsp,
                               suppy = supp(y)) { # / diff(supp(y))) {
         eval_bsp_prime(y, order = orderbsp, supp = suppy)
@@ -155,15 +151,12 @@ trafo_control <- function(order_bsp = 10L,
         ret
       }
     )
-
   }
 
 
   if (response_type == "ordered") {
-
     penalize_bsp <- 0
     order_bsp_penalty <- 1
-
   }
 
   return(
@@ -180,5 +173,4 @@ trafo_control <- function(order_bsp = 10L,
       trafo = trafo
     )
   )
-
 }
