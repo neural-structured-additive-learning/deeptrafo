@@ -1,6 +1,6 @@
 Package: deeptrafo
 Title: Fitting Deep Conditional Transformation Models
-Version: 1.0-0
+Version: 1.0-1
 Authors@R: c(
     person("Lucas", "Kook", , "lucasheinrich.kook@gmail.com", role = c("aut", "cre")),
     person("Philipp", "Baumann", , "baumann@kof.ethz.ch", role = c("aut")),
@@ -15,7 +15,7 @@ Description: Allows for the specification of deep conditional transformation
     are implemented. The software package is described in Kook et al (2024,
     <doi:10.18637/jss.v111.i10>).
 Depends: 
-    R (>= 4.0.0), 
+    R (>= 4.1.0), 
     tensorflow (>= 2.2.0), 
     keras (>= 2.2.0), 
     tfprobability (>= 0.15),
